@@ -11,6 +11,7 @@ import (
 
 func init() {
 	logg.LogKeys["CLI"] = true
+	logg.LogKeys["REST"] = true
 }
 
 func main() {
