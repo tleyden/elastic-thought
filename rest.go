@@ -9,22 +9,19 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// A container to hold context associated with a REST API
-// server.  This is used to avoid re-creating a handle to the
-// database for each request, since it is an expensive operation.
+// A container to hold settings associated with a REST API
+// server.
 type RestApiServer struct {
-	DatabaseURL string         // the couchbase sync gw db url
-	Database    couch.Database // the couchbase sync gw database handle
+	DatabaseURL string // the couchbase sync gw db url
 
 }
 
 // Create a new REST API server and connect to the database.
-func NewRestApiServer(dbUrl string) (*RestApiServer, error) {
+func NewRestApiServer(dbUrl string) *RestApiServer {
 	r := &RestApiServer{
 		DatabaseURL: dbUrl,
 	}
-	err := r.connectDb()
-	return r, err
+	return r
 }
 
 // Get the ElasticThought handler.  This is de-coupled from the
@@ -38,7 +35,8 @@ func (s RestApiServer) RestApiRouter() *mux.Router {
 		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
 	}
 	fooHandler := func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Foo")
+		db, err := s.getDbConnection()
+		fmt.Fprintf(w, "DB: %v Error: %v", db, err)
 	}
 
 	r.HandleFunc("/foo", fooHandler)
@@ -48,12 +46,11 @@ func (s RestApiServer) RestApiRouter() *mux.Router {
 
 }
 
-func (s *RestApiServer) connectDb() error {
+func (s RestApiServer) getDbConnection() (couch.Database, error) {
 	db, err := couch.Connect(s.DatabaseURL)
 	if err != nil {
-		return err
+		return db, err
 	}
-	s.Database = db
-	return nil
+	return db, nil
 
 }

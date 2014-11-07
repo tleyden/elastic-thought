@@ -18,10 +18,7 @@ func main() {
 	dbUrl := "http://localhost:4985/elasticthought" // TODO: cli param
 	port := 8080                                    // TODO: cli-param
 
-	restApiServer, err := elasticthought.NewRestApiServer(dbUrl)
-	if err != nil {
-		logg.LogFatal("Could not connect to db: %s", dbUrl)
-	}
+	restApiServer := elasticthought.NewRestApiServer(dbUrl)
 
 	logg.LogTo("CLI", "Starting webserver on port: %v", port)
 
