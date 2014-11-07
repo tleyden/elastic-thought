@@ -1,0 +1,2 @@
+
+REST Api wrapper for the [Caffe](caffe.berkeleyvision.org) deep learning framework that uses [Couchbase Server](http://www.couchbase.com/nosql-databases/couchbase-server) and [Sync Gateway](https://github.com/couchbase/sync_gateway) to store application data and blobs.

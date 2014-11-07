@@ -1,0 +1,183 @@
+FORMAT: 1A
+
+# elasticthought
+
+REST API wrapper for Caffe
+
+
+# Group User
+Related resources of the **User API**
+
+## Users Collection [/users]
+
+### Create a User [POST]
++ Request (application/json)
+
+        { 
+            "username": "foo",
+            "password": "bar"
+        }
+
++ Response 201 
+
+    
+# Group Data
+Related resources of the **Data API**
+
+## Datafiles Collection [/datafiles]
+
+### Create a Datafile [POST]
++ Request (application/json)
+
+    + Header
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
+
+    + Body
+
+            { "url": "http://s3.com/mnist-data.zip" }
+
+        
+
++ Response 201 (application/json)
+
+        { "id": "datafile-uuid" }
+
+
+## Datasets Collection [/datasets]
+
+### Create a Dataset [POST]
++ Request (application/json)
+
+    + Header
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
+
+    + Body
+
+            { 
+                "datafile": "datafile-uuid",
+                "split": {
+                    "training": 0.7,
+                    "testing": 0.3
+                }
+            }
+
++ Response 201 (application/json)
+
+        { 
+            "datasets": [
+                {
+                    "uuid": "training-dataset-uuid",
+                    "name":"training" 
+                },
+                {
+                    "uuid": "testing-dataset-uuid",
+                    "name":"testing" 
+                }
+            ] 
+        }
+        
+        
+# Group Training
+Related resources of the **Training API**
+
+## Solvers Collection [/solvers]
+
+### Create a Solver [POST]
++ Request (application/json)
+
+    + Header
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
+
+    + Body
+
+            { 
+                "engine": "caffe",
+                "caffe": {
+                    "solver-prototxt-url": "http://s3.com/mnist.prototxt",
+                    "environment": {
+                        "training-source": "training-dataset-uuid",
+                        "testing-source": "training-dataset-uuid"
+                    }
+                }
+            }
+
++ Response 201 (application/json)
+
+        { "id": "solver-uuid" }
+        
+## Training Jobs Collection [/training-jobs]
+
+After a solver is defined, create a training job that will use the solver to train a model.
+
+### Create a Training Job [POST]
++ Request (application/json)
+
+    + Header
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
+
+    + Body
+
+            { 
+                "solver": "solver-uuid"
+            }
+
++ Response 201 (application/json)
+
+        { 
+            "id": "training-job-uuid",
+            "status": "/training-jobs/{training-job-uuid}/status",
+            "logs": "/training-jobs/{training-job-uuid}/logs"
+        }
+        
+## Training Job Status [/training-jobs/{id}/status]
+
+The status of the Training Job 
+
++ Parameters
+    + id (required, string, `training-job-uuid`) ... The id of the training job.
+
+### Training Job Status [GET]
++ Request
+ 
+    + Headers
+ 
+            Authorization: Token 527d11fe429f3426cb8dbeba183a0d80
+
++ Response 200 (application/json)
+
+        { 
+            "id": "training-job-uuid",
+            "state": "running",
+            "loss": 0.0013,
+            "last-iteration": 2000,
+            "max-iterations": 10000,
+            "logs": "/training-jobs/{training-job-uuid}/logs"
+        }
+
+## Training Job Logs [/training-jobs/{id}/logs]
+
+The logs of the Training Job.  Currently returns entire text file, but in the future 
+it will support websocket streaming.
+
++ Parameters
+    + id (required, string, `training-job-uuid`) ... The id of the training job.
+
+### Training Job Logs [GET]
++ Request
+ 
+    + Headers
+ 
+            Authorization: Token 527d11fe429f3426cb8dbeba183a0d80
+
++ Response 200 (text/plain)
+
+
+# Group Prediction
+Related resources of the **Prediction API**
+
+
+
