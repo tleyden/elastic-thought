@@ -1,0 +1,15 @@
+\#*
+*~
+.#*
+\#*\#
+
+*.class
+
+.idea
+*.iml
+.gradle
+local.properties
+/.DS_Store
+build
+cli/config.json
+cli-main/cli-main
