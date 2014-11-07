@@ -3,7 +3,6 @@ package elasticthought
 import (
 	"encoding/json"
 	"fmt"
-	"html"
 	"net/http"
 
 	"github.com/couchbaselabs/logg"
@@ -37,7 +36,7 @@ func (s RestApiServer) RestApiRouter() *mux.Router {
 	r := mux.NewRouter()
 
 	homeHandler := func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
+		fmt.Fprintf(w, "Welcome to the ElasticThought REST API")
 	}
 
 	r.HandleFunc("/users", s.createHandler(handleNewUser)).Methods("POST")
@@ -63,7 +62,7 @@ func handleNewUser(w http.ResponseWriter, r *http.Request, db couch.Database) {
 	existingUser := NewUser()
 	err = db.Retrieve(userToCreate.DocId(), existingUser)
 	if err == nil {
-		errMsg := fmt.Sprintf("Error looking up existing user: %v", err)
+		errMsg := fmt.Sprintf("User already exists: %+v", *existingUser)
 		http.Error(w, errMsg, 500)
 		return
 	}
