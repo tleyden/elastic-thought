@@ -49,6 +49,14 @@ func CreateUserEndpoint(c *gin.Context) {
 }
 
 func CreateDataFileEndpoint(c *gin.Context) {
+
 	user := c.MustGet("user").(User)
+
+	// create a new Datfile object
+
+	// _changes listener will see it and process it (download and save to s3)
+
+	// return uuid of Dataafile object
+
 	c.String(200, "user is: %+v", user)
 }
