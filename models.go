@@ -1,6 +1,11 @@
 package elasticthought
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+
+	"github.com/dustin/go-couch"
+)
 
 // An ElasticThought user.
 type User struct {
@@ -23,6 +28,33 @@ func NewUserFromUser(other User) *User {
 	return user
 }
 
+func AuthenticateUser(db couch.Database, username, password string) (*User, error) {
+
+	userId := docIdFromUsername(username)
+
+	authenticatedUser := NewUser()
+
+	err := db.Retrieve(userId, authenticatedUser)
+
+	if err != nil {
+		// no valid user
+		return nil, err
+	}
+
+	// we found a valid user, but do passwords match?
+	if authenticatedUser.Password != password {
+		err := errors.New("Passwords do not match")
+		return nil, err
+	}
+
+	return authenticatedUser, err
+
+}
+
 func (u User) DocId() string {
-	return fmt.Sprintf("user:%v", u.Username)
+	return docIdFromUsername(u.Username)
+}
+
+func docIdFromUsername(username string) string {
+	return fmt.Sprintf("user:%v", username)
 }

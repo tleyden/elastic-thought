@@ -1,15 +1,6 @@
 package elasticthought
 
-import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-
-	"github.com/couchbaselabs/logg"
-	"github.com/dustin/go-couch"
-	"github.com/gorilla/mux"
-)
-
+/*
 // A container to hold settings associated with a REST API
 // server.
 type RestApiServer struct {
@@ -124,3 +115,4 @@ func (s RestApiServer) getDbConnection() (couch.Database, error) {
 	return db, nil
 
 }
+*/
