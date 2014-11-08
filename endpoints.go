@@ -38,14 +38,14 @@ func CreateUserEndpoint(c *gin.Context) {
 
 	// create a new user and return 201
 	newUser := NewUserFromUser(*userToCreate)
-	id, rev, err := db.InsertWith(newUser, newUser.DocId())
+	_, _, err = db.InsertWith(newUser, newUser.DocId())
 	if err != nil {
 		errMsg := fmt.Sprintf("Error creating new user: %v", err)
 		c.Fail(500, errors.New(errMsg))
 		return
 	}
 
-	c.String(201, "Created new user with id: %v rev: %v", id, rev)
+	c.String(201, "")
 
 }
 
@@ -70,16 +70,14 @@ func CreateDataFileEndpoint(c *gin.Context) {
 
 	// create a new Datafile object in db
 
-	id, rev, err := db.Insert(datafile)
+	id, _, err := db.Insert(datafile)
 	if err != nil {
 		errMsg := fmt.Sprintf("Error creating new datafile: %v", err)
 		c.Fail(500, errors.New(errMsg))
 		return
 	}
 
-	// return uuid of Dataafile object
-
-	c.String(201, "created datafile id: %v rev: %v", id, rev)
+	c.JSON(201, gin.H{"id": id})
 
 }
 
