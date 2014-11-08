@@ -7,19 +7,28 @@ import (
 	"strings"
 
 	"github.com/couchbaselabs/logg"
-	"github.com/dustin/go-couch"
 	"github.com/gin-gonic/gin"
+	"github.com/tleyden/go-couch"
 )
 
 func DbConnector(dbUrl string) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 
+		// make sure the db url has a trailing slash, otherwise inserts will fail
+		/*if !strings.HasSuffix(dbUrl, "/") {
+			err := errors.New(fmt.Sprintf("dbUrl needs trailing slash: %v", dbUrl))
+			logg.LogError(err)
+			c.Fail(500, err)
+			return
+		}*/
+
 		db, err := couch.Connect(dbUrl)
 		if err != nil {
 			err = errors.New(fmt.Sprintf("Error %v | dbUrl: %v", err, dbUrl))
 			logg.LogError(err)
 			c.Fail(500, err)
+			return
 		}
 
 		c.Set("db", db)

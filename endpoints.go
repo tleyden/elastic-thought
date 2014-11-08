@@ -6,10 +6,11 @@ import (
 	"fmt"
 
 	"github.com/couchbaselabs/logg"
-	"github.com/dustin/go-couch"
 	"github.com/gin-gonic/gin"
+	"github.com/tleyden/go-couch"
 )
 
+// Creates a new user
 func CreateUserEndpoint(c *gin.Context) {
 
 	db := c.MustGet("db").(couch.Database)
@@ -48,15 +49,53 @@ func CreateUserEndpoint(c *gin.Context) {
 
 }
 
+// Creates a datafile
 func CreateDataFileEndpoint(c *gin.Context) {
 
 	user := c.MustGet("user").(User)
+	db := c.MustGet("db").(couch.Database)
 
-	// create a new Datfile object
+	datafile := &Datafile{
+		ElasticThoughtDoc: ElasticThoughtDoc{Type: DOC_TYPE_DATAFILE},
+		UserID:            user.DocId(),
+	}
 
-	// _changes listener will see it and process it (download and save to s3)
+	if ok := c.Bind(&datafile); !ok {
+		errMsg := fmt.Sprintf("Invalid datafile")
+		c.Fail(400, errors.New(errMsg))
+		return
+	}
+
+	logg.LogTo("REST", "datafile: %+v", datafile)
+
+	// create a new Datafile object in db
+
+	id, rev, err := db.Insert(datafile)
+	if err != nil {
+		errMsg := fmt.Sprintf("Error creating new datafile: %v", err)
+		c.Fail(500, errors.New(errMsg))
+		return
+	}
+
+	// return uuid of Dataafile object
+
+	c.String(201, "created datafile id: %v rev: %v", id, rev)
+
+}
+
+// Creates datasets from a datafile
+func CreateDataSetsEndpoint(c *gin.Context) {
+
+	user := c.MustGet("user").(User)
+
+	// create a new Datafile object in db
+
+	// create two new Dataset objects that reference this Datafile
+
+	// _changes listener will see new Dataset objects and process them
 
 	// return uuid of Dataafile object
 
 	c.String(200, "user is: %+v", user)
+
 }

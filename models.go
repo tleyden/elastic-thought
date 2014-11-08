@@ -4,11 +4,23 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/dustin/go-couch"
+	"github.com/tleyden/go-couch"
 )
+
+const (
+	DOC_TYPE_USER     = "user"
+	DOC_TYPE_DATAFILE = "datafile"
+)
+
+type ElasticThoughtDoc struct {
+	Revision string `json:"_rev"`
+	Id       string `json:"_id"`
+	Type     string `json:"type"`
+}
 
 // An ElasticThought user.
 type User struct {
+	ElasticThoughtDoc
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -16,12 +28,14 @@ type User struct {
 
 // Create a new User
 func NewUser() *User {
-	return &User{}
+	return &User{
+		ElasticThoughtDoc: ElasticThoughtDoc{Type: DOC_TYPE_USER},
+	}
 }
 
 // Create a new User based on values in another user
 func NewUserFromUser(other User) *User {
-	user := &User{}
+	user := NewUser()
 	user.Username = other.Username
 	user.Email = other.Email
 	user.Password = other.Password
@@ -57,4 +71,11 @@ func (u User) DocId() string {
 
 func docIdFromUsername(username string) string {
 	return fmt.Sprintf("user:%v", username)
+}
+
+// A Datafile
+type Datafile struct {
+	ElasticThoughtDoc
+	UserID string `json:"user-id"`
+	Url    string `json:"url" binding:"required"`
 }
