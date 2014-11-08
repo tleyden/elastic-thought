@@ -40,9 +40,26 @@ func (s RestApiServer) RestApiRouter() *mux.Router {
 	}
 
 	r.HandleFunc("/users", s.createHandler(handleNewUser)).Methods("POST")
+	r.HandleFunc("/datafiles", s.createHandler(handleNewDatafile)).Methods("POST")
 	r.HandleFunc("/", homeHandler)
 
 	return r
+
+}
+
+func handleNewDatafile(w http.ResponseWriter, r *http.Request, db couch.Database) {
+
+	if loggedInUser, err := getBasicAuthUser(r); err != nil {
+		errMsg := fmt.Sprintf("Unable to authenticate user: %v", err)
+		http.Error(w, errMsg, 500)
+		return
+	}
+
+	// create a new Datfile object
+
+	// _changes listener will see it and process it (download and save to s3)
+
+	// return uuid of Dataafile object
 
 }
 
@@ -86,7 +103,8 @@ func handleNewUser(w http.ResponseWriter, r *http.Request, db couch.Database) {
 func (s RestApiServer) createHandler(dbHandler dbHandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		// create a connection to the db
+		// create a connection to the db -- for now, creates a new one
+		// for handling each request.
 		db, err := s.getDbConnection()
 		if err != nil {
 			errMsg := fmt.Sprintf("Unable to connect to DB: %v", err)
