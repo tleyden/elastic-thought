@@ -60,6 +60,8 @@ func CreateDataFileEndpoint(c *gin.Context) {
 		UserID:            user.DocId(),
 	}
 
+	// bind the Datafile to the JSON request, which will bind the
+	// url field or throw an error.
 	if ok := c.Bind(&datafile); !ok {
 		errMsg := fmt.Sprintf("Invalid datafile")
 		c.Fail(400, errors.New(errMsg))
@@ -69,7 +71,6 @@ func CreateDataFileEndpoint(c *gin.Context) {
 	logg.LogTo("REST", "datafile: %+v", datafile)
 
 	// create a new Datafile object in db
-
 	id, _, err := db.Insert(datafile)
 	if err != nil {
 		errMsg := fmt.Sprintf("Error creating new datafile: %v", err)
@@ -81,19 +82,39 @@ func CreateDataFileEndpoint(c *gin.Context) {
 
 }
 
+type datasetsInput struct {
+	DatafileId string `json:"datafile-id" binding:"required"`
+	Split      struct {
+		Training float32 `json:"training" binding:"required"`
+		Testing  float32 `json:"testing" binding:"required"`
+	} `json:"split" binding:"required"`
+}
+
 // Creates datasets from a datafile
 func CreateDataSetsEndpoint(c *gin.Context) {
 
 	user := c.MustGet("user").(User)
+	db := c.MustGet("db").(couch.Database)
+	logg.LogTo("REST", "user: %v db: %v", user, db)
 
-	// create a new Datafile object in db
+	input := datasetsInput{}
+
+	// bind the input struct to the JSON request
+	if ok := c.Bind(&input); !ok {
+		errMsg := fmt.Sprintf("Invalid input")
+		c.Fail(400, errors.New(errMsg))
+		return
+	}
+
+	// get Datafile object in db
 
 	// create two new Dataset objects that reference this Datafile
 
-	// _changes listener will see new Dataset objects and process them
+	// add message to queue so that a worker processes it
+	// config := nsq.NewConfig()
 
-	// return uuid of Dataafile object
+	// return uuid of Datafile object
 
-	c.String(200, "user is: %+v", user)
+	c.String(200, "input is: %+v", input)
 
 }
