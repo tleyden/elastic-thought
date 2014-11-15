@@ -9,10 +9,10 @@ to be used for a particular purpose.  The typical example would involve:
 */
 type Dataset struct {
 	ElasticThoughtDoc
-	DatafileID      string          `json:"datafile-id"`
+	DatafileID      string          `json:"datafile-id" binding:"required"`
 	ProcessingState ProcessingState `json:"processing-state"`
-	TrainingDataset
-	TestDataset
+	TrainingDataset TrainingDataset `json:"training" binding:"required"`
+	TestDataset     TestDataset     `json:"test" binding:"required"`
 }
 
 type TrainingDataset struct {

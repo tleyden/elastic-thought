@@ -87,51 +87,32 @@ func CreateDataSetsEndpoint(c *gin.Context) {
 	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
 	logg.LogTo("REST", "user: %v db: %v", user, db)
 
-	var decodedJson struct {
-		DatafileId string `json:"datafile-id" binding:"required"`
-		Split      struct {
-			Training float32 `json:"training" binding:"required"`
-			Testing  float32 `json:"testing" binding:"required"`
-		} `json:"split" binding:"required"`
-	}
+	datasetInput := NewDataset()
 
 	// bind the input struct to the JSON request
-	if ok := c.Bind(&decodedJson); !ok {
+	if ok := c.Bind(datasetInput); !ok {
 		errMsg := fmt.Sprintf("Invalid input")
 		c.Fail(400, errors.New(errMsg))
 		return
 	}
 
-	// get Datafile object in db
+	// save dataset object in db
+	id, _, err := db.Insert(datasetInput)
+	if err != nil {
+		errMsg := fmt.Sprintf("Error creating new dataset: %v", err)
+		c.Fail(500, errors.New(errMsg))
+		return
+	}
 
-	// create two new Dataset objects that reference this Datafile
+	// load dataset object from db (so we have id/rev fields)
+	dataset := &Dataset{}
+	err = db.Retrieve(id, dataset)
+	if err != nil {
+		errMsg := fmt.Sprintf("Error fetching dataset w/ id: %v.  Err: %v", id, err)
+		c.Fail(500, errors.New(errMsg))
+		return
+	}
 
-	// for each new dataset object, add
-	// add message to queue so that a worker processes it
-	// config := nsq.NewConfig()
-
-	// return
-	/*
-
-	   {
-	       "datasets": [
-	           {
-	               "datafile-id": "datafile-uuid",
-	               "id": "training-dataset-uuid",
-	               "name":"training",
-	               "split-percentage": 0.7
-	           },
-	           {
-	               "datafile-id": "datafile-uuid",
-	               "id": "testing-dataset-uuid",
-	               "name":"testing",
-	               "split-percentage": 0.3
-	           }
-	       ]
-	   }
-
-	*/
-
-	// c.String(200, "input is: %+v", input2)
+	c.JSON(201, dataset)
 
 }
