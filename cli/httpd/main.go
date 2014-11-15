@@ -10,14 +10,21 @@ import (
 func init() {
 	logg.LogKeys["CLI"] = true
 	logg.LogKeys["REST"] = true
+	logg.LogKeys["CHANGES"] = true
 }
 
 func main() {
 
+	dbUrl := "http://localhost:4985/elasticthought"
+
+	changesListener, err := et.NewChangesListener(dbUrl)
+	if err != nil {
+		logg.LogPanic("Error creating changes listener: %v", err)
+	}
+	go changesListener.FollowChangesFeed()
+
 	r := gin.Default()
-
-	r.Use(et.DbConnector("http://localhost:4985/elasticthought"))
-
+	r.Use(et.DbConnector(dbUrl))
 	r.POST("/users", et.CreateUserEndpoint)
 
 	authorized := r.Group("/")

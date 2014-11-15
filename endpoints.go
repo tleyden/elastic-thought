@@ -96,7 +96,8 @@ func CreateDataSetsEndpoint(c *gin.Context) {
 		return
 	}
 
-	// save dataset object in db
+	// save dataset object in db -- it will get picked up and processed
+	// by changes listener
 	id, _, err := db.Insert(datasetInput)
 	if err != nil {
 		errMsg := fmt.Sprintf("Error creating new dataset: %v", err)
