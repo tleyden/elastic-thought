@@ -58,7 +58,7 @@ Related resources of the **Data API**
 
             { 
                 "datafile-id": "datafile-uuid",
-                "split": {
+                "split-percentage": {
                     "training": 0.7,
                     "testing": 0.3
                 }
@@ -71,12 +71,14 @@ Related resources of the **Data API**
                 {
                     "datafile-id": "datafile-uuid",
                     "id": "training-dataset-uuid",
-                    "name":"training" 
+                    "name":"training",
+                    "split-percentage": 0.7
                 },
                 {
                     "datafile-id": "datafile-uuid",
                     "id": "testing-dataset-uuid",
-                    "name":"testing" 
+                    "name":"testing",
+                    "split-percentage": 0.3
                 }
             ] 
         }
