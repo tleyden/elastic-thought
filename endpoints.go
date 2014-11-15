@@ -55,10 +55,8 @@ func CreateDataFileEndpoint(c *gin.Context) {
 	user := c.MustGet(MIDDLEWARE_KEY_USER).(User)
 	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
 
-	datafile := &Datafile{
-		ElasticThoughtDoc: ElasticThoughtDoc{Type: DOC_TYPE_DATAFILE},
-		UserID:            user.DocId(),
-	}
+	datafile := NewDatafile()
+	datafile.UserID = user.DocId()
 
 	// bind the Datafile to the JSON request, which will bind the
 	// url field or throw an error.

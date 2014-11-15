@@ -3,6 +3,7 @@ package elasticthought
 const (
 	DOC_TYPE_USER     = "user"
 	DOC_TYPE_DATAFILE = "datafile"
+	DOC_TYPE_DATASET  = "dataset"
 )
 
 // All document structs should embed this struct go get access to
