@@ -12,12 +12,13 @@ import (
 
 // A changes listener listens for changes on the _changes feed and reacts to them
 type ChangesListener struct {
-	DbUrl    string
-	Database couch.Database
+	DbUrl     string
+	Database  couch.Database
+	JobRunner JobRunner
 }
 
 // Create a new ChangesListener
-func NewChangesListener(dbUrl string) (*ChangesListener, error) {
+func NewChangesListener(dbUrl string, jobRunner JobRunner) (*ChangesListener, error) {
 
 	db, err := couch.Connect(dbUrl)
 	if err != nil {
@@ -27,8 +28,9 @@ func NewChangesListener(dbUrl string) (*ChangesListener, error) {
 	}
 
 	return &ChangesListener{
-		DbUrl:    dbUrl,
-		Database: db,
+		DbUrl:     dbUrl,
+		Database:  db,
+		JobRunner: jobRunner,
 	}, nil
 }
 
@@ -45,10 +47,10 @@ func (c ChangesListener) FollowChangesFeed() {
 		if err != nil {
 			// it's very common for this to timeout while waiting for new changes.
 			// since we want to follow the changes feed forever, just log an error
-			// TODO: don't even log an error if its an io.Timeout, just noise
 			logg.LogTo("CHANGES", "%T decoding changes: %v.", err, err)
 			return since
 		}
+		c.processChanges(changes)
 
 		since = changes.LastSequence
 		logg.LogTo("CHANGES", "returning since: %v", since)
@@ -65,6 +67,34 @@ func (c ChangesListener) FollowChangesFeed() {
 	c.Database.Changes(handleChange, options)
 
 	logg.LogPanic("Changes listener died -- this should never happen")
+
+}
+
+func (c ChangesListener) processChanges(changes couch.Changes) {
+
+	for _, change := range changes.Results {
+
+		if change.Deleted {
+			logg.LogTo("CHANGES", "change was deleted, skipping")
+			continue
+		}
+
+		doc := ElasticThoughtDoc{}
+		err := c.Database.Retrieve(change.Id, &doc)
+		if err != nil {
+			errMsg := fmt.Errorf("Didn't retrieve: %v - %v", change.Id, err)
+			logg.LogError(errMsg)
+			continue
+		}
+
+		switch doc.Type {
+		case DOC_TYPE_DATASET:
+			logg.LogTo("CHANGES", "got a dataset doc: %+v", doc)
+			job := NewJobDescriptor(doc.Id)
+			c.JobRunner.ScheduleJob(*job)
+		}
+
+	}
 
 }
 

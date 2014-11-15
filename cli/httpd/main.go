@@ -17,7 +17,11 @@ func main() {
 
 	dbUrl := "http://localhost:4985/elasticthought"
 
-	changesListener, err := et.NewChangesListener(dbUrl)
+	// TODO: make this a config to choose either the in process job runner
+	// or an NSQJobRunner
+	jobRunner := et.NewInProcessJobRunner()
+
+	changesListener, err := et.NewChangesListener(dbUrl, jobRunner)
 	if err != nil {
 		logg.LogPanic("Error creating changes listener: %v", err)
 	}
