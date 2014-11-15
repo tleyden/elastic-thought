@@ -58,29 +58,26 @@ Related resources of the **Data API**
 
             { 
                 "datafile-id": "datafile-uuid",
-                "split-percentage": {
-                    "training": 0.7,
-                    "testing": 0.3
+                "training": {
+                    "split-percentage": 0.7
+                },
+                "testing": {
+                    "split-percentage": 0.3
                 }
             }
 
 + Response 201 (application/json)
 
         { 
-            "datasets": [
-                {
-                    "datafile-id": "datafile-uuid",
-                    "id": "training-dataset-uuid",
-                    "name":"training",
-                    "split-percentage": 0.7
-                },
-                {
-                    "datafile-id": "datafile-uuid",
-                    "id": "testing-dataset-uuid",
-                    "name":"testing",
-                    "split-percentage": 0.3
-                }
-            ] 
+            "_id": "dataset-uuid"
+            "datafile-id": "datafile-uuid",
+            "processing-state": "pending",
+            "training": {
+                "split-percentage": 0.7
+            },
+            "testing": {
+                "split-percentage": 0.3
+            }
         }
         
         
@@ -103,8 +100,8 @@ Related resources of the **Training API**
                 "caffe": {
                     "solver-prototxt-url": "http://s3.com/mnist.prototxt",
                     "environment": {
-                        "training-source": "training-dataset-uuid",
-                        "testing-source": "training-dataset-uuid"
+                        "training-source": "dataset-uuid/training",
+                        "testing-source": "dataset-uuid/testing"
                     }
                 }
             }
