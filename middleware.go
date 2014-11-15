@@ -11,17 +11,28 @@ import (
 	"github.com/tleyden/go-couch"
 )
 
+const (
+	MIDDLEWARE_KEY_DB   = "db"
+	MIDDLEWARE_KEY_USER = "user"
+)
+
+// Gin middleware to connnect to the Sync Gw database given in the
+// dbUrl parameter, and set the connection object into the context.
+// This creates a new connection for each request, which is ultra-conservative
+// in case the connection object isn't safe to use among multiple goroutines
+// (and I believe it is).  If it becomes a bottleneck, it's easy to create
+// another middleware that re-uses an existing connection.
 func DbConnector(dbUrl string) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 
-		// make sure the db url has a trailing slash, otherwise inserts will fail
-		/*if !strings.HasSuffix(dbUrl, "/") {
+		// make sure the db url does not have a trailing slash
+		if strings.HasSuffix(dbUrl, "/") {
 			err := errors.New(fmt.Sprintf("dbUrl needs trailing slash: %v", dbUrl))
 			logg.LogError(err)
 			c.Fail(500, err)
 			return
-		}*/
+		}
 
 		db, err := couch.Connect(dbUrl)
 		if err != nil {
@@ -31,7 +42,7 @@ func DbConnector(dbUrl string) gin.HandlerFunc {
 			return
 		}
 
-		c.Set("db", db)
+		c.Set(MIDDLEWARE_KEY_DB, db)
 
 		c.Next()
 
@@ -39,11 +50,15 @@ func DbConnector(dbUrl string) gin.HandlerFunc {
 
 }
 
+// Gin middleware to authenticate the user specified in the Basic Auth
+// Authorization header.  It will lookup the user in the database (this
+// middleware requires the use of the DbConnector middleware to have run
+// before it), and then add to the Gin Context.
 func DbAuthRequired() gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 
-		db := c.MustGet("db").(couch.Database)
+		db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
 
 		auth := strings.SplitN(c.Request.Header.Get("Authorization"), " ", 2)
 
@@ -77,7 +92,7 @@ func DbAuthRequired() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("user", *user)
+		c.Set(MIDDLEWARE_KEY_USER, *user)
 
 		c.Next()
 

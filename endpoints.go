@@ -13,7 +13,7 @@ import (
 // Creates a new user
 func CreateUserEndpoint(c *gin.Context) {
 
-	db := c.MustGet("db").(couch.Database)
+	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
 
 	// parse in a user object from the POST request
 	decoder := json.NewDecoder(c.Request.Body)
@@ -52,8 +52,8 @@ func CreateUserEndpoint(c *gin.Context) {
 // Creates a datafile
 func CreateDataFileEndpoint(c *gin.Context) {
 
-	user := c.MustGet("user").(User)
-	db := c.MustGet("db").(couch.Database)
+	user := c.MustGet(MIDDLEWARE_KEY_USER).(User)
+	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
 
 	datafile := &Datafile{
 		ElasticThoughtDoc: ElasticThoughtDoc{Type: DOC_TYPE_DATAFILE},
@@ -82,25 +82,23 @@ func CreateDataFileEndpoint(c *gin.Context) {
 
 }
 
-type datasetsInput struct {
-	DatafileId string `json:"datafile-id" binding:"required"`
-	Split      struct {
-		Training float32 `json:"training" binding:"required"`
-		Testing  float32 `json:"testing" binding:"required"`
-	} `json:"split" binding:"required"`
-}
-
 // Creates datasets from a datafile
 func CreateDataSetsEndpoint(c *gin.Context) {
 
-	user := c.MustGet("user").(User)
-	db := c.MustGet("db").(couch.Database)
+	user := c.MustGet(MIDDLEWARE_KEY_USER).(User)
+	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
 	logg.LogTo("REST", "user: %v db: %v", user, db)
 
-	input := datasetsInput{}
+	var decodedJson struct {
+		DatafileId string `json:"datafile-id" binding:"required"`
+		Split      struct {
+			Training float32 `json:"training" binding:"required"`
+			Testing  float32 `json:"testing" binding:"required"`
+		} `json:"split" binding:"required"`
+	}
 
 	// bind the input struct to the JSON request
-	if ok := c.Bind(&input); !ok {
+	if ok := c.Bind(&decodedJson); !ok {
 		errMsg := fmt.Sprintf("Invalid input")
 		c.Fail(400, errors.New(errMsg))
 		return
@@ -110,11 +108,32 @@ func CreateDataSetsEndpoint(c *gin.Context) {
 
 	// create two new Dataset objects that reference this Datafile
 
+	// for each new dataset object, add
 	// add message to queue so that a worker processes it
 	// config := nsq.NewConfig()
 
-	// return uuid of Datafile object
+	// return
+	/*
 
-	c.String(200, "input is: %+v", input)
+	   {
+	       "datasets": [
+	           {
+	               "datafile-id": "datafile-uuid",
+	               "id": "training-dataset-uuid",
+	               "name":"training",
+	               "split-percentage": 0.7
+	           },
+	           {
+	               "datafile-id": "datafile-uuid",
+	               "id": "testing-dataset-uuid",
+	               "name":"testing",
+	               "split-percentage": 0.3
+	           }
+	       ]
+	   }
+
+	*/
+
+	// c.String(200, "input is: %+v", input2)
 
 }
