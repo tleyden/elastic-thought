@@ -10,8 +10,17 @@ to be used for a particular purpose.  The typical example would involve:
 type Dataset struct {
 	ElasticThoughtDoc
 	DatafileID      string          `json:"datafile-id"`
-	SplitPercentage float64         `json:"split-percentage"`
 	ProcessingState ProcessingState `json:"processing-state"`
+	TrainingDataset
+	TestDataset
+}
+
+type TrainingDataset struct {
+	SplitPercentage float64 `json:"split-percentage"`
+}
+
+type TestDataset struct {
+	SplitPercentage float64 `json:"split-percentage"`
 }
 
 // Create a new dataset

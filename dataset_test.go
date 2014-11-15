@@ -10,7 +10,20 @@ import (
 
 func TestJsonDecode(t *testing.T) {
 
-	jsonString := `{"_id":"id","_rev":"rev","type":"dataset","datafile-id":"123","split-percentage":0.7,"processing-state":"processing"}`
+	jsonString := `
+	    {  
+	       "_id":"id",
+	       "_rev":"rev",
+	       "type":"dataset",
+	       "datafile-id":"123",
+	       "training":{  
+		  "split-percentage":0.7
+	       },
+	       "test":{  
+		  "split-percentage":0.3
+	       },
+	       "processing-state":"processing"
+	    }`
 
 	data := []byte(jsonString)
 
@@ -29,7 +42,8 @@ func TestJsonEncode(t *testing.T) {
 	dataset := NewDataset()
 	dataset.DatafileID = "dfid"
 	dataset.ProcessingState = FinishedSuccessfully
-	dataset.SplitPercentage = 0.7
+	dataset.TrainingDataset.SplitPercentage = 0.7
+	dataset.TestDataset.SplitPercentage = 0.3
 	dataset.Id = "dsid"
 
 	// marshal dataset -> json
