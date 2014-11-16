@@ -8,10 +8,7 @@ import (
 )
 
 func init() {
-	logg.LogKeys["CLI"] = true
-	logg.LogKeys["REST"] = true
-	logg.LogKeys["CHANGES"] = true
-	logg.LogKeys["DATASET_SPLITTER"] = true
+	et.EnableAllLogKeys()
 }
 
 func main() {
