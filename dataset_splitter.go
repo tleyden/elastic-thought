@@ -16,6 +16,9 @@ func (d DatasetSplitter) Run() {
 
 	// Get the url associated with datafile
 
+	// Open the url -- content type should be application/x-gzip and url should end with
+	// .tar.gz
+
 	// Read from the stream and open tar archive
 
 	// Walk the directories and split the files
