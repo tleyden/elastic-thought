@@ -11,11 +11,12 @@ func init() {
 	logg.LogKeys["CLI"] = true
 	logg.LogKeys["REST"] = true
 	logg.LogKeys["CHANGES"] = true
+	logg.LogKeys["DATASET_SPLITTER"] = true
 }
 
 func main() {
 
-	config := Configuration{}
+	config := et.Configuration{}
 	config.DbUrl = "http://localhost:4985/elasticthought"
 	config.NsqLookupdUrl = "127.0.0.1:4161"
 	config.NsqdUrl = "127.0.0.1:4150"
@@ -23,7 +24,7 @@ func main() {
 
 	// TODO: make this a config to choose either the in process job runner
 	// or an NSQJobRunner
-	jobRunner := et.NewInProcessJobRunner(config)
+	jobRunner := et.NewInProcessJobScheduler(config)
 
 	changesListener, err := et.NewChangesListener(config, jobRunner)
 	if err != nil {

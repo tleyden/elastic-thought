@@ -10,6 +10,7 @@ func init() {
 	logg.LogKeys["CLI"] = true
 	logg.LogKeys["REST"] = true
 	logg.LogKeys["CHANGES"] = true
+	logg.LogKeys["DATASET_SPLITTER"] = true
 }
 
 func main() {
@@ -20,7 +21,7 @@ func main() {
 	config.NsqdUrl = "127.0.0.1:4150"
 	config.NsqdTopic = "elastic-thought"
 
-	worker := NewWorker(config)
+	worker := NewNsqWorker(config)
 	go worker.HandleEvents()
 
 	select {} // block forever

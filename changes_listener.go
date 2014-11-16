@@ -2,7 +2,6 @@ package elasticthought
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 
@@ -20,12 +19,7 @@ type ChangesListener struct {
 // Create a new ChangesListener
 func NewChangesListener(c Configuration, jobScheduler JobScheduler) (*ChangesListener, error) {
 
-	db, err := couch.Connect(c.DbUrl)
-	if err != nil {
-		err = errors.New(fmt.Sprintf("Error %v | dbUrl: %v", err, c.DbUrl))
-		logg.LogError(err)
-		return nil, err
-	}
+	db := c.DbConnection()
 
 	return &ChangesListener{
 		Configuration: c,
@@ -89,8 +83,27 @@ func (c ChangesListener) processChanges(changes couch.Changes) {
 
 		switch doc.Type {
 		case DOC_TYPE_DATASET:
+
 			logg.LogTo("CHANGES", "got a dataset doc: %+v", doc)
-			job := NewJobDescriptor(c.Configuration, doc.Id)
+
+			// create a Dataset doc from the ElasticThoughtDoc
+			dataset := &Dataset{}
+			err = c.Database.Retrieve(change.Id, &dataset)
+			if err != nil {
+				errMsg := fmt.Errorf("Didn't retrieve: %v - %v", change.Id, err)
+				logg.LogError(errMsg)
+				continue
+			}
+
+			logg.LogTo("CHANGES", "convert to  dataset: %+v", dataset)
+
+			// check the state, only schedule if state == pending
+			if dataset.ProcessingState != Pending {
+				logg.LogTo("CHANGES", "Dataset state != pending: %+v", dataset)
+				continue
+			}
+
+			job := NewJobDescriptor(doc.Id)
 			c.JobScheduler.ScheduleJob(*job)
 		}
 

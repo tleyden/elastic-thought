@@ -19,12 +19,12 @@ func (j InProcessJobScheduler) ScheduleJob(jobDescriptor JobDescriptor) error {
 	// create job locally and fire off go-routine
 	logg.Log("in process job runner called with: %+v", jobDescriptor)
 
-	job := CreateJob(jobDescriptor)
+	job, err := CreateJob(j.Configuration, jobDescriptor)
+	if err != nil {
+		return err
+	}
+
 	go job.Run()
 
 	return nil
-}
-
-func CreateJob(jobDescriptor JobDescriptor) Runnable {
-	return DatasetSplitter{}
 }
