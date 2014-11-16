@@ -33,7 +33,8 @@ func CreateJob(config Configuration, jobDescriptor JobDescriptor) (Runnable, err
 		}
 
 		return DatasetSplitter{
-			Dataset: *dataset,
+			Configuration: config,
+			Dataset:       *dataset,
 		}, nil
 	}
 
