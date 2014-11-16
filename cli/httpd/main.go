@@ -17,8 +17,8 @@ func main() {
 
 	// TODO: make this a config to choose either the in process job runner
 	// or an NSQJobRunner
-	// jobScheduler := et.NewInProcessJobScheduler(config)
-	jobScheduler := et.NewNsqJobScheduler(config)
+	jobScheduler := et.NewInProcessJobScheduler(config)
+	// jobScheduler := et.NewNsqJobScheduler(config)
 
 	changesListener, err := et.NewChangesListener(config, jobScheduler)
 	if err != nil {

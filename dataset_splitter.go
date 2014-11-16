@@ -9,5 +9,19 @@ type DatasetSplitter struct {
 }
 
 func (d DatasetSplitter) Run() {
+
 	logg.LogTo("DATASET_SPLITTER", "Datasetsplitter.run()!.  Config: %+v Dataset: %+v", d.Configuration, d.Dataset)
+
+	// Find the datafile object associated with dataset
+
+	// Get the url associated with datafile
+
+	// Read from the stream and open tar archive
+
+	// Walk the directories and split the files
+
+	// Write to training and test tar archive
+
+	// Save both training and test tar archive to cbfs (wrapped in gzip stream)
+
 }
