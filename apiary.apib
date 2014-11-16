@@ -28,6 +28,9 @@ Related resources of the **Data API**
 ## Datafiles Collection [/datafiles]
 
 ### Create a Datafile [POST]
+
+The url passed in the JSON must point to a .tar.gz file.  That is currently the only format allowed.
+
 + Request (application/json)
 
     + Header
@@ -36,7 +39,7 @@ Related resources of the **Data API**
 
     + Body
 
-            { "url": "http://s3.com/mnist-data.zip" }
+            { "url": "http://s3.com/mnist-data.tar.gz" }
 
         
 
