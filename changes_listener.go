@@ -14,11 +14,11 @@ import (
 type ChangesListener struct {
 	Configuration Configuration
 	Database      couch.Database
-	JobRunner     JobRunner
+	JobScheduler  JobScheduler
 }
 
 // Create a new ChangesListener
-func NewChangesListener(c Configuration, jobRunner JobRunner) (*ChangesListener, error) {
+func NewChangesListener(c Configuration, jobScheduler JobScheduler) (*ChangesListener, error) {
 
 	db, err := couch.Connect(c.DbUrl)
 	if err != nil {
@@ -30,7 +30,7 @@ func NewChangesListener(c Configuration, jobRunner JobRunner) (*ChangesListener,
 	return &ChangesListener{
 		Configuration: c,
 		Database:      db,
-		JobRunner:     jobRunner,
+		JobScheduler:  jobScheduler,
 	}, nil
 }
 
@@ -91,7 +91,7 @@ func (c ChangesListener) processChanges(changes couch.Changes) {
 		case DOC_TYPE_DATASET:
 			logg.LogTo("CHANGES", "got a dataset doc: %+v", doc)
 			job := NewJobDescriptor(c.Configuration, doc.Id)
-			c.JobRunner.ScheduleJob(*job)
+			c.JobScheduler.ScheduleJob(*job)
 		}
 
 	}

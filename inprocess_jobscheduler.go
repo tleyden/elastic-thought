@@ -2,18 +2,19 @@ package elasticthought
 
 import "github.com/couchbaselabs/logg"
 
-// TODO: rename to InProcessJobScheduler
-type InProcessJobRunner struct {
+// Run worker jobs in a goroutine in the rest server process (as oppposed to using nsq)
+// Makes certain testing easier
+type InProcessJobScheduler struct {
 	Configuration Configuration
 }
 
-func NewInProcessJobRunner(c Configuration) *InProcessJobRunner {
-	return &InProcessJobRunner{
+func NewInProcessJobScheduler(c Configuration) *InProcessJobScheduler {
+	return &InProcessJobScheduler{
 		Configuration: c,
 	}
 }
 
-func (j InProcessJobRunner) ScheduleJob(jobDescriptor JobDescriptor) error {
+func (j InProcessJobScheduler) ScheduleJob(jobDescriptor JobDescriptor) error {
 
 	// create job locally and fire off go-routine
 	logg.Log("in process job runner called with: %+v", jobDescriptor)
