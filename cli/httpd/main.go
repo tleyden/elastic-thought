@@ -13,11 +13,7 @@ func init() {
 
 func main() {
 
-	config := et.Configuration{}
-	config.DbUrl = "http://localhost:4985/elasticthought"
-	config.NsqLookupdUrl = "127.0.0.1:4161"
-	config.NsqdUrl = "127.0.0.1:4150"
-	config.NsqdTopic = "elastic-thought"
+	config := *(et.NewDefaultConfiguration()) // TODO: get these vals from cmd line args
 
 	// TODO: make this a config to choose either the in process job runner
 	// or an NSQJobRunner

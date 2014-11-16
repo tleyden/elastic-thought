@@ -16,6 +16,18 @@ type Configuration struct {
 	NsqdTopic     string
 }
 
+func NewDefaultConfiguration() *Configuration {
+
+	config := &Configuration{
+		DbUrl:         "http://localhost:4985/elasticthought",
+		NsqLookupdUrl: "127.0.0.1:4161",
+		NsqdUrl:       "127.0.0.1:4150",
+		NsqdTopic:     "elastic-thought",
+	}
+	return config
+
+}
+
 // Connect to db based on url stored in config, or panic if not able to connect
 func (c Configuration) DbConnection() couch.Database {
 	db, err := couch.Connect(c.DbUrl)
