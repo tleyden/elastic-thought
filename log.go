@@ -10,6 +10,7 @@ func init() {
 		"CLI",
 		"REST",
 		"CHANGES",
+		"JOB_SCHEDULER",
 		"DATASET_SPLITTER",
 	}
 }

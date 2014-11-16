@@ -1,5 +1,12 @@
 package elasticthought
 
+import (
+	"encoding/json"
+
+	"github.com/bitly/go-nsq"
+	"github.com/couchbaselabs/logg"
+)
+
 type NsqJobScheduler struct {
 	Configuration Configuration
 }
@@ -12,11 +19,22 @@ func NewNsqJobScheduler(c Configuration) *NsqJobScheduler {
 
 func (j NsqJobScheduler) ScheduleJob(jobDescriptor JobDescriptor) error {
 
-	// connect to nsq
+	config := nsq.NewConfig()
+	w, _ := nsq.NewProducer(j.Configuration.NsqdUrl, config)
 
-	// serialize job descriptor to json
+	data, err := json.Marshal(jobDescriptor)
+	if err != nil {
+		return err
+	}
 
-	// publish to nsq
+	err = w.Publish(j.Configuration.NsqdTopic, data)
+	if err != nil {
+		return err
+	}
+
+	logg.LogTo("JOB_SCHEDULER", "Published to nsq: %v", string(data))
+
+	w.Stop()
 
 	return nil
 }
