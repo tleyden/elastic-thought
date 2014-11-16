@@ -1,6 +1,10 @@
 package elasticthought
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/couchbaselabs/logg"
+)
 
 // Create a new job based on the Job Descriptor
 func CreateJob(config Configuration, jobDescriptor JobDescriptor) (Runnable, error) {
@@ -18,7 +22,19 @@ func CreateJob(config Configuration, jobDescriptor JobDescriptor) (Runnable, err
 	// based on document type, create the correct Runnable
 	switch doc.Type {
 	case DOC_TYPE_DATASET:
-		return DatasetSplitter{}, nil
+
+		// create a Dataset doc
+		dataset := &Dataset{}
+		err = db.Retrieve(doc.Id, &dataset)
+		if err != nil {
+			errMsg := fmt.Errorf("Didn't retrieve: %v - %v", doc.Id, err)
+			logg.LogError(errMsg)
+			return nil, errMsg
+		}
+
+		return DatasetSplitter{
+			Dataset: *dataset,
+		}, nil
 	}
 
 	return nil, fmt.Errorf("Unable to create job for: %+v", jobDescriptor)

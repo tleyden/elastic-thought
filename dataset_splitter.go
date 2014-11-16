@@ -8,5 +8,5 @@ type DatasetSplitter struct {
 }
 
 func (d DatasetSplitter) Run() {
-	logg.LogTo("DATASET_SPLITTER", "Datasetsplitter.run()!")
+	logg.LogTo("DATASET_SPLITTER", "Datasetsplitter.run()!.  Dataset: %+v", d.Dataset)
 }
