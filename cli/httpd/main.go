@@ -15,20 +15,24 @@ func init() {
 
 func main() {
 
-	dbUrl := "http://localhost:4985/elasticthought"
+	config := Configuration{}
+	config.DbUrl = "http://localhost:4985/elasticthought"
+	config.NsqLookupdUrl = "127.0.0.1:4161"
+	config.NsqdUrl = "127.0.0.1:4150"
+	config.NsqdTopic = "elastic-thought"
 
 	// TODO: make this a config to choose either the in process job runner
 	// or an NSQJobRunner
-	jobRunner := et.NewInProcessJobRunner()
+	jobRunner := et.NewInProcessJobRunner(config)
 
-	changesListener, err := et.NewChangesListener(dbUrl, jobRunner)
+	changesListener, err := et.NewChangesListener(config, jobRunner)
 	if err != nil {
 		logg.LogPanic("Error creating changes listener: %v", err)
 	}
 	go changesListener.FollowChangesFeed()
 
 	r := gin.Default()
-	r.Use(et.DbConnector(dbUrl))
+	r.Use(et.DbConnector(config.DbUrl))
 	r.POST("/users", et.CreateUserEndpoint)
 
 	authorized := r.Group("/")

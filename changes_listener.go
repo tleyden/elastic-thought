@@ -12,25 +12,25 @@ import (
 
 // A changes listener listens for changes on the _changes feed and reacts to them
 type ChangesListener struct {
-	DbUrl     string
-	Database  couch.Database
-	JobRunner JobRunner
+	Configuration Configuration
+	Database      couch.Database
+	JobRunner     JobRunner
 }
 
 // Create a new ChangesListener
-func NewChangesListener(dbUrl string, jobRunner JobRunner) (*ChangesListener, error) {
+func NewChangesListener(c Configuration, jobRunner JobRunner) (*ChangesListener, error) {
 
-	db, err := couch.Connect(dbUrl)
+	db, err := couch.Connect(c.DbUrl)
 	if err != nil {
-		err = errors.New(fmt.Sprintf("Error %v | dbUrl: %v", err, dbUrl))
+		err = errors.New(fmt.Sprintf("Error %v | dbUrl: %v", err, c.DbUrl))
 		logg.LogError(err)
 		return nil, err
 	}
 
 	return &ChangesListener{
-		DbUrl:     dbUrl,
-		Database:  db,
-		JobRunner: jobRunner,
+		Configuration: c,
+		Database:      db,
+		JobRunner:     jobRunner,
 	}, nil
 }
 
@@ -90,7 +90,7 @@ func (c ChangesListener) processChanges(changes couch.Changes) {
 		switch doc.Type {
 		case DOC_TYPE_DATASET:
 			logg.LogTo("CHANGES", "got a dataset doc: %+v", doc)
-			job := NewJobDescriptor(doc.Id)
+			job := NewJobDescriptor(c.Configuration, doc.Id)
 			c.JobRunner.ScheduleJob(*job)
 		}
 
