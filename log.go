@@ -11,6 +11,7 @@ func init() {
 		"REST",
 		"CHANGES",
 		"JOB_SCHEDULER",
+		"NSQ_WORKER",
 		"DATASET_SPLITTER",
 	}
 }
