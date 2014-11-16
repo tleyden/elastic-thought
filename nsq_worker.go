@@ -1,6 +1,7 @@
 package elasticthought
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/bitly/go-nsq"
@@ -26,18 +27,35 @@ func (n NsqWorker) HandleEvents() {
 
 	// pull event off of nsql topic
 
-	// create jobDescriptor from json
-
-	// create job from job descriptor
-	// job := CreateJob(n.Configuration, jobDescriptor)
-
-	// run job
-	// go job.Run()
-
 	config := nsq.NewConfig()
 	q, _ := nsq.NewConsumer(n.Configuration.NsqdTopic, channelName, config)
 	q.AddHandler(nsq.HandlerFunc(func(message *nsq.Message) error {
-		logg.LogTo("NSQ_WORKER", "Got a message!!!: %v", message)
+
+		logg.LogTo("NSQ_WORKER", "Got a message!: %v", string(message.Body))
+
+		// create jobDescriptor from json
+		jobDescriptor := JobDescriptor{}
+		err := json.Unmarshal(message.Body, &jobDescriptor)
+		if err != nil {
+			bodyStr := string(message.Body)
+			logg.LogTo("NSQ_WORKER", "Error unmarshalling msg: %v", bodyStr)
+			return err
+		}
+
+		logg.LogTo("NSQ_WORKER", "Job descriptor: %+v", jobDescriptor)
+
+		// create job from job descriptor
+		job, err := CreateJob(n.Configuration, jobDescriptor)
+		if err != nil {
+			logg.LogTo("NSQ_WORKER", "Error creating job from: %+v", jobDescriptor)
+			return err
+		}
+
+		logg.LogTo("NSQ_WORKER", "Job: %+v", job)
+
+		// run job
+		go job.Run()
+
 		return nil
 	}))
 	err := q.ConnectToNSQLookupd(n.Configuration.NsqLookupdUrl)
