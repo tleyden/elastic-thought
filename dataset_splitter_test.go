@@ -45,6 +45,12 @@ func TestTransform(t *testing.T) {
 	r := bytes.NewReader(buf.Bytes())
 	tr := tar.NewReader(r)
 
+	// ugly hack.  Since I'm trying to read from the source stream *twice*, which
+	// doesn't work, the workaround is to create *two* source streams.  this code
+	// creates the second source stream from the same buffer.
+	r2 := bytes.NewReader(buf.Bytes())
+	tr2 := tar.NewReader(r2)
+
 	// create two writers
 	bufTrain := new(bytes.Buffer)
 	bufTest := new(bytes.Buffer)
@@ -52,7 +58,7 @@ func TestTransform(t *testing.T) {
 	twTest := tar.NewWriter(bufTest)
 
 	// pass these into transform
-	err := splitter.transform(tr, twTrain, twTest)
+	err := splitter.transform(tr, tr2, twTrain, twTest)
 	assert.True(t, err == nil)
 
 	// assert that the both the training and test tar archives

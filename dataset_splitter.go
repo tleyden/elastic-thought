@@ -161,10 +161,14 @@ func (d DatasetSplitter) splitMap(source filemap) (training filemap, testing fil
 }
 
 // Read from source tar stream and write training and test to given tar writers
-func (d DatasetSplitter) transform(source *tar.Reader, train, test *tar.Writer) error {
+//
+// TODO: fix ugly hack.  Since I'm trying to read from the source stream *twice*, which
+// doesn't work, the workaround is to expect *two* source streams: source1 and source2.
+// That way after source1 is read, source2 is ready for reading from the beginning
+func (d DatasetSplitter) transform(source1, source2 *tar.Reader, train, test *tar.Writer) error {
 
 	// build a map from the source
-	sourceMap, err := d.createMap(source)
+	sourceMap, err := d.createMap(source1)
 	if err != nil {
 		return err
 	}
@@ -179,7 +183,7 @@ func (d DatasetSplitter) transform(source *tar.Reader, train, test *tar.Writer) 
 	// iterate over the source
 	logg.Log("iterate over source")
 	for {
-		hdr, err := source.Next()
+		hdr, err := source2.Next()
 		logg.Log("hdr: %v", hdr)
 
 		if err == io.EOF {
@@ -205,7 +209,7 @@ func (d DatasetSplitter) transform(source *tar.Reader, train, test *tar.Writer) 
 		}
 
 		// TODO: is there a more efficient way to do this?
-		bytes, err := ioutil.ReadAll(source)
+		bytes, err := ioutil.ReadAll(source2)
 		if err != nil {
 			return err
 		}
