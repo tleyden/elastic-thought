@@ -93,20 +93,33 @@ func TestTransform(t *testing.T) {
 
 }
 
+func TestValidate(t *testing.T) {
+
+}
+
+type tarFile struct {
+	Name string
+	Body string
+}
+
 func createTestArchive(buf *bytes.Buffer) {
 
-	// Create a new tar archive.
-	tw := tar.NewWriter(buf)
-
-	var files = []struct {
-		Name, Body string
-	}{
+	var files = []tarFile{
 		{"foo/1.txt", "Hello 1."},
 		{"foo/2.txt", "Hello 2."},
 		{"bar/1.txt", "Hello bar 1."},
 		{"bar/2.txt", "Hello bar 2."},
 	}
-	for _, file := range files {
+	createArchive(buf, files)
+
+}
+
+func createArchive(buf *bytes.Buffer, tarFiles []tarFile) {
+
+	// Create a new tar archive.
+	tw := tar.NewWriter(buf)
+
+	for _, file := range tarFiles {
 		hdr := &tar.Header{
 			Name: file.Name,
 			Size: int64(len(file.Body)),

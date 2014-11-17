@@ -33,7 +33,15 @@ func (d DatasetSplitter) Run() {
 
 }
 
-// Read from source and write training and test to given writers
+// Validate that the source tar stream conforms to expected specs
+func (d DatasetSplitter) validate(source io.Reader) (bool, error) {
+	return true, nil
+}
+
+// Read from source tar stream and write training and test to given tar writers
 func (d DatasetSplitter) transform(source io.Reader, train, test io.Writer) error {
+
+	// iterate over the source
+
 	return nil
 }
