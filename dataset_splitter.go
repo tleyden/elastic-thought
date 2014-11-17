@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"strings"
 
 	"github.com/couchbaselabs/logg"
@@ -25,6 +26,22 @@ func (f filemap) addFileToDirectory(directory, fileToAdd string) {
 	}
 	files = append(files, fileToAdd)
 	f[directory] = files
+}
+
+func (f filemap) hasPath(path string) bool {
+	pathComponents := strings.Split(path, "/")
+	directory := pathComponents[0]
+	filename := pathComponents[1]
+	files, ok := f[directory]
+	if !ok {
+		return false
+	}
+	for _, file := range files {
+		if file == filename {
+			return true
+		}
+	}
+	return false
 }
 
 func (d DatasetSplitter) Run() {
@@ -147,12 +164,74 @@ func (d DatasetSplitter) splitMap(source filemap) (training filemap, testing fil
 func (d DatasetSplitter) transform(source *tar.Reader, train, test *tar.Writer) error {
 
 	// build a map from the source
+	sourceMap, err := d.createMap(source)
+	if err != nil {
+		return err
+	}
+	logg.Log("sourceMap: %+v", sourceMap)
 
 	// split the map into training and test
+	trainMap, testMap, err := d.splitMap(sourceMap)
+	if err != nil {
+		return err
+	}
 
 	// iterate over the source
+	logg.Log("iterate over source")
+	for {
+		hdr, err := source.Next()
+		logg.Log("hdr: %v", hdr)
 
-	// distribute to writers based on training and test maps
+		if err == io.EOF {
+			// end of tar archive
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		// distribute to writers based on training and test maps
+		var twToAdd *tar.Writer
+
+		// if strings.HasPrefix(hdr.Name, "foo") {
+		if trainMap.hasPath(hdr.Name) {
+			// add to training tar writer
+			twToAdd = train
+		} else if testMap.hasPath(hdr.Name) {
+			// add to testing tar writer
+			twToAdd = test
+		} else {
+			logg.LogPanic("File not present in either test/train: %v", hdr.Name)
+		}
+
+		// TODO: is there a more efficient way to do this?
+		bytes, err := ioutil.ReadAll(source)
+		if err != nil {
+			return err
+		}
+
+		logg.Log("file: %v numbytes: %v", hdr.Name, len(bytes))
+
+		hdrToAdd := &tar.Header{
+			Name: hdr.Name,
+			Size: int64(len(bytes)),
+		}
+		if err := twToAdd.WriteHeader(hdrToAdd); err != nil {
+			return err
+		}
+		if _, err := twToAdd.Write(bytes); err != nil {
+			return err
+		}
+
+	}
+
+	// close writers
+	if err := train.Close(); err != nil {
+		return err
+	}
+	if err := test.Close(); err != nil {
+		return err
+	}
 
 	return nil
 }

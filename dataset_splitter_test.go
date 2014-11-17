@@ -77,6 +77,7 @@ func TestTransform(t *testing.T) {
 			if err != nil {
 				log.Fatalln(err)
 			}
+			logg.Log("filename: %v", hdr.Name)
 			if strings.HasPrefix(hdr.Name, "foo") {
 				numFoo += 1
 				// make sure it's the first time seeing this filename
