@@ -112,6 +112,25 @@ func (d DatasetSplitter) createMap(source *tar.Reader) (filemap, error) {
 
 }
 
+// Split map into training and testing disjoint subsets based on values
+// of DatasetSplitter's Dataset
+func (d DatasetSplitter) splitMap(source filemap) (training filemap, testing filemap, err error) {
+
+	// iterate over source keys
+	for directory, files := range source {
+
+		logg.Log("dir: %v files: %v", directory, files)
+
+		// split files into subsets based on ratios in dataset
+
+		// add to respective maps
+
+	}
+
+	return
+
+}
+
 // Read from source tar stream and write training and test to given tar writers
 func (d DatasetSplitter) transform(source *tar.Reader, train, test *tar.Writer) error {
 

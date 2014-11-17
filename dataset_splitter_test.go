@@ -12,8 +12,12 @@ import (
 	"github.com/couchbaselabs/logg"
 )
 
-func TestTransform(t *testing.T) {
+type tarFile struct {
+	Name string
+	Body string
+}
 
+func create5050Splitter() DatasetSplitter {
 	dataset := Dataset{
 		TrainingDataset: TrainingDataset{
 			SplitPercentage: 0.5,
@@ -26,6 +30,12 @@ func TestTransform(t *testing.T) {
 	splitter := DatasetSplitter{
 		Dataset: dataset,
 	}
+	return splitter
+}
+
+func TestTransform(t *testing.T) {
+
+	splitter := create5050Splitter()
 
 	// Create a test tar archive
 	buf := new(bytes.Buffer)
@@ -152,9 +162,47 @@ func TestCreateMap(t *testing.T) {
 
 }
 
-type tarFile struct {
-	Name string
-	Body string
+func TestSplitMap(t *testing.T) {
+
+	splitter := create5050Splitter()
+	fmap := filemap{
+		"foo": []string{"foo1.txt", "foo2.txt"},
+		"bar": []string{"bar1.txt", "bar2.txt"},
+	}
+	train, test, err := splitter.splitMap(fmap)
+	assert.True(t, err == nil)
+
+	// assertions
+	mapsToVerify := []filemap{train, test}
+	for _, mapToVerify := range mapsToVerify {
+		seenFoos := map[string]string{}
+		seenBars := map[string]string{}
+		numFoo := 0
+		numBar := 0
+		for _, files := range mapToVerify {
+			for _, file := range files {
+				if strings.Contains(file, "foo") {
+					numFoo += 1
+					// make sure it's the first time seeing this filename
+					if _, ok := seenFoos[file]; ok {
+						logg.LogPanic("Not first time seeing: %v", file)
+					}
+					seenFoos[file] = file
+				}
+				if strings.Contains(file, "bar") {
+					numBar += 1
+					// make sure it's the first time seeing this filename
+					if _, ok := seenBars[file]; ok {
+						logg.LogPanic("Not first time seeing: %v", file)
+					}
+					seenBars[file] = file
+				}
+			}
+		}
+		assert.Equals(t, numFoo, 1)
+		assert.Equals(t, numBar, 1)
+	}
+
 }
 
 func createTestArchive(buf *bytes.Buffer) {
