@@ -116,18 +116,30 @@ func (d DatasetSplitter) createMap(source *tar.Reader) (filemap, error) {
 // of DatasetSplitter's Dataset
 func (d DatasetSplitter) splitMap(source filemap) (training filemap, testing filemap, err error) {
 
+	training = filemap{}
+	testing = filemap{}
+
 	// iterate over source keys
 	for directory, files := range source {
 
-		logg.Log("dir: %v files: %v", directory, files)
+		numTraining := int(float64(len(files)) * d.Dataset.TrainingDataset.SplitPercentage)
+
+		numTest := len(files) - int(numTraining)
 
 		// split files into subsets based on ratios in dataset
+		trainingFiles, testFiles, err := splitFiles(files, numTraining, numTest)
+
+		if err != nil {
+			return nil, nil, err
+		}
 
 		// add to respective maps
+		training[directory] = trainingFiles
+		testing[directory] = testFiles
 
 	}
 
-	return
+	return training, testing, nil
 
 }
 
@@ -143,4 +155,15 @@ func (d DatasetSplitter) transform(source *tar.Reader, train, test *tar.Writer) 
 	// distribute to writers based on training and test maps
 
 	return nil
+}
+
+func splitFiles(files []string, numTraining, numTest int) (training []string, test []string, err error) {
+	for i, file := range files {
+		if i < numTraining {
+			training = append(training, file)
+		} else {
+			test = append(test, file)
+		}
+	}
+	return
 }
