@@ -1,7 +1,10 @@
 package elasticthought
 
 import (
+	"archive/tar"
+	"fmt"
 	"io"
+	"strings"
 
 	"github.com/couchbaselabs/logg"
 )
@@ -10,6 +13,18 @@ import (
 type DatasetSplitter struct {
 	Configuration Configuration
 	Dataset       Dataset
+}
+
+type filemap map[string][]string
+
+func (f filemap) addFileToDirectory(directory, fileToAdd string) {
+	files, ok := f[directory]
+	if !ok {
+		files = []string{}
+		f[directory] = files
+	}
+	files = append(files, fileToAdd)
+	f[directory] = files
 }
 
 func (d DatasetSplitter) Run() {
@@ -34,14 +49,79 @@ func (d DatasetSplitter) Run() {
 }
 
 // Validate that the source tar stream conforms to expected specs
-func (d DatasetSplitter) validate(source io.Reader) (bool, error) {
+func (d DatasetSplitter) validate(source *tar.Reader) (bool, error) {
+
+	// validation rules:
+	// 1. has at least 2 files
+	// 2. the depth of each file is 2 (folder/filename.xxx)
+
+	numFiles := 0
+	for {
+		hdr, err := source.Next()
+		if err == io.EOF {
+			// end of tar archive
+			break
+		}
+		if err != nil {
+			return false, err
+		}
+		numFiles += 1
+
+		pathComponents := strings.Split(hdr.Name, "/")
+		if len(pathComponents) != 2 {
+			return false, fmt.Errorf("Path does not have 2 components: %v", hdr.Name)
+		}
+
+	}
+
+	if numFiles < 2 {
+		return false, fmt.Errorf("Archive must contain at least 2 files")
+	}
+
 	return true, nil
 }
 
+// Create a map of folder -> []filename for all entries in the archive
+func (d DatasetSplitter) createMap(source *tar.Reader) (filemap, error) {
+
+	resultMap := filemap{}
+	for {
+		hdr, err := source.Next()
+		if err == io.EOF {
+			// end of tar archive
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		pathComponents := strings.Split(hdr.Name, "/")
+
+		if len(pathComponents) != 2 {
+			return nil, fmt.Errorf("Path does not have 2 components: %v", hdr.Name)
+		}
+
+		directory := pathComponents[0]
+		filename := pathComponents[1]
+
+		resultMap.addFileToDirectory(directory, filename)
+
+	}
+
+	return resultMap, nil
+
+}
+
 // Read from source tar stream and write training and test to given tar writers
-func (d DatasetSplitter) transform(source io.Reader, train, test io.Writer) error {
+func (d DatasetSplitter) transform(source *tar.Reader, train, test *tar.Writer) error {
+
+	// build a map from the source
+
+	// split the map into training and test
 
 	// iterate over the source
+
+	// distribute to writers based on training and test maps
 
 	return nil
 }

@@ -93,7 +93,62 @@ func TestTransform(t *testing.T) {
 
 }
 
-func TestValidate(t *testing.T) {
+func TestValidateValid(t *testing.T) {
+
+	buf := new(bytes.Buffer)
+	var files = []tarFile{
+		{"foo/1.txt", "Hello 1."},
+		{"foo/2.txt", "Hello 2."},
+		{"bar/1.txt", "Hello bar 1."},
+		{"bar/2.txt", "Hello bar 2."},
+	}
+	createArchive(buf, files)
+	reader := bytes.NewReader(buf.Bytes())
+	tr := tar.NewReader(reader)
+
+	splitter := DatasetSplitter{}
+	ok, err := splitter.validate(tr)
+	assert.True(t, ok)
+	assert.True(t, err == nil)
+
+}
+
+func TestValidateTooDeep(t *testing.T) {
+
+	buf := new(bytes.Buffer)
+	var files = []tarFile{
+		{"a/foo/1.txt", "Hello 1."},
+		{"a/bar/1.txt", "Hello bar 1."},
+	}
+	createArchive(buf, files)
+	reader := bytes.NewReader(buf.Bytes())
+	tr := tar.NewReader(reader)
+
+	splitter := DatasetSplitter{}
+	ok, err := splitter.validate(tr)
+	assert.False(t, ok)
+	assert.True(t, err != nil)
+
+}
+
+func TestCreateMap(t *testing.T) {
+
+	buf := new(bytes.Buffer)
+	var files = []tarFile{
+		{"foo/1.txt", "Hello 1."},
+		{"bar/1.txt", "Hello bar 1."},
+		{"bar/2.txt", "Hello bar 2."},
+	}
+	createArchive(buf, files)
+	reader := bytes.NewReader(buf.Bytes())
+	tr := tar.NewReader(reader)
+
+	splitter := DatasetSplitter{}
+	filemap, err := splitter.createMap(tr)
+	assert.True(t, err == nil)
+
+	assert.Equals(t, len(filemap["foo"]), 1)
+	assert.Equals(t, len(filemap["bar"]), 2)
 
 }
 
