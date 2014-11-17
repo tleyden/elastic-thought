@@ -1,6 +1,10 @@
 package elasticthought
 
-import "github.com/couchbaselabs/logg"
+import (
+	"io"
+
+	"github.com/couchbaselabs/logg"
+)
 
 // Worker job that splits a dataset into training/test set
 type DatasetSplitter struct {
@@ -27,4 +31,9 @@ func (d DatasetSplitter) Run() {
 
 	// Save both training and test tar archive to cbfs (wrapped in gzip stream)
 
+}
+
+// Read from source and write training and test to given writers
+func (d DatasetSplitter) transform(source io.Reader, train, test io.Writer) error {
+	return nil
 }
