@@ -1,5 +1,7 @@
 package elasticthought
 
+import "github.com/tleyden/go-couch"
+
 /*
 A dataset is created from a datafile, and represents a partition of the datafile
 to be used for a particular purpose.  The typical example would involve:
@@ -28,4 +30,13 @@ func NewDataset() *Dataset {
 	return &Dataset{
 		ElasticThoughtDoc: ElasticThoughtDoc{Type: DOC_TYPE_DATASET},
 	}
+}
+
+// Find and return the datafile associated with this dataset
+func (d Dataset) GetDatafile(db couch.Database) (*Datafile, error) {
+	datafile := &Datafile{}
+	if err := db.Retrieve(d.DatafileID, datafile); err != nil {
+		return nil, err
+	}
+	return datafile, nil
 }
