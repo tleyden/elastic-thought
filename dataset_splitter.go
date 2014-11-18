@@ -26,7 +26,7 @@ func (d DatasetSplitter) Run() {
 	db := d.Configuration.DbConnection()
 	datafile, err := d.Dataset.GetDatafile(db)
 	if err != nil {
-		errMsg := fmt.Errorf("Error looking up datafile: %v", err)
+		errMsg := fmt.Errorf("Error looking up datafile with id: %v.  Error: %v", d.Dataset.DatafileID, err)
 		logg.LogError(errMsg)
 		return
 	}
@@ -40,27 +40,52 @@ func (d DatasetSplitter) Run() {
 		return
 	}
 
+	logg.LogTo("DATASET_SPLITTER", "Creating io pipe")
+
 	cbfsReaderTesting, wTesting := io.Pipe()
 	cbfsReaderTraining, wTraining := io.Pipe()
-
-	go func() {
-		bytes, err := ioutil.ReadAll(cbfsReaderTesting)
-		logg.LogTo("DATASET_SPLITTER", "Read %d bytes from cbfsReaderTesting.  Err: %v", len(bytes), err)
-	}()
-	go func() {
-		bytes, err := ioutil.ReadAll(cbfsReaderTraining)
-		logg.LogTo("DATASET_SPLITTER", "Read %d bytes from cbfsReaderTraining.  Err: %v", len(bytes), err)
-	}()
 
 	tarWriterTesting := tar.NewWriter(wTesting)
 	tarWriterTraining := tar.NewWriter(wTraining)
 
+	go func() {
+		for {
+			bytes := make([]byte, 1024)
+			logg.LogTo("DATASET_SPLITTER", "Going to read bytes from cbfsReaderTesting.")
+			n, err := cbfsReaderTesting.Read(bytes)
+			logg.LogTo("DATASET_SPLITTER", "Read %d bytes from cbfsReaderTesting.  Err: %v", n, err)
+			if err != nil {
+				break
+			}
+		}
+
+	}()
+	go func() {
+		for {
+			bytes := make([]byte, 1024)
+			logg.LogTo("DATASET_SPLITTER", "Going to read bytes from cbfsReaderTraining.")
+			n, err := cbfsReaderTraining.Read(bytes)
+			logg.LogTo("DATASET_SPLITTER", "Read %d bytes from cbfsReaderTraining.  Err: %v", n, err)
+			if err != nil {
+				break
+			}
+
+		}
+
+	}()
+
+	logg.LogTo("DATASET_SPLITTER", "Calling transform")
 	err = d.transform(tr1, tr2, tarWriterTraining, tarWriterTesting)
 	if err != nil {
 		errMsg := fmt.Errorf("Error transforming tar stream: %v", err)
 		logg.LogError(errMsg)
 		return
 	}
+
+	logg.LogTo("DATASET_SPLITTER", "Finished calling transform")
+
+	cbfsReaderTesting.Close()
+	cbfsReaderTraining.Close()
 
 	// Read from the stream and open tar archive
 
@@ -124,7 +149,6 @@ func (d DatasetSplitter) transform(source1, source2 *tar.Reader, train, test *ta
 	logg.Log("iterate over source")
 	for {
 		hdr, err := source2.Next()
-		logg.Log("hdr: %v", hdr)
 
 		if err == io.EOF {
 			// end of tar archive
@@ -154,8 +178,6 @@ func (d DatasetSplitter) transform(source1, source2 *tar.Reader, train, test *ta
 			return err
 		}
 
-		logg.Log("file: %v numbytes: %v", hdr.Name, len(bytes))
-
 		hdrToAdd := &tar.Header{
 			Name: hdr.Name,
 			Size: int64(len(bytes)),
@@ -170,12 +192,14 @@ func (d DatasetSplitter) transform(source1, source2 *tar.Reader, train, test *ta
 	}
 
 	// close writers
+	logg.LogTo("DATASET_SPLITTER", "Closing writers")
 	if err := train.Close(); err != nil {
 		return err
 	}
 	if err := test.Close(); err != nil {
 		return err
 	}
+	logg.LogTo("DATASET_SPLITTER", "Closed writers")
 
 	return nil
 }
