@@ -11,6 +11,7 @@ import (
 // Holds configuration values that are used throughout the application
 type Configuration struct {
 	DbUrl         string
+	CbfsUrl       string
 	NsqLookupdUrl string
 	NsqdUrl       string
 	NsqdTopic     string
@@ -20,6 +21,7 @@ func NewDefaultConfiguration() *Configuration {
 
 	config := &Configuration{
 		DbUrl:         "http://localhost:4985/elasticthought",
+		CbfsUrl:       "http://localhost:8484",
 		NsqLookupdUrl: "127.0.0.1:4161",
 		NsqdUrl:       "127.0.0.1:4150",
 		NsqdTopic:     "elastic-thought",
