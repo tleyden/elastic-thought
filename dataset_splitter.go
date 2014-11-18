@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"sync"
 
 	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
@@ -21,6 +20,8 @@ type DatasetSplitter struct {
 	Dataset       Dataset
 }
 
+// TODO: this is currently reading the entire tar stream into a buffer before
+// handing it to cbfs.  Should be using an io.Pipe.
 func (d DatasetSplitter) Run() {
 
 	logg.LogTo("DATASET_SPLITTER", "Datasetsplitter.run()!.  Config: %+v Dataset: %+v", d.Configuration, d.Dataset)
@@ -42,13 +43,11 @@ func (d DatasetSplitter) Run() {
 		return
 	}
 
-	logg.LogTo("DATASET_SPLITTER", "Creating io pipe")
+	bufferTesting := &bytes.Buffer{}
+	bufferTraining := &bytes.Buffer{}
 
-	cbfsReaderTesting, wTesting := io.Pipe()
-	cbfsReaderTraining, wTraining := io.Pipe()
-
-	tarWriterTesting := tar.NewWriter(wTesting)
-	tarWriterTraining := tar.NewWriter(wTraining)
+	tarWriterTesting := tar.NewWriter(bufferTesting)
+	tarWriterTraining := tar.NewWriter(bufferTraining)
 
 	cbfs, err := cbfsclient.New(d.Configuration.CbfsUrl)
 	logg.LogTo("DATASET_SPLITTER", "Created cbfs client: %v", cbfs)
@@ -61,25 +60,6 @@ func (d DatasetSplitter) Run() {
 	destTesting := fmt.Sprintf("%v/testing.tar.gz", d.Dataset.Id)
 	logg.LogTo("DATASET_SPLITTER", " %v %v ", destTesting, destTraining)
 
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	wg.Add(1)
-
-	testingBuffer := &bytes.Buffer{}
-	trainingBuffer := &bytes.Buffer{}
-
-	go func() {
-		defer wg.Done()
-		io.Copy(testingBuffer, cbfsReaderTesting)
-		logg.LogTo("DATASET_SPLITTER", "Saved testing data to buffer")
-	}()
-
-	go func() {
-		defer wg.Done()
-		io.Copy(trainingBuffer, cbfsReaderTraining)
-		logg.LogTo("DATASET_SPLITTER", "Saved training data to buffer")
-	}()
-
 	logg.LogTo("DATASET_SPLITTER", "Calling transform")
 	err = d.transform(tr1, tr2, tarWriterTraining, tarWriterTesting)
 	if err != nil {
@@ -87,12 +67,6 @@ func (d DatasetSplitter) Run() {
 		logg.LogError(errMsg)
 		return
 	}
-
-	logg.LogTo("DATASET_SPLITTER", "waiting for reading buffer")
-
-	wg.Wait()
-
-	logg.LogTo("DATASET_SPLITTER", "Done waiting for reading buffer")
 
 	// close writers
 	logg.LogTo("DATASET_SPLITTER", "Closing writers")
@@ -108,18 +82,24 @@ func (d DatasetSplitter) Run() {
 	}
 	logg.LogTo("DATASET_SPLITTER", "Closed writers")
 
-	logg.LogTo("DATASET_SPLITTER", "closing cbfsReaders")
+	// At this point bufferTesting has all data
+	logg.LogTo("DATASET_SPLITTER", "bufferTesting size: %d", bufferTesting.Len())
+	logg.LogTo("DATASET_SPLITTER", "bufferTraining size: %d", bufferTraining.Len())
 
-	cbfsReaderTesting.Close()
-	cbfsReaderTraining.Close()
+	if err := cbfs.Put("", destTesting, bufferTesting, options); err != nil {
+		errMsg := fmt.Errorf("Error writing %v to cbfs: %v", destTesting, err)
+		logg.LogError(errMsg)
+		return
 
-	// Read from the stream and open tar archive
+	}
+	logg.LogTo("DATASET_SPLITTER", "Wrote %v to cbfs", destTesting)
 
-	// Walk the directories and split the files
-
-	// Write to training and test tar archive
-
-	// Save both training and test tar archive to cbfs (wrapped in gzip stream)
+	if err := cbfs.Put("", destTraining, bufferTraining, options); err != nil {
+		errMsg := fmt.Errorf("Error writing %v to cbfs: %v", destTraining, err)
+		logg.LogError(errMsg)
+		return
+	}
+	logg.LogTo("DATASET_SPLITTER", "Wrote %v to cbfs", destTraining)
 
 }
 
