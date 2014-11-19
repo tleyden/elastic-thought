@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -215,16 +214,12 @@ func (d DatasetSplitter) transform(source1, source2 *tar.Reader, train, test *ta
 			logg.LogPanic("File not present in either test/train: %v", hdr.Name)
 		}
 
-		// TODO: is there a more efficient way to do this?
-		bytes, err := ioutil.ReadAll(source2)
-		if err != nil {
-			return err
-		}
-
 		if err := twToAdd.WriteHeader(hdr); err != nil {
 			return err
 		}
-		if _, err := twToAdd.Write(bytes); err != nil {
+
+		_, err = io.Copy(twToAdd, source2)
+		if err != nil {
 			return err
 		}
 
