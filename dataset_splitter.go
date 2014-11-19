@@ -20,11 +20,8 @@ type DatasetSplitter struct {
 	Dataset       Dataset
 }
 
-// TODO: this is currently reading the entire tar stream into a buffer before
-// handing it to cbfs.  Should be using an io.Pipe.
+// Run this job
 func (d DatasetSplitter) Run() {
-
-	logg.LogTo("DATASET_SPLITTER", "Datasetsplitter.run()!.  Config: %+v Dataset: %+v", d.Configuration, d.Dataset)
 
 	// Find the datafile object associated with dataset
 	db := d.Configuration.DbConnection()
@@ -43,26 +40,31 @@ func (d DatasetSplitter) Run() {
 		return
 	}
 
+	// Create pipes
 	prTrain, pwTrain := io.Pipe()
 	prTest, pwTest := io.Pipe()
 
-	// bufferTesting := &bytes.Buffer{}
-	// bufferTraining := &bytes.Buffer{}
-
+	// Create tar writers on the write end of the pipes
 	tarWriterTesting := tar.NewWriter(pwTest)
 	tarWriterTraining := tar.NewWriter(pwTrain)
 
+	// Create a cbfs client
 	cbfs, err := cbfsclient.New(d.Configuration.CbfsUrl)
-	logg.LogTo("DATASET_SPLITTER", "Created cbfs client: %v", cbfs)
 	options := cbfsclient.PutOptions{
 		ContentType: "application/x-gzip",
 	}
-	logg.LogTo("DATASET_SPLITTER", "options: %v", options)
+	if err != nil {
+		errMsg := fmt.Errorf("Error creating cbfs client: %v", err)
+		logg.LogError(errMsg)
+		return
+	}
 
+	// Figure out where to store these on cbfs
 	destTraining := fmt.Sprintf("%v/training.tar.gz", d.Dataset.Id)
 	destTesting := fmt.Sprintf("%v/testing.tar.gz", d.Dataset.Id)
-	logg.LogTo("DATASET_SPLITTER", " %v %v ", destTesting, destTraining)
 
+	// Spawn a goroutine that will read from tar.gz reader coming from url data
+	// and write to the training and test tar writers (which are on write ends of pipe)
 	go func() {
 		logg.LogTo("DATASET_SPLITTER", "Calling transform")
 		err = d.transform(tr1, tr2, tarWriterTraining, tarWriterTesting)
@@ -71,53 +73,40 @@ func (d DatasetSplitter) Run() {
 			logg.LogError(errMsg)
 			return
 		}
+
+		// Must close _underlying_ piped writers, or the piped readers will
+		// never get an EOF.  Closing just the tar writers that wrap the underlying
+		// piped writers is not enough.
 		pwTest.Close()
 		pwTrain.Close()
 	}()
 
-	// At this point bufferTesting has all data
-	// logg.LogTo("DATASET_SPLITTER", "bufferTesting size: %d", bufferTesting.Len())
-	// logg.LogTo("DATASET_SPLITTER", "bufferTraining size: %d", bufferTraining.Len())
+	// Spawn goroutines to read off the read ends of the pipe and store in cbfs
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
 
-	/*
-		go func() {
-			if err := cbfs.Put("", destTesting, prTest, options); err != nil {
-				errMsg := fmt.Errorf("Error writing %v to cbfs: %v", destTesting, err)
-				logg.LogError(errMsg)
-				return
+		if err := cbfs.Put("", destTesting, prTest, options); err != nil {
+			errMsg := fmt.Errorf("Error writing %v to cbfs: %v", destTesting, err)
+			logg.LogError(errMsg)
+			return
 
-			}
-			logg.LogTo("DATASET_SPLITTER", "Wrote %v to cbfs", destTesting)
-
-		}()
-
+		}
+		logg.LogTo("DATASET_SPLITTER", "Wrote %v to cbfs", destTesting)
+	}()
+	go func() {
+		defer wg.Done()
 		if err := cbfs.Put("", destTraining, prTrain, options); err != nil {
 			errMsg := fmt.Errorf("Error writing %v to cbfs: %v", destTraining, err)
 			logg.LogError(errMsg)
 			return
 		}
-	*/
-
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		logg.LogTo("DATASET_SPLITTER", "prTest ReadAll()")
-		bytes, err := ioutil.ReadAll(prTest)
-		logg.LogTo("DATASET_SPLITTER", "prTest ReadAll: byteslen: %v, err: %v", len(bytes), err)
+		logg.LogTo("DATASET_SPLITTER", "Wrote %v to cbfs", destTraining)
 	}()
 
-	go func() {
-		defer wg.Done()
-		logg.LogTo("DATASET_SPLITTER", "prTrain ReadAll()")
-		bytes, err := ioutil.ReadAll(prTrain)
-		logg.LogTo("DATASET_SPLITTER", "prTrain ReadAll: byteslen: %v, err: %v", len(bytes), err)
-
-	}()
+	// Wait for the piped readers to finish
 	wg.Wait()
-
-	// logg.LogTo("DATASET_SPLITTER", "Wrote %v to cbfs", destTraining)
 
 }
 
