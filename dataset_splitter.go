@@ -108,6 +108,9 @@ func (d DatasetSplitter) Run() {
 	// Wait for the piped readers to finish
 	wg.Wait()
 
+	// Update the state of the dataset to be finished
+	d.Dataset.FinishedSuccessfully(db)
+
 }
 
 // Opens to tar.gz streams to the same url.  The reason this is done twice is due to

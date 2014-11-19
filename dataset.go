@@ -40,3 +40,18 @@ func (d Dataset) GetDatafile(db couch.Database) (*Datafile, error) {
 	}
 	return datafile, nil
 }
+
+func (d Dataset) FinishedSuccessfully(db couch.Database) error {
+
+	d.ProcessingState = FinishedSuccessfully
+
+	// TODO: retry if 409 error
+	_, err := db.Edit(d)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
