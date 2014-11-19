@@ -2,13 +2,13 @@ package elasticthought
 
 import (
 	"archive/tar"
-	"bytes"
 	"compress/gzip"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
@@ -43,11 +43,14 @@ func (d DatasetSplitter) Run() {
 		return
 	}
 
-	bufferTesting := &bytes.Buffer{}
-	bufferTraining := &bytes.Buffer{}
+	prTrain, pwTrain := io.Pipe()
+	prTest, pwTest := io.Pipe()
 
-	tarWriterTesting := tar.NewWriter(bufferTesting)
-	tarWriterTraining := tar.NewWriter(bufferTraining)
+	// bufferTesting := &bytes.Buffer{}
+	// bufferTraining := &bytes.Buffer{}
+
+	tarWriterTesting := tar.NewWriter(pwTest)
+	tarWriterTraining := tar.NewWriter(pwTrain)
 
 	cbfs, err := cbfsclient.New(d.Configuration.CbfsUrl)
 	logg.LogTo("DATASET_SPLITTER", "Created cbfs client: %v", cbfs)
@@ -60,46 +63,61 @@ func (d DatasetSplitter) Run() {
 	destTesting := fmt.Sprintf("%v/testing.tar.gz", d.Dataset.Id)
 	logg.LogTo("DATASET_SPLITTER", " %v %v ", destTesting, destTraining)
 
-	logg.LogTo("DATASET_SPLITTER", "Calling transform")
-	err = d.transform(tr1, tr2, tarWriterTraining, tarWriterTesting)
-	if err != nil {
-		errMsg := fmt.Errorf("Error transforming tar stream: %v", err)
-		logg.LogError(errMsg)
-		return
-	}
-
-	// close writers
-	logg.LogTo("DATASET_SPLITTER", "Closing writers")
-	if err := tarWriterTesting.Close(); err != nil {
-		errMsg := fmt.Errorf("Error closing tar writer: %v", err)
-		logg.LogError(errMsg)
-		return
-	}
-	if err := tarWriterTraining.Close(); err != nil {
-		errMsg := fmt.Errorf("Error closing tar reader: %v", err)
-		logg.LogError(errMsg)
-		return
-	}
-	logg.LogTo("DATASET_SPLITTER", "Closed writers")
+	go func() {
+		logg.LogTo("DATASET_SPLITTER", "Calling transform")
+		err = d.transform(tr1, tr2, tarWriterTraining, tarWriterTesting)
+		if err != nil {
+			errMsg := fmt.Errorf("Error transforming tar stream: %v", err)
+			logg.LogError(errMsg)
+			return
+		}
+		pwTest.Close()
+		pwTrain.Close()
+	}()
 
 	// At this point bufferTesting has all data
-	logg.LogTo("DATASET_SPLITTER", "bufferTesting size: %d", bufferTesting.Len())
-	logg.LogTo("DATASET_SPLITTER", "bufferTraining size: %d", bufferTraining.Len())
+	// logg.LogTo("DATASET_SPLITTER", "bufferTesting size: %d", bufferTesting.Len())
+	// logg.LogTo("DATASET_SPLITTER", "bufferTraining size: %d", bufferTraining.Len())
 
-	if err := cbfs.Put("", destTesting, bufferTesting, options); err != nil {
-		errMsg := fmt.Errorf("Error writing %v to cbfs: %v", destTesting, err)
-		logg.LogError(errMsg)
-		return
+	/*
+		go func() {
+			if err := cbfs.Put("", destTesting, prTest, options); err != nil {
+				errMsg := fmt.Errorf("Error writing %v to cbfs: %v", destTesting, err)
+				logg.LogError(errMsg)
+				return
 
-	}
-	logg.LogTo("DATASET_SPLITTER", "Wrote %v to cbfs", destTesting)
+			}
+			logg.LogTo("DATASET_SPLITTER", "Wrote %v to cbfs", destTesting)
 
-	if err := cbfs.Put("", destTraining, bufferTraining, options); err != nil {
-		errMsg := fmt.Errorf("Error writing %v to cbfs: %v", destTraining, err)
-		logg.LogError(errMsg)
-		return
-	}
-	logg.LogTo("DATASET_SPLITTER", "Wrote %v to cbfs", destTraining)
+		}()
+
+		if err := cbfs.Put("", destTraining, prTrain, options); err != nil {
+			errMsg := fmt.Errorf("Error writing %v to cbfs: %v", destTraining, err)
+			logg.LogError(errMsg)
+			return
+		}
+	*/
+
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		logg.LogTo("DATASET_SPLITTER", "prTest ReadAll()")
+		bytes, err := ioutil.ReadAll(prTest)
+		logg.LogTo("DATASET_SPLITTER", "prTest ReadAll: byteslen: %v, err: %v", len(bytes), err)
+	}()
+
+	go func() {
+		defer wg.Done()
+		logg.LogTo("DATASET_SPLITTER", "prTrain ReadAll()")
+		bytes, err := ioutil.ReadAll(prTrain)
+		logg.LogTo("DATASET_SPLITTER", "prTrain ReadAll: byteslen: %v, err: %v", len(bytes), err)
+
+	}()
+	wg.Wait()
+
+	// logg.LogTo("DATASET_SPLITTER", "Wrote %v to cbfs", destTraining)
 
 }
 
@@ -194,6 +212,20 @@ func (d DatasetSplitter) transform(source1, source2 *tar.Reader, train, test *ta
 	}
 
 	logg.LogTo("DATASET_SPLITTER", "done iterating over source")
+
+	// close writers
+	logg.LogTo("DATASET_SPLITTER", "Closing writers")
+	if err := train.Close(); err != nil {
+		errMsg := fmt.Errorf("Error closing tar writer: %v", err)
+		logg.LogError(errMsg)
+		return err
+	}
+	if err := test.Close(); err != nil {
+		errMsg := fmt.Errorf("Error closing tar reader: %v", err)
+		logg.LogError(errMsg)
+		return err
+	}
+	logg.LogTo("DATASET_SPLITTER", "Closed writers")
 
 	return nil
 }
