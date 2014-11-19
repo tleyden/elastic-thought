@@ -84,6 +84,8 @@ func TestTransform(t *testing.T) {
 				log.Fatalln(err)
 			}
 			logg.Log("filename: %v", hdr.Name)
+			assert.Equals(t, hdr.Uid, 100)
+			assert.Equals(t, hdr.Gid, 101)
 			if strings.HasPrefix(hdr.Name, "foo") {
 				numFoo += 1
 				// make sure it's the first time seeing this filename
@@ -233,6 +235,8 @@ func createArchive(buf *bytes.Buffer, tarFiles []tarFile) {
 		hdr := &tar.Header{
 			Name: file.Name,
 			Size: int64(len(file.Body)),
+			Uid:  100,
+			Gid:  101,
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
 			log.Fatalln(err)

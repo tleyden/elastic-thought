@@ -184,11 +184,7 @@ func (d DatasetSplitter) transform(source1, source2 *tar.Reader, train, test *ta
 			return err
 		}
 
-		hdrToAdd := &tar.Header{
-			Name: hdr.Name,
-			Size: int64(len(bytes)),
-		}
-		if err := twToAdd.WriteHeader(hdrToAdd); err != nil {
+		if err := twToAdd.WriteHeader(hdr); err != nil {
 			return err
 		}
 		if _, err := twToAdd.Write(bytes); err != nil {
