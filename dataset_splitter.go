@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"sync"
 
 	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
@@ -28,7 +27,7 @@ func (d DatasetSplitter) Run() {
 	datafile, err := d.Dataset.GetDatafile(db)
 	if err != nil {
 		errMsg := fmt.Errorf("Error looking up datafile with id: %v.  Error: %v", d.Dataset.DatafileID, err)
-		logg.LogError(errMsg)
+		d.recordProcessingError(errMsg)
 		return
 	}
 
@@ -36,7 +35,7 @@ func (d DatasetSplitter) Run() {
 	tr1, tr2, err := d.openTwoTarGzStreams(datafile.Url)
 	if err != nil {
 		errMsg := fmt.Errorf("Error opening tar.gz streams: %v", err)
-		logg.LogError(errMsg)
+		d.recordProcessingError(errMsg)
 		return
 	}
 
@@ -55,7 +54,7 @@ func (d DatasetSplitter) Run() {
 	}
 	if err != nil {
 		errMsg := fmt.Errorf("Error creating cbfs client: %v", err)
-		logg.LogError(errMsg)
+		d.recordProcessingError(errMsg)
 		return
 	}
 
@@ -65,52 +64,80 @@ func (d DatasetSplitter) Run() {
 
 	// Spawn a goroutine that will read from tar.gz reader coming from url data
 	// and write to the training and test tar writers (which are on write ends of pipe)
+	transformDoneChan := make(chan error, 1)
 	go func() {
+
+		// Must close _underlying_ piped writers, or the piped readers will
+		// never get an EOF.  Closing just the tar writers that wrap the underlying
+		// piped writers is not enough.
+		defer pwTest.Close()
+		defer pwTrain.Close()
+
 		logg.LogTo("DATASET_SPLITTER", "Calling transform")
 		err = d.transform(tr1, tr2, tarWriterTraining, tarWriterTesting)
 		if err != nil {
 			errMsg := fmt.Errorf("Error transforming tar stream: %v", err)
 			logg.LogError(errMsg)
+			transformDoneChan <- errMsg
 			return
 		}
 
-		// Must close _underlying_ piped writers, or the piped readers will
-		// never get an EOF.  Closing just the tar writers that wrap the underlying
-		// piped writers is not enough.
-		pwTest.Close()
-		pwTrain.Close()
+		transformDoneChan <- nil
+
 	}()
 
 	// Spawn goroutines to read off the read ends of the pipe and store in cbfs
-	wg := &sync.WaitGroup{}
-	wg.Add(2)
+	cbfsTrainDoneChan := make(chan error, 1)
+	cbfsTestDoneChan := make(chan error, 1)
 	go func() {
-		defer wg.Done()
-
 		if err := cbfs.Put("", destTesting, prTest, options); err != nil {
 			errMsg := fmt.Errorf("Error writing %v to cbfs: %v", destTesting, err)
 			logg.LogError(errMsg)
+			cbfsTestDoneChan <- errMsg
 			return
 
 		}
 		logg.LogTo("DATASET_SPLITTER", "Wrote %v to cbfs", destTesting)
+		cbfsTestDoneChan <- nil
 	}()
 	go func() {
-		defer wg.Done()
 		if err := cbfs.Put("", destTraining, prTrain, options); err != nil {
 			errMsg := fmt.Errorf("Error writing %v to cbfs: %v", destTraining, err)
 			logg.LogError(errMsg)
+			cbfsTrainDoneChan <- errMsg
 			return
 		}
 		logg.LogTo("DATASET_SPLITTER", "Wrote %v to cbfs", destTraining)
+		cbfsTrainDoneChan <- nil
 	}()
 
-	// Wait for the piped readers to finish
-	wg.Wait()
+	// Wait for the results from all the goroutines
+	cbfsTrainResult := <-cbfsTrainDoneChan
+	cbfsTestResult := <-cbfsTestDoneChan
+	transformResult := <-transformDoneChan
+
+	// If any results had an error, log it and return
+	results := []error{transformResult, cbfsTestResult, cbfsTrainResult}
+	for _, result := range results {
+		if result != nil {
+			logg.LogTo("DATASET_SPLITTER", "Setting dataset to failed: %v", transformResult)
+			d.Dataset.Failed(db, fmt.Errorf("%v", transformResult))
+			return
+		}
+	}
 
 	// Update the state of the dataset to be finished
 	d.Dataset.FinishedSuccessfully(db)
 
+}
+
+func (d DatasetSplitter) recordProcessingError(err error) {
+	logg.LogError(err)
+	db := d.Configuration.DbConnection()
+	if err := d.Dataset.Failed(db, err); err != nil {
+		errMsg := fmt.Errorf("Error setting dataset as failed: %v", err)
+		logg.LogError(errMsg)
+	}
 }
 
 // Opens to tar.gz streams to the same url.  The reason this is done twice is due to

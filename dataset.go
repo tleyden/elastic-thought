@@ -1,6 +1,10 @@
 package elasticthought
 
-import "github.com/tleyden/go-couch"
+import (
+	"fmt"
+
+	"github.com/tleyden/go-couch"
+)
 
 /*
 A dataset is created from a datafile, and represents a partition of the datafile
@@ -15,6 +19,7 @@ type Dataset struct {
 	ProcessingState ProcessingState `json:"processing-state"`
 	TrainingDataset TrainingDataset `json:"training" binding:"required"`
 	TestDataset     TestDataset     `json:"test" binding:"required"`
+	ProcessingLog   string          `json:"processing-log"`
 }
 
 type TrainingDataset struct {
@@ -41,9 +46,27 @@ func (d Dataset) GetDatafile(db couch.Database) (*Datafile, error) {
 	return datafile, nil
 }
 
+// Update the dataset state to record that it finished successfully
 func (d Dataset) FinishedSuccessfully(db couch.Database) error {
 
 	d.ProcessingState = FinishedSuccessfully
+
+	// TODO: retry if 409 error
+	_, err := db.Edit(d)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+// Update the dataset state to record that it failed
+func (d Dataset) Failed(db couch.Database, processingErr error) error {
+
+	d.ProcessingState = Failed
+	d.ProcessingLog = fmt.Sprintf("%v", processingErr)
 
 	// TODO: retry if 409 error
 	_, err := db.Edit(d)
