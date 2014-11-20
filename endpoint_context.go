@@ -1,6 +1,7 @@
 package elasticthought
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -12,6 +13,111 @@ import (
 
 type EndpointContext struct {
 	Configuration Configuration
+}
+
+// Creates a new user
+func (e EndpointContext) CreateUserEndpoint(c *gin.Context) {
+
+	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
+
+	// parse in a user object from the POST request
+	decoder := json.NewDecoder(c.Request.Body)
+	userToCreate := NewUser()
+	err := decoder.Decode(userToCreate)
+	if err != nil {
+		errMsg := fmt.Sprintf("Unable to parse user params: %v", err)
+		c.Fail(500, errors.New(errMsg))
+		return
+	}
+
+	// make sure this user isn't already in the db
+	existingUser := NewUser()
+	err = db.Retrieve(userToCreate.DocId(), existingUser)
+	if err == nil {
+		errMsg := fmt.Sprintf("User already exists: %+v", *existingUser)
+		c.Fail(500, errors.New(errMsg))
+		return
+	}
+
+	logg.LogTo("REST", "Did not find existing user, ok to create")
+
+	// create a new user and return 201
+	newUser := NewUserFromUser(*userToCreate)
+	_, _, err = db.InsertWith(newUser, newUser.DocId())
+	if err != nil {
+		errMsg := fmt.Sprintf("Error creating new user: %v", err)
+		c.Fail(500, errors.New(errMsg))
+		return
+	}
+
+	c.String(201, "")
+
+}
+
+// Creates a datafile
+func (e EndpointContext) CreateDataFileEndpoint(c *gin.Context) {
+
+	user := c.MustGet(MIDDLEWARE_KEY_USER).(User)
+	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
+
+	datafile := NewDatafile()
+	datafile.UserID = user.DocId()
+
+	// bind the Datafile to the JSON request, which will bind the
+	// url field or throw an error.
+	if ok := c.Bind(&datafile); !ok {
+		errMsg := fmt.Sprintf("Invalid datafile")
+		c.Fail(400, errors.New(errMsg))
+		return
+	}
+
+	logg.LogTo("REST", "datafile: %+v", datafile)
+
+	// create a new Datafile object in db
+	id, _, err := db.Insert(datafile)
+	if err != nil {
+		errMsg := fmt.Sprintf("Error creating new datafile: %v", err)
+		c.Fail(500, errors.New(errMsg))
+		return
+	}
+
+	c.JSON(201, gin.H{"id": id})
+
+}
+
+// Creates datasets from a datafile
+func (e EndpointContext) CreateDataSetsEndpoint(c *gin.Context) {
+
+	user := c.MustGet(MIDDLEWARE_KEY_USER).(User)
+	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
+	logg.LogTo("REST", "user: %v db: %v", user, db)
+
+	dataset := NewDataset()
+
+	// bind the input struct to the JSON request
+	if ok := c.Bind(dataset); !ok {
+		errMsg := fmt.Sprintf("Invalid input")
+		c.Fail(400, errors.New(errMsg))
+		return
+	}
+
+	// save dataset in db
+	dataset, err := dataset.Insert(db)
+	if err != nil {
+		c.Fail(500, err)
+		return
+	}
+
+	// update with urls of training/testing artifacts (which don't exist yet)
+	dataset, err = dataset.AddArtifactUrls(db)
+	if err != nil {
+		errMsg := fmt.Sprintf("Error updating dataset: %v.  Err: %v", dataset.Id, err)
+		c.Fail(500, errors.New(errMsg))
+		return
+	}
+
+	c.JSON(201, dataset)
+
 }
 
 func (e EndpointContext) CreateSolverEndpoint(c *gin.Context) {

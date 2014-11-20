@@ -32,13 +32,13 @@ func main() {
 
 	r := gin.Default()
 	r.Use(et.DbConnector(config.DbUrl))
-	r.POST("/users", et.CreateUserEndpoint)
+	r.POST("/users", context.CreateUserEndpoint)
 
 	authorized := r.Group("/")
 	authorized.Use(et.DbAuthRequired())
 	{
-		authorized.POST("/datafiles", et.CreateDataFileEndpoint)
-		authorized.POST("/datasets", et.CreateDataSetsEndpoint)
+		authorized.POST("/datafiles", context.CreateDataFileEndpoint)
+		authorized.POST("/datasets", context.CreateDataSetsEndpoint)
 		authorized.POST("/solvers", context.CreateSolverEndpoint)
 	}
 
