@@ -24,10 +24,12 @@ type Dataset struct {
 
 type TrainingDataset struct {
 	SplitPercentage float64 `json:"split-percentage"`
+	Url             string  `json:"url"`
 }
 
 type TestDataset struct {
 	SplitPercentage float64 `json:"split-percentage"`
+	Url             string  `json:"url"`
 }
 
 // Create a new dataset
@@ -76,5 +78,40 @@ func (d Dataset) Failed(db couch.Database, processingErr error) error {
 	}
 
 	return nil
+
+}
+
+// Path to training artifact file, eg <id>/training.tar.gz
+func (d Dataset) TrainingArtifactPath() string {
+	return fmt.Sprintf("%v/training.tar.gz", d.Id)
+}
+
+// Path to testing artifact file, eg <id>/testing.tar.gz
+func (d Dataset) TestingArtifactPath() string {
+	return fmt.Sprintf("%v/testing.tar.gz", d.Id)
+}
+
+// Update this dataset with the artifact urls (cbfs://<id>/training.tar.gz, ..)
+// even though these artifacts might not exist yet.
+func (d Dataset) AddArtifactUrls(db couch.Database) (Dataset, error) {
+
+	d.TrainingDataset.Url = fmt.Sprintf("cbfs://%v", d.TrainingArtifactPath())
+	d.TestDataset.Url = fmt.Sprintf("cbfs://%v", d.TestingArtifactPath())
+
+	// TODO: retry if 409 error
+	_, err := db.Edit(d)
+
+	if err != nil {
+		return Dataset{}, err
+	}
+
+	// load latest version of dataset to return
+	dataset := Dataset{}
+	err = db.Retrieve(d.Id, &dataset)
+	if err != nil {
+		return Dataset{}, err
+	}
+
+	return dataset, nil
 
 }

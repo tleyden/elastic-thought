@@ -106,14 +106,41 @@ func CreateDataSetsEndpoint(c *gin.Context) {
 	}
 
 	// load dataset object from db (so we have id/rev fields)
-	dataset := &Dataset{}
-	err = db.Retrieve(id, dataset)
+	dataset := Dataset{}
+	err = db.Retrieve(id, &dataset)
 	if err != nil {
 		errMsg := fmt.Sprintf("Error fetching dataset w/ id: %v.  Err: %v", id, err)
 		c.Fail(500, errors.New(errMsg))
 		return
 	}
 
+	// update with urls of training/testing artifacts (which don't exist yet)
+	dataset, err = dataset.AddArtifactUrls(db)
+	if err != nil {
+		errMsg := fmt.Sprintf("Error updating dataset: %v.  Err: %v", id, err)
+		c.Fail(500, errors.New(errMsg))
+		return
+	}
+
 	c.JSON(201, dataset)
+
+}
+
+// Creates a solver
+func CreateSolverEndpoint(c *gin.Context) {
+
+	user := c.MustGet(MIDDLEWARE_KEY_USER).(User)
+	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
+	logg.LogTo("REST", "user: %v db: %v", user, db)
+
+	// bind json to solver
+
+	// save solver in db, get solver id
+
+	// download contents of solver-spec-url into cbfs://<solver-id>/spec.prototxt
+
+	// update solver object's solver-spec-url  with cbfs url
+
+	// return solver object
 
 }

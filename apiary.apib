@@ -76,10 +76,12 @@ The url passed in the JSON must point to a .tar.gz file.  That is currently the 
             "datafile-id": "datafile-uuid",
             "processing-state": "pending",
             "training": {
-                "split-percentage": 0.7
+                "split-percentage": 0.7,
+		"url": "cbfs://<dataset-uuid>/training.tar.gz"
             },
             "testing": {
-                "split-percentage": 0.3
+                "split-percentage": 0.3,
+		"url": "cbfs://<dataset-uuid>/testing.tar.gz"
             }
         }
         
@@ -100,18 +102,17 @@ Related resources of the **Training API**
 
             { 
                 "engine": "caffe",
-                "caffe": {
-                    "solver-prototxt-url": "http://s3.com/mnist.prototxt",
-                    "environment": {
-                        "training-source": "dataset-uuid/training",
-                        "testing-source": "dataset-uuid/testing"
-                    }
-                }
+		"dataset-id": "dataset-uuid",
+		"specification-url": "http://s3.com/mnist.prototxt"
+		"specification-env": {
+		    "test-image-data-source": "cbfs://<dataset-uuid>/testing.tar.gz",
+		    "training-image-data-source": "cbfs://<dataset-uuid>/training.tar.gz"
+		}		
             }
 
-+ Response 201 (application/json)
+	    + Response 201 (application/json)
 
-        { "id": "solver-uuid" }
+        { "_id": "solver-uuid" }
         
 ## Training Jobs Collection [/training-jobs]
 

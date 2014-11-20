@@ -58,8 +58,8 @@ func (d DatasetSplitter) Run() {
 	}
 
 	// Figure out where to store these on cbfs
-	destTraining := fmt.Sprintf("%v/training.tar.gz", d.Dataset.Id)
-	destTesting := fmt.Sprintf("%v/testing.tar.gz", d.Dataset.Id)
+	destTraining := d.Dataset.TrainingArtifactPath()
+	destTesting := d.Dataset.TestingArtifactPath()
 
 	// Spawn a goroutine that will read from tar.gz reader coming from url data
 	// and write to the training and test tar writers (which are on write ends of pipe)

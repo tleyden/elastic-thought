@@ -35,6 +35,7 @@ func main() {
 	{
 		authorized.POST("/datafiles", et.CreateDataFileEndpoint)
 		authorized.POST("/datasets", et.CreateDataSetsEndpoint)
+		authorized.POST("/solvers", et.CreateSolverEndpoint)
 	}
 
 	// Listen and serve on 0.0.0.0:8080
