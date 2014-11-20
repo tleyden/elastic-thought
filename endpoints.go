@@ -87,37 +87,26 @@ func CreateDataSetsEndpoint(c *gin.Context) {
 	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
 	logg.LogTo("REST", "user: %v db: %v", user, db)
 
-	datasetInput := NewDataset()
+	dataset := NewDataset()
 
 	// bind the input struct to the JSON request
-	if ok := c.Bind(datasetInput); !ok {
+	if ok := c.Bind(dataset); !ok {
 		errMsg := fmt.Sprintf("Invalid input")
 		c.Fail(400, errors.New(errMsg))
 		return
 	}
 
-	// save dataset object in db -- it will get picked up and processed
-	// by changes listener
-	id, _, err := db.Insert(datasetInput)
+	// save dataset in db
+	dataset, err := dataset.Insert(db)
 	if err != nil {
-		errMsg := fmt.Sprintf("Error creating new dataset: %v", err)
-		c.Fail(500, errors.New(errMsg))
-		return
-	}
-
-	// load dataset object from db (so we have id/rev fields)
-	dataset := Dataset{}
-	err = db.Retrieve(id, &dataset)
-	if err != nil {
-		errMsg := fmt.Sprintf("Error fetching dataset w/ id: %v.  Err: %v", id, err)
-		c.Fail(500, errors.New(errMsg))
+		c.Fail(500, err)
 		return
 	}
 
 	// update with urls of training/testing artifacts (which don't exist yet)
 	dataset, err = dataset.AddArtifactUrls(db)
 	if err != nil {
-		errMsg := fmt.Sprintf("Error updating dataset: %v.  Err: %v", id, err)
+		errMsg := fmt.Sprintf("Error updating dataset: %v.  Err: %v", dataset.Id, err)
 		c.Fail(500, errors.New(errMsg))
 		return
 	}

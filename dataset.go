@@ -32,11 +32,34 @@ type TestDataset struct {
 	Url             string  `json:"url"`
 }
 
-// Create a new dataset
+// Create a new dataset.  If you don't use this, you must set the
+// embedded ElasticThoughtDoc Type field.
 func NewDataset() *Dataset {
 	return &Dataset{
 		ElasticThoughtDoc: ElasticThoughtDoc{Type: DOC_TYPE_DATASET},
 	}
+}
+
+// Insert into database (only call this if you know it doesn't arleady exist,
+// or else you'll end up w/ unwanted dupes)
+func (d Dataset) Insert(db couch.Database) (*Dataset, error) {
+
+	id, _, err := db.Insert(d)
+	if err != nil {
+		err := fmt.Errorf("Error inserting dataset: %v.  Err: %v", d, err)
+		return nil, err
+	}
+
+	// load dataset object from db (so we have id/rev fields)
+	dataset := &Dataset{}
+	err = db.Retrieve(id, dataset)
+	if err != nil {
+		err := fmt.Errorf("Error fetching dataset: %v.  Err: %v", id, err)
+		return nil, err
+	}
+
+	return dataset, nil
+
 }
 
 // Find and return the datafile associated with this dataset
@@ -93,7 +116,7 @@ func (d Dataset) TestingArtifactPath() string {
 
 // Update this dataset with the artifact urls (cbfs://<id>/training.tar.gz, ..)
 // even though these artifacts might not exist yet.
-func (d Dataset) AddArtifactUrls(db couch.Database) (Dataset, error) {
+func (d Dataset) AddArtifactUrls(db couch.Database) (*Dataset, error) {
 
 	d.TrainingDataset.Url = fmt.Sprintf("cbfs://%v", d.TrainingArtifactPath())
 	d.TestDataset.Url = fmt.Sprintf("cbfs://%v", d.TestingArtifactPath())
@@ -102,14 +125,14 @@ func (d Dataset) AddArtifactUrls(db couch.Database) (Dataset, error) {
 	_, err := db.Edit(d)
 
 	if err != nil {
-		return Dataset{}, err
+		return nil, err
 	}
 
 	// load latest version of dataset to return
-	dataset := Dataset{}
-	err = db.Retrieve(d.Id, &dataset)
+	dataset := &Dataset{}
+	err = db.Retrieve(d.Id, dataset)
 	if err != nil {
-		return Dataset{}, err
+		return nil, err
 	}
 
 	return dataset, nil

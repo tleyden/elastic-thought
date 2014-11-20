@@ -14,12 +14,16 @@ type Solver struct {
 	SpecificationEnv map[string]string `json:"specification-env"`
 }
 
+// Create a new solver.  If you don't use this, you must set the
+// embedded ElasticThoughtDoc Type field.
 func NewSolver() *Solver {
 	return &Solver{
 		ElasticThoughtDoc: ElasticThoughtDoc{Type: DOC_TYPE_SOLVER},
 	}
 }
 
+// Insert into database (only call this if you know it doesn't arleady exist,
+// or else you'll end up w/ unwanted dupes)
 func (s Solver) Insert(db couch.Database) (*Solver, error) {
 
 	id, _, err := db.Insert(s)
