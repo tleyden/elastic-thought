@@ -114,37 +114,3 @@ func CreateDataSetsEndpoint(c *gin.Context) {
 	c.JSON(201, dataset)
 
 }
-
-// Creates a solver
-func CreateSolverEndpoint(c *gin.Context) {
-
-	user := c.MustGet(MIDDLEWARE_KEY_USER).(User)
-	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
-	logg.LogTo("REST", "user: %v db: %v", user, db)
-
-	solver := NewSolver()
-
-	// bind the input struct to the JSON request
-	if ok := c.Bind(solver); !ok {
-		errMsg := fmt.Sprintf("Invalid input")
-		c.Fail(400, errors.New(errMsg))
-		return
-	}
-
-	logg.LogTo("REST", "solver: %+v", solver)
-
-	// save solver in db
-	solver, err := solver.Insert(db)
-	if err != nil {
-		c.Fail(500, err)
-		return
-	}
-
-	// download contents of solver-spec-url into cbfs://<solver-id>/spec.prototxt
-
-	// update solver object's solver-spec-url  with cbfs url
-
-	// return solver object
-	c.JSON(201, *solver)
-
-}

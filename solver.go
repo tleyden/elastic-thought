@@ -43,3 +43,7 @@ func (s Solver) Insert(db couch.Database) (*Solver, error) {
 	return solver, nil
 
 }
+
+func (s Solver) SaveSpec(db couch.Database) (*Solver, error) {
+	return nil, nil
+}

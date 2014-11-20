@@ -20,6 +20,10 @@ func main() {
 	jobScheduler := et.NewInProcessJobScheduler(config)
 	// jobScheduler := et.NewNsqJobScheduler(config)
 
+	context := &et.EndpointContext{
+		Configuration: config,
+	}
+
 	changesListener, err := et.NewChangesListener(config, jobScheduler)
 	if err != nil {
 		logg.LogPanic("Error creating changes listener: %v", err)
@@ -35,7 +39,7 @@ func main() {
 	{
 		authorized.POST("/datafiles", et.CreateDataFileEndpoint)
 		authorized.POST("/datasets", et.CreateDataSetsEndpoint)
-		authorized.POST("/solvers", et.CreateSolverEndpoint)
+		authorized.POST("/solvers", context.CreateSolverEndpoint)
 	}
 
 	// Listen and serve on 0.0.0.0:8080
