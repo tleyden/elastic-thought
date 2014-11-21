@@ -72,7 +72,7 @@ func TestTransform(t *testing.T) {
 	logg.Log("tr2: %v", tr2)
 
 	// pass these into transform
-	err := splitter.transform2(tr, twTrain, twTest)
+	err := splitter.transform(tr, twTrain, twTest)
 	assert.True(t, err == nil)
 	if err != nil {
 		assert.Errorf(t, "Err from transform2: %v", err)
@@ -164,70 +164,6 @@ func TestValidateTooDeep(t *testing.T) {
 	ok, err := splitter.validate(tr)
 	assert.False(t, ok)
 	assert.True(t, err != nil)
-
-}
-
-func TestCreateMap(t *testing.T) {
-
-	buf := new(bytes.Buffer)
-	var files = []tarFile{
-		{"foo/1.txt", "Hello 1."},
-		{"bar/1.txt", "Hello bar 1."},
-		{"bar/2.txt", "Hello bar 2."},
-	}
-	createArchive(buf, files)
-	reader := bytes.NewReader(buf.Bytes())
-	tr := tar.NewReader(reader)
-
-	splitter := DatasetSplitter{}
-	filemap, err := splitter.createMap(tr)
-	assert.True(t, err == nil)
-
-	assert.Equals(t, len(filemap["foo"]), 1)
-	assert.Equals(t, len(filemap["bar"]), 2)
-
-}
-
-func TestSplitMap(t *testing.T) {
-
-	splitter := create5050Splitter()
-	fmap := filemap{
-		"foo": []string{"foo1.txt", "foo2.txt"},
-		"bar": []string{"bar1.txt", "bar2.txt"},
-	}
-	train, test, err := splitter.splitMap(fmap)
-	assert.True(t, err == nil)
-
-	// assertions
-	mapsToVerify := []filemap{train, test}
-	for _, mapToVerify := range mapsToVerify {
-		seenFoos := map[string]string{}
-		seenBars := map[string]string{}
-		numFoo := 0
-		numBar := 0
-		for _, files := range mapToVerify {
-			for _, file := range files {
-				if strings.Contains(file, "foo") {
-					numFoo += 1
-					// make sure it's the first time seeing this filename
-					if _, ok := seenFoos[file]; ok {
-						logg.LogPanic("Not first time seeing: %v", file)
-					}
-					seenFoos[file] = file
-				}
-				if strings.Contains(file, "bar") {
-					numBar += 1
-					// make sure it's the first time seeing this filename
-					if _, ok := seenBars[file]; ok {
-						logg.LogPanic("Not first time seeing: %v", file)
-					}
-					seenBars[file] = file
-				}
-			}
-		}
-		assert.Equals(t, numFoo, 1)
-		assert.Equals(t, numBar, 1)
-	}
 
 }
 
