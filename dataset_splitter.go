@@ -157,55 +157,68 @@ func (d DatasetSplitter) openTarGzStream(url string) (*tar.Reader, error) {
 
 }
 
-// Read from source tar stream and write training and test to given tar writers
+/*
+Read from source tar stream and write training and test to given tar writers
+
+It is a bit complicated because the source stream should be iterated over _once_,
+but it needs to workaround the inability to look ahead or behind in the stream.
+(You can't know how to split the files within a directory until you've seen
+all the files in that directory).
+
+What it does is:
+
+    - Iterate over the reader
+    - Keeps writing entries to a "temp tar writer" as long as we are in the same dir
+    - Once we hit a new dir (or the end of the tar):
+        - Look at all files in temp tar writer and calculate target distribution
+        - Iterate over temp tar writer and write to target tar writers
+        - Reset tar writer
+
+The temp tar writer mentioned above currently saves everything to a bytes.Buffer,
+but if needed it can easily switched over to use a
+
+*/
 func (d DatasetSplitter) transform(source *tar.Reader, train, test *tar.Writer) error {
 
 	currentDirectory := ""
 	currentDirFiles := []string{}
 
-	buf := new(bytes.Buffer) // TODO: write to temp file instead of memory
+	buf := new(bytes.Buffer)
 	twTemp := tar.NewWriter(buf)
 	defer twTemp.Close()
 
 	for {
 		hdr, err := source.Next()
-		if err == io.EOF {
-			// end of tar archive
 
-			// split up the saved buffer and distribute to tar writers
+		if err == io.EOF {
+			// end of tar archive - split up the saved buffer and distribute to tar writers
 			twTemp.Close()
 			trTemp := tar.NewReader(buf)
-
 			if err := d.split(trTemp, train, test, currentDirFiles); err != nil {
 				return err
 			}
-
 			break
 		}
+
 		if err != nil {
 			return err
 		}
 
+		// figure out directory name of this file
 		pathComponents := strings.Split(hdr.Name, "/")
-
 		if len(pathComponents) != 2 {
 			return fmt.Errorf("Path does not have 2 components: %v", hdr.Name)
 		}
-
-		logg.LogTo("DATASET_SPLITTER", "source file: %v", hdr.Name)
-
 		directory := pathComponents[0]
 
-		// if its the first file we've seen, set currentDirectory
-		// to this directory
+		// its the first directory we've seen, set to current
 		if currentDirectory == "" {
 			currentDirectory = directory
 		}
 
-		switch directory {
-		case currentDirectory:
-			// we're in the same directory, append to the file buffer
-			logg.LogTo("DATASET_SPLITTER", "we're in the same directory %v, append to the file buffer.  cur: %v", directory, currentDirectory)
+		// function which copies an entry over to temp tar writer and
+		// adds the current file to the running list of files for this dir
+		addToTwTemp := func() error {
 			if err := twTemp.WriteHeader(hdr); err != nil {
 				return err
 			}
@@ -215,10 +228,19 @@ func (d DatasetSplitter) transform(source *tar.Reader, train, test *tar.Writer) 
 			}
 			// save this file to the list of files we've accumulated for this dir
 			currentDirFiles = append(currentDirFiles, hdr.Name)
+			return nil
+		}
+
+		switch directory {
+		case currentDirectory:
+			// we're in the same directory
+
+			// add to temp tar writer
+			if err := addToTwTemp(); err != nil {
+				return err
+			}
 
 		default:
-			logg.LogTo("DATASET_SPLITTER", "we're in a new directory %v, split", directory)
-			logg.LogTo("DATASET_SPLITTER", "currentDirectory: %v, directory: %v", currentDirectory, directory)
 
 			// we're in a new directory
 			currentDirectory = directory
@@ -226,38 +248,28 @@ func (d DatasetSplitter) transform(source *tar.Reader, train, test *tar.Writer) 
 			// split up the saved buffer and distribute to tar writers
 			twTemp.Close()
 			trTemp := tar.NewReader(buf)
-
 			if err := d.split(trTemp, train, test, currentDirFiles); err != nil {
 				return err
 			}
 
 			// reset the tar writer to create a fresh one
 			twTemp.Close()
-			buf = new(bytes.Buffer) // TODO: write to temp file instead of memory
+			buf = new(bytes.Buffer)
 			twTemp = tar.NewWriter(buf)
 
 			// reset file list
 			currentDirFiles = []string{}
 
-			// now write the current entry to the new empty tar writer
-			if err := twTemp.WriteHeader(hdr); err != nil {
+			// add to temp tar writer
+			if err := addToTwTemp(); err != nil {
 				return err
 			}
-			_, err = io.Copy(twTemp, source)
-			if err != nil {
-				return err
-			}
-			// save this file to the list of files we've accumulated for this dir
-			currentDirFiles = append(currentDirFiles, hdr.Name)
 
 		}
 
 	}
 
-	logg.LogTo("DATASET_SPLITTER", "done iterating over source")
-
 	// close writers
-	logg.LogTo("DATASET_SPLITTER", "Closing writers")
 	if err := train.Close(); err != nil {
 		errMsg := fmt.Errorf("Error closing tar writer: %v", err)
 		logg.LogError(errMsg)
@@ -268,7 +280,6 @@ func (d DatasetSplitter) transform(source *tar.Reader, train, test *tar.Writer) 
 		logg.LogError(errMsg)
 		return err
 	}
-	logg.LogTo("DATASET_SPLITTER", "Closed writers")
 
 	return nil
 
@@ -300,10 +311,8 @@ func (d DatasetSplitter) split(source *tar.Reader, train, test *tar.Writer, file
 		// figure out which tar writer to use
 		var tw *tar.Writer
 		if _, ok := trainingFiles[hdr.Name]; ok {
-			logg.LogTo("DATASET_SPLITTER", "Writing %v to train", hdr.Name)
 			tw = train
 		} else if _, ok := testFiles[hdr.Name]; ok {
-			logg.LogTo("DATASET_SPLITTER", "Writing %v to test", hdr.Name)
 			tw = test
 		} else {
 			return fmt.Errorf("file not in either set: %v", hdr.Name)
@@ -362,13 +371,10 @@ func splitFilesToMaps(files []string, numTraining, numTest int) (training map[st
 	training = make(map[string]struct{})
 	test = make(map[string]struct{})
 
-	logg.LogTo("DATASET_SPLITTER", "loop over files: %v", files)
 	for i, file := range files {
 		if i < numTraining {
-			logg.LogTo("DATASET_SPLITTER", "add %v to training", file)
 			training[file] = struct{}{}
 		} else {
-			logg.LogTo("DATASET_SPLITTER", "add %v to test", file)
 			test[file] = struct{}{}
 		}
 	}
