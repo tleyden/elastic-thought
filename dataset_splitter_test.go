@@ -81,7 +81,7 @@ func TestTransform(t *testing.T) {
 	twTest := tar.NewWriter(bufTest)
 
 	// pass these into transform
-	err := splitter.transform2(tr, twTrain, twTest)
+	err := splitter.transform(tr, twTrain, twTest)
 	assert.True(t, err == nil)
 	if err != nil {
 		assert.Errorf(t, "Err from transform2: %v", err)

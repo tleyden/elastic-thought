@@ -2,7 +2,6 @@ package elasticthought
 
 import (
 	"archive/tar"
-	"bytes"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -158,10 +157,10 @@ func (d DatasetSplitter) openTarGzStream(url string) (*tar.Reader, error) {
 
 }
 
-func (d DatasetSplitter) transform2(source *tar.Reader, train, test *tar.Writer) error {
+// Read from source tar stream and write training and test to given tar writers
+func (d DatasetSplitter) transform(source *tar.Reader, train, test *tar.Writer) error {
 
 	splitter := d.splitter(train, test)
-	logg.LogTo("DATASET_SPLITTER", "splitter: %v", splitter)
 
 	for {
 		hdr, err := source.Next()
@@ -213,198 +212,18 @@ func (d DatasetSplitter) splitter(train, test *tar.Writer) func(string) *tar.Wri
 	return func(file string) *tar.Writer {
 		dir := path.Dir(file)
 		counts := dircounts[dir]
-		fmt.Printf("dir: %v counts: %v ratios: %v\n", dir, counts, ratio)
 		count0ratio1 := counts[0] * ratio[1]
 		count1ratio0 := counts[1] * ratio[0]
-		fmt.Printf("dir: %v count0ratio1: %v, count1ratio0: %v\n", dir, count0ratio1, count1ratio0)
 		if count0ratio1 <= count1ratio0 {
-			fmt.Printf("count0ratio1 <= count1ratio0\n")
 			counts[0]++
 			dircounts[dir] = counts
 			return train
 		} else {
-			fmt.Printf("count0ratio1 > count1ratio0\n")
 			counts[1]++
 			dircounts[dir] = counts
 			return test
 		}
 	}
-}
-
-/*
-Read from source tar stream and write training and test to given tar writers
-
-It is a bit complicated because the source stream should be iterated over _once_,
-but it needs to workaround the inability to look ahead or behind in the stream.
-(You can't know how to split the files within a directory until you've seen
-all the files in that directory).
-
-What it does is:
-
-    - Iterate over the reader
-    - Keeps writing entries to a "temp tar writer" as long as we are in the same dir
-    - Once we hit a new dir (or the end of the tar):
-        - Look at all files in temp tar writer and calculate target distribution
-        - Iterate over temp tar writer and write to target tar writers
-        - Reset tar writer
-
-The temp tar writer mentioned above currently saves everything to a bytes.Buffer,
-but if needed it can easily switched over to use a
-
-*/
-func (d DatasetSplitter) transform(source *tar.Reader, train, test *tar.Writer) error {
-
-	currentDirectory := ""
-	currentDirFiles := []string{}
-
-	buf := new(bytes.Buffer)
-	twTemp := tar.NewWriter(buf)
-	defer twTemp.Close()
-
-	for {
-		hdr, err := source.Next()
-
-		if err == io.EOF {
-			// end of tar archive - split up the saved buffer and distribute to tar writers
-			twTemp.Close()
-			trTemp := tar.NewReader(buf)
-			if err := d.split(trTemp, train, test, currentDirFiles); err != nil {
-				return err
-			}
-			break
-		}
-
-		if err != nil {
-			return err
-		}
-
-		// figure out directory name of this file
-		pathComponents := strings.Split(hdr.Name, "/")
-		if len(pathComponents) != 2 {
-			return fmt.Errorf("Path does not have 2 components: %v", hdr.Name)
-		}
-		directory := pathComponents[0]
-
-		// its the first directory we've seen, set to current
-		if currentDirectory == "" {
-			currentDirectory = directory
-		}
-
-		// function which copies an entry over to temp tar writer and
-		// adds the current file to the running list of files for this dir
-		addToTwTemp := func() error {
-			if err := twTemp.WriteHeader(hdr); err != nil {
-				return err
-			}
-			_, err = io.Copy(twTemp, source)
-			if err != nil {
-				return err
-			}
-			// save this file to the list of files we've accumulated for this dir
-			currentDirFiles = append(currentDirFiles, hdr.Name)
-			return nil
-		}
-
-		switch directory {
-		case currentDirectory:
-			// we're in the same directory
-
-			// add to temp tar writer
-			if err := addToTwTemp(); err != nil {
-				return err
-			}
-
-		default:
-
-			// we're in a new directory
-			currentDirectory = directory
-
-			// split up the saved buffer and distribute to tar writers
-			twTemp.Close()
-			trTemp := tar.NewReader(buf)
-			if err := d.split(trTemp, train, test, currentDirFiles); err != nil {
-				return err
-			}
-
-			// reset the tar writer to create a fresh one
-			twTemp.Close()
-			buf = new(bytes.Buffer)
-			twTemp = tar.NewWriter(buf)
-
-			// reset file list
-			currentDirFiles = []string{}
-
-			// add to temp tar writer
-			if err := addToTwTemp(); err != nil {
-				return err
-			}
-
-		}
-
-	}
-
-	// close writers
-	if err := train.Close(); err != nil {
-		errMsg := fmt.Errorf("Error closing tar writer: %v", err)
-		logg.LogError(errMsg)
-		return err
-	}
-	if err := test.Close(); err != nil {
-		errMsg := fmt.Errorf("Error closing tar reader: %v", err)
-		logg.LogError(errMsg)
-		return err
-	}
-
-	return nil
-
-}
-
-func (d DatasetSplitter) split(source *tar.Reader, train, test *tar.Writer, files []string) error {
-
-	numTraining := int(float64(len(files)) * d.Dataset.TrainingDataset.SplitPercentage)
-
-	numTest := len(files) - int(numTraining)
-
-	// split files into subsets based on ratios in dataset
-	trainingFiles, testFiles, err := splitFilesToMaps(files, numTraining, numTest)
-
-	if err != nil {
-		return err
-	}
-
-	for {
-		hdr, err := source.Next()
-		if err == io.EOF {
-			// end of tar archive
-			break
-		}
-		if err != nil {
-			return err
-		}
-
-		// figure out which tar writer to use
-		var tw *tar.Writer
-		if _, ok := trainingFiles[hdr.Name]; ok {
-			tw = train
-		} else if _, ok := testFiles[hdr.Name]; ok {
-			tw = test
-		} else {
-			return fmt.Errorf("file not in either set: %v", hdr.Name)
-		}
-
-		if err := tw.WriteHeader(hdr); err != nil {
-			return err
-		}
-
-		_, err = io.Copy(tw, source)
-		if err != nil {
-			return err
-		}
-
-	}
-
-	return nil
-
 }
 
 // Validate that the source tar stream conforms to expected specs
@@ -438,19 +257,4 @@ func (d DatasetSplitter) validate(source *tar.Reader) (bool, error) {
 	}
 
 	return true, nil
-}
-
-func splitFilesToMaps(files []string, numTraining, numTest int) (training map[string]struct{}, test map[string]struct{}, err error) {
-
-	training = make(map[string]struct{})
-	test = make(map[string]struct{})
-
-	for i, file := range files {
-		if i < numTraining {
-			training[file] = struct{}{}
-		} else {
-			test[file] = struct{}{}
-		}
-	}
-	return
 }
