@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path"
 	"strings"
 
 	"github.com/couchbaselabs/cbfs/client"
@@ -155,6 +156,79 @@ func (d DatasetSplitter) openTarGzStream(url string) (*tar.Reader, error) {
 
 	return tarReader, nil
 
+}
+
+func (d DatasetSplitter) transform2(source *tar.Reader, train, test *tar.Writer) error {
+
+	splitter := d.splitter(train, test)
+	logg.LogTo("DATASET_SPLITTER", "splitter: %v", splitter)
+
+	for {
+		hdr, err := source.Next()
+
+		if err == io.EOF {
+			// end of tar archive
+			break
+		}
+
+		if err != nil {
+			return err
+		}
+
+		tw := splitter(hdr.Name)
+
+		if err := tw.WriteHeader(hdr); err != nil {
+			return err
+		}
+		_, err = io.Copy(tw, source)
+		if err != nil {
+			return err
+		}
+
+	}
+
+	// close writers
+	if err := train.Close(); err != nil {
+		errMsg := fmt.Errorf("Error closing tar writer: %v", err)
+		logg.LogError(errMsg)
+		return err
+	}
+	if err := test.Close(); err != nil {
+		errMsg := fmt.Errorf("Error closing tar reader: %v", err)
+		logg.LogError(errMsg)
+		return err
+	}
+
+	return nil
+}
+
+func (d DatasetSplitter) splitter(train, test *tar.Writer) func(string) *tar.Writer {
+
+	trainingRatio := int(d.Dataset.TrainingDataset.SplitPercentage * 100)
+	testRatio := int(d.Dataset.TestDataset.SplitPercentage * 100)
+
+	ratio := [2]int{trainingRatio, testRatio}
+
+	dircounts := make(map[string][2]int)
+	return func(file string) *tar.Writer {
+		dir := path.Dir(file)
+		counts := dircounts[dir]
+		fmt.Printf("dir: %v counts: %v ratios: %v\n", dir, counts, ratio)
+		count0ratio1 := counts[0] * ratio[1]
+		count1ratio0 := counts[1] * ratio[0]
+		fmt.Printf("dir: %v count0ratio1: %v, count1ratio0: %v\n", dir, count0ratio1, count1ratio0)
+		if count0ratio1 <= count1ratio0 {
+			fmt.Printf("count0ratio1 <= count1ratio0\n")
+			counts[0]++
+			dircounts[dir] = counts
+			return train
+		} else {
+			fmt.Printf("count0ratio1 > count1ratio0\n")
+			counts[1]++
+			dircounts[dir] = counts
+			return test
+		}
+	}
 }
 
 /*

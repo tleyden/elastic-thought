@@ -5,11 +5,10 @@ import (
 	"bytes"
 	"io"
 	"log"
-	"strings"
+	"path"
 	"testing"
 
 	"github.com/couchbaselabs/go.assert"
-	"github.com/couchbaselabs/logg"
 )
 
 type tarFile struct {
@@ -37,18 +36,37 @@ func create5050Splitter() DatasetSplitter {
 	return splitter
 }
 
+func create8020Splitter() DatasetSplitter {
+	dataset := Dataset{
+		TrainingDataset: TrainingDataset{
+			SplitPercentage: 0.8,
+		},
+		TestDataset: TestDataset{
+			SplitPercentage: 0.2,
+		},
+	}
+
+	splitter := DatasetSplitter{
+		Dataset: dataset,
+	}
+	return splitter
+}
+
 func TestTransform(t *testing.T) {
 
-	splitter := create5050Splitter()
+	splitter := create8020Splitter()
 
 	// Create a test tar archive
 	buf := new(bytes.Buffer)
 
 	var files = []tarFile{
-		{"foo/1.txt", "Hello 1."},
-		{"foo/2.txt", "Hello 2."},
-		{"bar/1.txt", "Hello bar 1."},
-		{"bar/2.txt", "Hello bar 2."},
+		{"foo/1.txt", "."},
+		{"foo/2.txt", "."},
+		{"bar/1.txt", "."},
+		{"bar/2.txt", "."},
+		{"bar/3.txt", "."},
+		{"bar/4.txt", "."},
+		{"bar/5.txt", "."},
 	}
 	createArchive(buf, files)
 
@@ -63,25 +81,23 @@ func TestTransform(t *testing.T) {
 	twTest := tar.NewWriter(bufTest)
 
 	// pass these into transform
-	err := splitter.transform(tr, twTrain, twTest)
+	err := splitter.transform2(tr, twTrain, twTest)
 	assert.True(t, err == nil)
 	if err != nil {
 		assert.Errorf(t, "Err from transform2: %v", err)
 	}
 
+	trainingResult := make(filemap)
+	testResult := make(filemap)
+
 	// assert that the both the training and test tar archives
-	// have been split 50/50 over each "label" folder, so each "label"
-	// folder should now have one example each.  Ie, one "foo/x.txt" and
-	// one "bar/x.txt".  Also, the resulting split sets must be disjoint.
+	// have been split correctly over each "label" folder
+	// Also, the resulting split sets must be disjoint.
 	buffers := []*bytes.Buffer{bufTrain, bufTest}
 	for _, buffer := range buffers {
 		readerVerify := bytes.NewReader(buffer.Bytes())
 		trVerify := tar.NewReader(readerVerify)
 
-		seenFoos := map[string]string{}
-		seenBars := map[string]string{}
-		numFoo := 0
-		numBar := 0
 		for {
 			hdr, err := trVerify.Next()
 			if err == io.EOF {
@@ -93,29 +109,25 @@ func TestTransform(t *testing.T) {
 			}
 			assert.Equals(t, hdr.Uid, 100)
 			assert.Equals(t, hdr.Gid, 101)
-			if strings.HasPrefix(hdr.Name, "foo") {
-				numFoo += 1
-				// make sure it's the first time seeing this filename
-				if _, ok := seenFoos[hdr.Name]; ok {
-					logg.LogPanic("Not first time seeing: %v", hdr.Name)
-				}
-				seenFoos[hdr.Name] = hdr.Name
-			}
-			if strings.HasPrefix(hdr.Name, "bar") {
-				numBar += 1
-				if _, ok := seenBars[hdr.Name]; ok {
-					logg.LogPanic("Not first time seeing: %v", hdr.Name)
-				}
-				seenBars[hdr.Name] = hdr.Name
 
+			dir := path.Dir(hdr.Name)
+
+			switch buffer {
+			case bufTrain:
+				trainingResult.addFileToDirectory(dir, hdr.Name)
+			case bufTest:
+				testResult.addFileToDirectory(dir, hdr.Name)
 			}
 
 		}
 
-		assert.Equals(t, numFoo, 1)
-		assert.Equals(t, numBar, 1)
-
 	}
+
+	// make sure they have correct number of entries
+	assert.Equals(t, len(trainingResult["foo"]), 1)
+	assert.Equals(t, len(testResult["foo"]), 1)
+	assert.Equals(t, len(trainingResult["bar"]), 4)
+	assert.Equals(t, len(testResult["foo"]), 1)
 
 }
 
