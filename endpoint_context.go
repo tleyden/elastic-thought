@@ -120,6 +120,7 @@ func (e EndpointContext) CreateDataSetsEndpoint(c *gin.Context) {
 
 }
 
+// Creates a solver
 func (e EndpointContext) CreateSolverEndpoint(c *gin.Context) {
 
 	user := c.MustGet(MIDDLEWARE_KEY_USER).(User)
