@@ -18,6 +18,10 @@ type tarFile struct {
 	Body string
 }
 
+func init() {
+	EnableAllLogKeys()
+}
+
 func create5050Splitter() DatasetSplitter {
 	dataset := Dataset{
 		TrainingDataset: TrainingDataset{
@@ -40,7 +44,14 @@ func TestTransform(t *testing.T) {
 
 	// Create a test tar archive
 	buf := new(bytes.Buffer)
-	createTestArchive(buf)
+
+	var files = []tarFile{
+		{"foo/1.txt", "Hello 1."},
+		{"foo/2.txt", "Hello 2."},
+		{"bar/1.txt", "Hello bar 1."},
+		{"bar/2.txt", "Hello bar 2."},
+	}
+	createArchive(buf, files)
 
 	// Open the tar archive for reading.
 	r := bytes.NewReader(buf.Bytes())
@@ -58,9 +69,14 @@ func TestTransform(t *testing.T) {
 	twTrain := tar.NewWriter(bufTrain)
 	twTest := tar.NewWriter(bufTest)
 
+	logg.Log("tr2: %v", tr2)
+
 	// pass these into transform
-	err := splitter.transform(tr, tr2, twTrain, twTest)
+	err := splitter.transform2(tr, twTrain, twTest)
 	assert.True(t, err == nil)
+	if err != nil {
+		assert.Errorf(t, "Err from transform2: %v", err)
+	}
 
 	// assert that the both the training and test tar archives
 	// have been split 50/50 over each "label" folder, so each "label"
@@ -212,18 +228,6 @@ func TestSplitMap(t *testing.T) {
 		assert.Equals(t, numFoo, 1)
 		assert.Equals(t, numBar, 1)
 	}
-
-}
-
-func createTestArchive(buf *bytes.Buffer) {
-
-	var files = []tarFile{
-		{"foo/1.txt", "Hello 1."},
-		{"foo/2.txt", "Hello 2."},
-		{"bar/1.txt", "Hello bar 1."},
-		{"bar/2.txt", "Hello bar 2."},
-	}
-	createArchive(buf, files)
 
 }
 

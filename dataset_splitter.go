@@ -2,6 +2,7 @@ package elasticthought
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -164,6 +165,172 @@ func (d DatasetSplitter) openTwoTarGzStreams(url string) (*tar.Reader, *tar.Read
 	tarReader2 := tar.NewReader(gzipReader2)
 
 	return tarReader1, tarReader2, nil
+
+}
+
+func (d DatasetSplitter) transform2(source *tar.Reader, train, test *tar.Writer) error {
+
+	currentDirectory := ""
+	currentDirFiles := []string{}
+
+	buf := new(bytes.Buffer) // TODO: write to temp file instead of memory
+	twTemp := tar.NewWriter(buf)
+	defer twTemp.Close()
+
+	for {
+		hdr, err := source.Next()
+		if err == io.EOF {
+			// end of tar archive
+
+			// split up the saved buffer and distribute to tar writers
+			twTemp.Close()
+			trTemp := tar.NewReader(buf)
+
+			if err := d.split(trTemp, train, test, currentDirFiles); err != nil {
+				return err
+			}
+
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		pathComponents := strings.Split(hdr.Name, "/")
+
+		if len(pathComponents) != 2 {
+			return fmt.Errorf("Path does not have 2 components: %v", hdr.Name)
+		}
+
+		logg.LogTo("DATASET_SPLITTER", "source file: %v", hdr.Name)
+
+		directory := pathComponents[0]
+
+		// if its the first file we've seen, set currentDirectory
+		// to this directory
+		if currentDirectory == "" {
+			currentDirectory = directory
+		}
+
+		switch directory {
+		case currentDirectory:
+			// we're in the same directory, append to the file buffer
+			logg.LogTo("DATASET_SPLITTER", "we're in the same directory %v, append to the file buffer.  cur: %v", directory, currentDirectory)
+			if err := twTemp.WriteHeader(hdr); err != nil {
+				return err
+			}
+			_, err = io.Copy(twTemp, source)
+			if err != nil {
+				return err
+			}
+			// save this file to the list of files we've accumulated for this dir
+			currentDirFiles = append(currentDirFiles, hdr.Name)
+
+		default:
+			logg.LogTo("DATASET_SPLITTER", "we're in a new directory %v, split", directory)
+			logg.LogTo("DATASET_SPLITTER", "currentDirectory: %v, directory: %v", currentDirectory, directory)
+
+			// we're in a new directory
+			currentDirectory = directory
+
+			// split up the saved buffer and distribute to tar writers
+			twTemp.Close()
+			trTemp := tar.NewReader(buf)
+
+			if err := d.split(trTemp, train, test, currentDirFiles); err != nil {
+				return err
+			}
+
+			// reset the tar writer to create a fresh one
+			twTemp.Close()
+			buf = new(bytes.Buffer) // TODO: write to temp file instead of memory
+			twTemp = tar.NewWriter(buf)
+
+			// reset file list
+			currentDirFiles = []string{}
+
+			// now write the current entry to the new empty tar writer
+			if err := twTemp.WriteHeader(hdr); err != nil {
+				return err
+			}
+			_, err = io.Copy(twTemp, source)
+			if err != nil {
+				return err
+			}
+			// save this file to the list of files we've accumulated for this dir
+			currentDirFiles = append(currentDirFiles, hdr.Name)
+
+		}
+
+	}
+
+	logg.LogTo("DATASET_SPLITTER", "done iterating over source")
+
+	// close writers
+	logg.LogTo("DATASET_SPLITTER", "Closing writers")
+	if err := train.Close(); err != nil {
+		errMsg := fmt.Errorf("Error closing tar writer: %v", err)
+		logg.LogError(errMsg)
+		return err
+	}
+	if err := test.Close(); err != nil {
+		errMsg := fmt.Errorf("Error closing tar reader: %v", err)
+		logg.LogError(errMsg)
+		return err
+	}
+	logg.LogTo("DATASET_SPLITTER", "Closed writers")
+
+	return nil
+
+}
+
+func (d DatasetSplitter) split(source *tar.Reader, train, test *tar.Writer, files []string) error {
+
+	numTraining := int(float64(len(files)) * d.Dataset.TrainingDataset.SplitPercentage)
+
+	numTest := len(files) - int(numTraining)
+
+	// split files into subsets based on ratios in dataset
+	trainingFiles, testFiles, err := splitFilesToMaps(files, numTraining, numTest)
+
+	if err != nil {
+		return err
+	}
+
+	for {
+		hdr, err := source.Next()
+		if err == io.EOF {
+			// end of tar archive
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		// figure out which tar writer to use
+		var tw *tar.Writer
+		if _, ok := trainingFiles[hdr.Name]; ok {
+			logg.LogTo("DATASET_SPLITTER", "Writing %v to train", hdr.Name)
+			tw = train
+		} else if _, ok := testFiles[hdr.Name]; ok {
+			logg.LogTo("DATASET_SPLITTER", "Writing %v to test", hdr.Name)
+			tw = test
+		} else {
+			return fmt.Errorf("file not in either set: %v", hdr.Name)
+		}
+
+		if err := tw.WriteHeader(hdr); err != nil {
+			return err
+		}
+
+		_, err = io.Copy(tw, source)
+		if err != nil {
+			return err
+		}
+
+	}
+
+	return nil
 
 }
 
@@ -345,6 +512,24 @@ func splitFiles(files []string, numTraining, numTest int) (training []string, te
 			training = append(training, file)
 		} else {
 			test = append(test, file)
+		}
+	}
+	return
+}
+
+func splitFilesToMaps(files []string, numTraining, numTest int) (training map[string]struct{}, test map[string]struct{}, err error) {
+
+	training = make(map[string]struct{})
+	test = make(map[string]struct{})
+
+	logg.LogTo("DATASET_SPLITTER", "loop over files: %v", files)
+	for i, file := range files {
+		if i < numTraining {
+			logg.LogTo("DATASET_SPLITTER", "add %v to training", file)
+			training[file] = struct{}{}
+		} else {
+			logg.LogTo("DATASET_SPLITTER", "add %v to test", file)
+			test[file] = struct{}{}
 		}
 	}
 	return
