@@ -1,8 +1,13 @@
 package elasticthought
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
@@ -100,5 +105,63 @@ func (s Solver) Save(db couch.Database) (*Solver, error) {
 	}
 
 	return solver, nil
+
+}
+
+// Save the content in the SpecificationUrl to the given directory.
+// As the filename, use the last part of the url path from the SpecificationUrl
+func (s Solver) SaveSpecification(config Configuration, destDirectory string) error {
+
+	// strip leading cbfs://
+	specUrlPath, err := s.SpecificationUrlPath()
+	if err != nil {
+		return err
+	}
+
+	// get filename, eg, if path is foo/spec.txt, get spec.txt
+	_, specUrlFilename := filepath.Split(specUrlPath)
+
+	// use cbfs client to open stream
+
+	cbfs, err := cbfsclient.New(config.CbfsUrl)
+	if err != nil {
+		return err
+	}
+
+	// get from cbfs
+	logg.LogTo("TRAINING_JOB", "Cbfs get %v", specUrlPath)
+	reader, err := cbfs.Get(specUrlPath)
+	if err != nil {
+		return err
+	}
+
+	// write stream to file in work directory
+	destPath := filepath.Join(destDirectory, specUrlFilename)
+	f, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	w := bufio.NewWriter(f)
+	defer w.Flush()
+	_, err = io.Copy(w, reader)
+	if err != nil {
+		return err
+	}
+
+	logg.LogTo("TRAINING_JOB", "Wrote to %v", destPath)
+
+	return nil
+}
+
+// If spefication url is "cbfs://foo/bar.txt", return "/foo/bar.txt"
+func (s Solver) SpecificationUrlPath() (string, error) {
+
+	cbfsUriPrefix := "cbfs://"
+	specUrl := s.SpecificationUrl
+	if !strings.HasPrefix(specUrl, cbfsUriPrefix) {
+		return "", fmt.Errorf("Expected %v to start with %v", specUrl, cbfsUriPrefix)
+	}
+
+	return strings.Replace(specUrl, cbfsUriPrefix, "", 1), nil
 
 }

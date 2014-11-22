@@ -2,6 +2,7 @@ package elasticthought
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/couchbaselabs/logg"
 	"github.com/tleyden/go-couch"
@@ -34,7 +35,13 @@ func (j TrainingJob) Run() {
 
 	logg.LogTo("TRAINING_JOB", "Run() called!")
 
-	// inside the job:
+	// get the solver associated with this training job
+	solver, err := j.getSolver()
+	if err != nil {
+		errMsg := fmt.Errorf("Error getting solver: %+v.  Err: %v", j, err)
+		j.recordProcessingError(errMsg)
+		return
+	}
 
 	// create a work directory based on config, eg, /usr/lib/elasticthought/<job-id>
 	if err := j.createWorkDirectory(); err != nil {
@@ -43,11 +50,20 @@ func (j TrainingJob) Run() {
 		return
 	}
 
-	// read prototext from cbfs, do template replacement, write to work dir
+	// read prototext from cbfs, write to work dir
+	if err := j.saveSpecification(*solver); err != nil {
+		errMsg := fmt.Errorf("Error saving specifcation: %+v.  Err: %v", j, err)
+		j.recordProcessingError(errMsg)
+		return
+	}
 
-	// if any env values are cbfs urls to .tar.gz files, then
+	// download and untar the training and test .tar.gz files associated w/ solver
 
-	// download and extract to work dir
+	// ^^^ the above step should return training and test files with file lists
+
+	// write training and test files to work directory
+
+	// call caffe train --solver=<work-dir>/spec.prototxt
 
 }
 
@@ -61,9 +77,35 @@ func (j TrainingJob) recordProcessingError(err error) {
 	}
 }
 
+func (j TrainingJob) getWorkDirectory() string {
+	return filepath.Join(j.Configuration.WorkDirectory, j.Id)
+}
+
 func (j TrainingJob) createWorkDirectory() error {
-	logg.LogTo("TRAINING_JOB", "Creating dir: %v", j.Configuration.WorkDirectory)
-	return mkdir(j.Configuration.WorkDirectory)
+	workDir := j.getWorkDirectory()
+	logg.LogTo("TRAINING_JOB", "Creating dir: %v", workDir)
+	return mkdir(workDir)
+}
+
+func (j TrainingJob) getSolver() (*Solver, error) {
+	db := j.Configuration.DbConnection()
+	solver := &Solver{}
+	err := db.Retrieve(j.SolverId, solver)
+	if err != nil {
+		errMsg := fmt.Errorf("Didn't retrieve: %v - %v", j.SolverId, err)
+		logg.LogError(errMsg)
+		return nil, errMsg
+	}
+	return solver, nil
+}
+
+func (j TrainingJob) saveSpecification(s Solver) error {
+
+	if err := s.SaveSpecification(j.Configuration, j.getWorkDirectory()); err != nil {
+		return err
+	}
+	logg.LogTo("TRAINING_JOB", "Saved specification: %v", j.getWorkDirectory())
+	return nil
 
 }
 
