@@ -40,6 +40,7 @@ func main() {
 		authorized.POST("/datafiles", context.CreateDataFileEndpoint)
 		authorized.POST("/datasets", context.CreateDataSetsEndpoint)
 		authorized.POST("/solvers", context.CreateSolverEndpoint)
+		authorized.POST("/training-jobs", context.CreateTrainingJob)
 	}
 
 	// Listen and serve on 0.0.0.0:8080

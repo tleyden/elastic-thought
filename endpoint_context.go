@@ -166,3 +166,46 @@ func (e EndpointContext) CreateSolverEndpoint(c *gin.Context) {
 	c.JSON(201, *solver)
 
 }
+
+// Create Training Job
+func (e EndpointContext) CreateTrainingJob(c *gin.Context) {
+
+	// bind to json
+	user := c.MustGet(MIDDLEWARE_KEY_USER).(User)
+	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
+
+	trainingJob := NewTrainingJob()
+	trainingJob.UserID = user.Id
+
+	// bind the input struct to the JSON request
+	if ok := c.Bind(trainingJob); !ok {
+		errMsg := fmt.Sprintf("Invalid input")
+		c.Fail(400, errors.New(errMsg))
+		return
+	}
+
+	logg.LogTo("REST", "trainingJob: %+v", trainingJob)
+
+	// save training job in db
+	trainingJob, err := trainingJob.Insert(db)
+	if err != nil {
+		c.Fail(500, err)
+		return
+	}
+
+	// job will get kicked off by changes listener
+
+	// return solver object
+	c.JSON(201, *trainingJob)
+
+	// inside the job:
+
+	// create a work directory based on config, eg, /usr/lib/elasticthought/<job-id>
+
+	// read prototext from cbfs, do template replacement, write to work dir
+
+	// if any env values are cbfs urls to .tar.gz files, then
+
+	// download and extract to work dir
+
+}
