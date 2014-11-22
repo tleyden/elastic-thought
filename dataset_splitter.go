@@ -131,6 +131,7 @@ func (d DatasetSplitter) Run() {
 
 }
 
+// Codereview: de-dupe
 func (d DatasetSplitter) recordProcessingError(err error) {
 	logg.LogError(err)
 	db := d.Configuration.DbConnection()

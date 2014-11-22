@@ -48,7 +48,7 @@ func CreateJob(config Configuration, jobDescriptor JobDescriptor) (Runnable, err
 			return nil, errMsg
 		}
 
-		trainingJob.configuration = config
+		trainingJob.Configuration = config
 		return trainingJob, nil
 
 	}

@@ -15,6 +15,7 @@ type Configuration struct {
 	NsqLookupdUrl string
 	NsqdUrl       string
 	NsqdTopic     string
+	WorkDirectory string
 }
 
 func NewDefaultConfiguration() *Configuration {
@@ -25,6 +26,7 @@ func NewDefaultConfiguration() *Configuration {
 		NsqLookupdUrl: "127.0.0.1:4161",
 		NsqdUrl:       "127.0.0.1:4150",
 		NsqdTopic:     "elastic-thought",
+		WorkDirectory: "/tmp/elastic-thought",
 	}
 	return config
 
