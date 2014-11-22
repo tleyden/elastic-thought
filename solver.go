@@ -12,9 +12,8 @@ import (
 // A solver can generate trained models, which ban be used to make predictions
 type Solver struct {
 	ElasticThoughtDoc
-	DatasetId        string            `json:"dataset-id"`
-	SpecificationUrl string            `json:"specification-url" binding:"required"`
-	SpecificationEnv map[string]string `json:"specification-env"`
+	DatasetId        string `json:"dataset-id"`
+	SpecificationUrl string `json:"specification-url" binding:"required"`
 }
 
 // Create a new solver.  If you don't use this, you must set the
