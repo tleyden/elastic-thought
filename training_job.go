@@ -70,11 +70,9 @@ func (j TrainingJob) Run() {
 
 func (j TrainingJob) saveTrainTestData(s Solver) error {
 
-	// download and untar the training and test .tar.gz files associated w/ solver
-
-	// ^^^ the above step should return training and test files with file lists
-
-	// write training and test files to work directory
+	if err := s.SaveTrainTestData(j.Configuration, j.getWorkDirectory()); err != nil {
+		return err
+	}
 	return nil
 
 }

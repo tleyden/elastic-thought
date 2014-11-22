@@ -153,6 +153,46 @@ func (s Solver) SaveSpecification(config Configuration, destDirectory string) er
 	return nil
 }
 
+// Download and untar the training and test .tar.gz files associated w/ solver,
+// as well as index files.
+func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) error {
+
+	// find cbfs paths to artificacts
+	dataset := NewDataset()
+	dataset.Id = s.DatasetId
+	trainingArtifact := dataset.TrainingArtifactPath()
+	testArtifact := dataset.TestingArtifactPath()
+
+	artificactPaths := []string{trainingArtifact, testArtifact}
+	for _, artificactPath := range artificactPaths {
+
+		// create cbfs client
+		cbfs, err := cbfsclient.New(config.CbfsUrl)
+		if err != nil {
+			return err
+		}
+
+		// open stream to artifact in cbfs
+		logg.LogTo("TRAINING_JOB", "Cbfs get %v", artificactPath)
+		reader, err := cbfs.Get(artificactPath)
+		if err != nil {
+			return err
+		}
+
+		// write stream contents to destDirectory, and return table of contents slice
+		toc, err := untarGzWithToc(reader, destDirectory)
+		logg.LogTo("TRAINING_JOB", "toc %v", toc)
+		if err != nil {
+			return err
+		}
+
+		// write table of contents to destDirectory
+
+	}
+	return nil
+
+}
+
 // If spefication url is "cbfs://foo/bar.txt", return "/foo/bar.txt"
 func (s Solver) SpecificationUrlPath() (string, error) {
 

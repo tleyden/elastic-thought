@@ -2,10 +2,8 @@ package elasticthought
 
 import (
 	"archive/tar"
-	"compress/gzip"
 	"fmt"
 	"io"
-	"net/http"
 	"path"
 	"strings"
 
@@ -32,7 +30,7 @@ func (d DatasetSplitter) Run() {
 	}
 
 	// Open the url -- content type should be application/x-gzip
-	tr, err := d.openTarGzStream(datafile.Url)
+	tr, err := openTarGzStream(datafile.Url)
 	if err != nil {
 		errMsg := fmt.Errorf("Error opening tar.gz streams: %v", err)
 		d.recordProcessingError(errMsg)
@@ -139,23 +137,6 @@ func (d DatasetSplitter) recordProcessingError(err error) {
 		errMsg := fmt.Errorf("Error setting dataset as failed: %v", err)
 		logg.LogError(errMsg)
 	}
-}
-
-// Opens to tar.gz streams
-func (d DatasetSplitter) openTarGzStream(url string) (*tar.Reader, error) {
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	gzipReader, err := gzip.NewReader(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	tarReader := tar.NewReader(gzipReader)
-
-	return tarReader, nil
-
 }
 
 // Read from source tar stream and write training and test to given tar writers
