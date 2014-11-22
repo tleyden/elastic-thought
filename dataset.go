@@ -106,20 +106,20 @@ func (d Dataset) Failed(db couch.Database, processingErr error) error {
 
 // Path to training artifact file, eg <id>/training.tar.gz
 func (d Dataset) TrainingArtifactPath() string {
-	return fmt.Sprintf("%v/training.tar.gz", d.Id)
+	return fmt.Sprintf("%v/%v", d.Id, TRAINING_ARTIFACT)
 }
 
 // Path to testing artifact file, eg <id>/testing.tar.gz
 func (d Dataset) TestingArtifactPath() string {
-	return fmt.Sprintf("%v/testing.tar.gz", d.Id)
+	return fmt.Sprintf("%v/%v", d.Id, TEST_ARTIFACT)
 }
 
 // Update this dataset with the artifact urls (cbfs://<id>/training.tar.gz, ..)
 // even though these artifacts might not exist yet.
 func (d Dataset) AddArtifactUrls(db couch.Database) (*Dataset, error) {
 
-	d.TrainingDataset.Url = fmt.Sprintf("cbfs://%v", d.TrainingArtifactPath())
-	d.TestDataset.Url = fmt.Sprintf("cbfs://%v", d.TestingArtifactPath())
+	d.TrainingDataset.Url = fmt.Sprintf("%v%v", CBFS_URI_PREFIX, d.TrainingArtifactPath())
+	d.TestDataset.Url = fmt.Sprintf("%v%v", CBFS_URI_PREFIX, d.TestingArtifactPath())
 
 	// TODO: retry if 409 error
 	_, err := db.Edit(d)

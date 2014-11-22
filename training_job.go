@@ -58,12 +58,24 @@ func (j TrainingJob) Run() {
 	}
 
 	// download and untar the training and test .tar.gz files associated w/ solver
+	if err := j.saveTrainTestData(*solver); err != nil {
+		errMsg := fmt.Errorf("Error saving train/test data: %+v.  Err: %v", j, err)
+		j.recordProcessingError(errMsg)
+		return
+	}
+
+	// call caffe train --solver=<work-dir>/spec.prototxt
+
+}
+
+func (j TrainingJob) saveTrainTestData(s Solver) error {
+
+	// download and untar the training and test .tar.gz files associated w/ solver
 
 	// ^^^ the above step should return training and test files with file lists
 
 	// write training and test files to work directory
-
-	// call caffe train --solver=<work-dir>/spec.prototxt
+	return nil
 
 }
 

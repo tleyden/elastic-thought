@@ -76,7 +76,7 @@ func (s Solver) SaveSpec(db couch.Database, cbfs *cbfsclient.Client) (*Solver, e
 	logg.LogTo("REST", "Wrote %v to cbfs", destPath)
 
 	// update solver with cbfs url
-	cbfsUrl := fmt.Sprintf("cbfs://%v", destPath)
+	cbfsUrl := fmt.Sprintf("%v%v", CBFS_URI_PREFIX, destPath)
 	s.SpecificationUrl = cbfsUrl
 
 	// save
@@ -156,12 +156,11 @@ func (s Solver) SaveSpecification(config Configuration, destDirectory string) er
 // If spefication url is "cbfs://foo/bar.txt", return "/foo/bar.txt"
 func (s Solver) SpecificationUrlPath() (string, error) {
 
-	cbfsUriPrefix := "cbfs://"
 	specUrl := s.SpecificationUrl
-	if !strings.HasPrefix(specUrl, cbfsUriPrefix) {
-		return "", fmt.Errorf("Expected %v to start with %v", specUrl, cbfsUriPrefix)
+	if !strings.HasPrefix(specUrl, CBFS_URI_PREFIX) {
+		return "", fmt.Errorf("Expected %v to start with %v", specUrl, CBFS_URI_PREFIX)
 	}
 
-	return strings.Replace(specUrl, cbfsUriPrefix, "", 1), nil
+	return strings.Replace(specUrl, CBFS_URI_PREFIX, "", 1), nil
 
 }
