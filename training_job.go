@@ -3,15 +3,17 @@ package elasticthought
 import (
 	"fmt"
 
+	"github.com/couchbaselabs/logg"
 	"github.com/tleyden/go-couch"
 )
 
 // A training job represents a "training session" of a solver against training/test data
 type TrainingJob struct {
 	ElasticThoughtDoc
-	UserID          string          `json:"user-id"`
 	ProcessingState ProcessingState `json:"processing-state"`
+	UserID          string          `json:"user-id"`
 	SolverId        string          `json:"solver-id" binding:"required"`
+	configuration   Configuration
 }
 
 // Create a new training job.  If you don't use this, you must set the
@@ -20,6 +22,22 @@ func NewTrainingJob() *TrainingJob {
 	return &TrainingJob{
 		ElasticThoughtDoc: ElasticThoughtDoc{Type: DOC_TYPE_TRAINING_JOB},
 	}
+}
+
+// Run this job
+func (j TrainingJob) Run() {
+	logg.LogTo("TRAINING_JOB", "Run() called!")
+
+	// inside the job:
+
+	// create a work directory based on config, eg, /usr/lib/elasticthought/<job-id>
+
+	// read prototext from cbfs, do template replacement, write to work dir
+
+	// if any env values are cbfs urls to .tar.gz files, then
+
+	// download and extract to work dir
+
 }
 
 // Insert into database (only call this if you know it doesn't arleady exist,

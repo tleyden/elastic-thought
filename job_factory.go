@@ -36,6 +36,21 @@ func CreateJob(config Configuration, jobDescriptor JobDescriptor) (Runnable, err
 			Configuration: config,
 			Dataset:       *dataset,
 		}, nil
+
+	case DOC_TYPE_TRAINING_JOB:
+
+		// create a TrainingJob doc
+		trainingJob := &TrainingJob{}
+		err = db.Retrieve(doc.Id, &trainingJob)
+		if err != nil {
+			errMsg := fmt.Errorf("Didn't retrieve: %v - %v", doc.Id, err)
+			logg.LogError(errMsg)
+			return nil, errMsg
+		}
+
+		trainingJob.configuration = config
+		return trainingJob, nil
+
 	}
 
 	return nil, fmt.Errorf("Unable to create job for: %+v", jobDescriptor)

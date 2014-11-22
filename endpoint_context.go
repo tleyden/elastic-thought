@@ -198,14 +198,4 @@ func (e EndpointContext) CreateTrainingJob(c *gin.Context) {
 	// return solver object
 	c.JSON(201, *trainingJob)
 
-	// inside the job:
-
-	// create a work directory based on config, eg, /usr/lib/elasticthought/<job-id>
-
-	// read prototext from cbfs, do template replacement, write to work dir
-
-	// if any env values are cbfs urls to .tar.gz files, then
-
-	// download and extract to work dir
-
 }

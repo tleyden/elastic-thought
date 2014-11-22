@@ -84,9 +84,34 @@ func (c ChangesListener) processChanges(changes couch.Changes) {
 		switch doc.Type {
 		case DOC_TYPE_DATASET:
 			c.handleDatasetChange(change, doc)
+		case DOC_TYPE_TRAINING_JOB:
+			c.handleTrainingJobChange(change, doc)
 		}
 
 	}
+
+}
+
+func (c ChangesListener) handleTrainingJobChange(change couch.Change, doc ElasticThoughtDoc) {
+
+	logg.LogTo("CHANGES", "got a training job doc: %+v", doc)
+
+	// create a Training Job doc from the ElasticThoughtDoc
+	trainingJob := &TrainingJob{}
+	if err := c.Database.Retrieve(change.Id, &trainingJob); err != nil {
+		errMsg := fmt.Errorf("Didn't retrieve: %v - %v", change.Id, err)
+		logg.LogError(errMsg)
+		return
+	}
+
+	// check the state, only schedule if state == pending
+	if trainingJob.ProcessingState != Pending {
+		logg.LogTo("CHANGES", "State != pending: %+v", trainingJob)
+		return
+	}
+
+	job := NewJobDescriptor(doc.Id)
+	c.JobScheduler.ScheduleJob(*job)
 
 }
 

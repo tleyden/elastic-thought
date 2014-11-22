@@ -92,6 +92,9 @@ Related resources of the **Training API**
 ## Solvers Collection [/solvers]
 
 ### Create a Solver [POST]
+
+Inside the prototxt file, you should have image_data_param { source: "training" } in the training input layer, and image_data_param { source: "test" } in the test input layer.  (this currently makes several assumptions about which layers you are using)
+
 + Request (application/json)
 
     + Header
