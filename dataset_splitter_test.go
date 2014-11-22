@@ -11,11 +11,6 @@ import (
 	"github.com/couchbaselabs/go.assert"
 )
 
-type tarFile struct {
-	Name string
-	Body string
-}
-
 func init() {
 	EnableAllLogKeys()
 }
@@ -166,31 +161,5 @@ func TestValidateTooDeep(t *testing.T) {
 	ok, err := splitter.validate(tr)
 	assert.False(t, ok)
 	assert.True(t, err != nil)
-
-}
-
-func createArchive(buf *bytes.Buffer, tarFiles []tarFile) {
-
-	// Create a new tar archive.
-	tw := tar.NewWriter(buf)
-
-	for _, file := range tarFiles {
-		hdr := &tar.Header{
-			Name: file.Name,
-			Size: int64(len(file.Body)),
-			Uid:  100,
-			Gid:  101,
-		}
-		if err := tw.WriteHeader(hdr); err != nil {
-			log.Fatalln(err)
-		}
-		if _, err := tw.Write([]byte(file.Body)); err != nil {
-			log.Fatalln(err)
-		}
-	}
-	// Make sure to check the error on Close.
-	if err := tw.Close(); err != nil {
-		log.Fatalln(err)
-	}
 
 }
