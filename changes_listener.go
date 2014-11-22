@@ -83,31 +83,35 @@ func (c ChangesListener) processChanges(changes couch.Changes) {
 
 		switch doc.Type {
 		case DOC_TYPE_DATASET:
-
-			logg.LogTo("CHANGES", "got a dataset doc: %+v", doc)
-
-			// create a Dataset doc from the ElasticThoughtDoc
-			dataset := &Dataset{}
-			err = c.Database.Retrieve(change.Id, &dataset)
-			if err != nil {
-				errMsg := fmt.Errorf("Didn't retrieve: %v - %v", change.Id, err)
-				logg.LogError(errMsg)
-				continue
-			}
-
-			logg.LogTo("CHANGES", "convert to  dataset: %+v", dataset)
-
-			// check the state, only schedule if state == pending
-			if dataset.ProcessingState != Pending {
-				logg.LogTo("CHANGES", "Dataset state != pending: %+v", dataset)
-				continue
-			}
-
-			job := NewJobDescriptor(doc.Id)
-			c.JobScheduler.ScheduleJob(*job)
+			c.handleDatasetChange(change, doc)
 		}
 
 	}
+
+}
+
+func (c ChangesListener) handleDatasetChange(change couch.Change, doc ElasticThoughtDoc) {
+
+	logg.LogTo("CHANGES", "got a dataset doc: %+v", doc)
+
+	// create a Dataset doc from the ElasticThoughtDoc
+	dataset := &Dataset{}
+	if err := c.Database.Retrieve(change.Id, &dataset); err != nil {
+		errMsg := fmt.Errorf("Didn't retrieve: %v - %v", change.Id, err)
+		logg.LogError(errMsg)
+		return
+	}
+
+	logg.LogTo("CHANGES", "convert to  dataset: %+v", dataset)
+
+	// check the state, only schedule if state == pending
+	if dataset.ProcessingState != Pending {
+		logg.LogTo("CHANGES", "Dataset state != pending: %+v", dataset)
+		return
+	}
+
+	job := NewJobDescriptor(doc.Id)
+	c.JobScheduler.ScheduleJob(*job)
 
 }
 
