@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -180,7 +181,14 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) er
 		}
 		defer reader.Close()
 
-		toc, err := untarGzWithToc(reader, destDirectory)
+		destDirectoryToUse := ""
+		if artificactPath == trainingArtifact {
+			destDirectoryToUse = path.Join(destDirectory, "training")
+		} else {
+			destDirectoryToUse = path.Join(destDirectory, "test")
+		}
+
+		toc, err := untarGzWithToc(reader, destDirectoryToUse)
 		logg.LogTo("TRAINING_JOB", "toc %v", toc)
 		if err != nil {
 			return err
