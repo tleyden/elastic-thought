@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/couchbaselabs/logg"
 )
@@ -78,8 +79,12 @@ func untarGzWithToc(reader io.Reader, destDirectory string) ([]string, error) {
 
 func writeToDest(hdr *tar.Header, tr *tar.Reader, destDirectory string) error {
 
-	// write stream to file in work directory
 	destPath := filepath.Join(destDirectory, hdr.Name)
+
+	if strings.HasPrefix(hdr.Name, ".") {
+		logg.LogTo("TRAINING_JOB", "ignore hidden file: %v", destPath)
+		return nil
+	}
 
 	logg.LogTo("TRAINING_JOB", "writeToDest called with: %v hdr: %+v", destPath, hdr)
 
@@ -94,6 +99,15 @@ func writeToDest(hdr *tar.Header, tr *tar.Reader, destDirectory string) error {
 		}
 
 	default:
+
+		/*
+			// make the directory in case it doesn't already exist
+			destPathDir := path.Dir(destPath)
+			if err := mkdir(destPathDir); err != nil {
+				logg.LogTo("TRAINING_JOB", "mkdir failed on %v", destPath)
+				return err
+			}
+		*/
 
 		logg.LogTo("TRAINING_JOB", "calling os.Create on %v", destPath)
 		f, err := os.Create(destPath)
