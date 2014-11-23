@@ -15,38 +15,6 @@ func init() {
 	EnableAllLogKeys()
 }
 
-func create5050Splitter() DatasetSplitter {
-	dataset := Dataset{
-		TrainingDataset: TrainingDataset{
-			SplitPercentage: 0.5,
-		},
-		TestDataset: TestDataset{
-			SplitPercentage: 0.5,
-		},
-	}
-
-	splitter := DatasetSplitter{
-		Dataset: dataset,
-	}
-	return splitter
-}
-
-func create8020Splitter() DatasetSplitter {
-	dataset := Dataset{
-		TrainingDataset: TrainingDataset{
-			SplitPercentage: 0.8,
-		},
-		TestDataset: TestDataset{
-			SplitPercentage: 0.2,
-		},
-	}
-
-	splitter := DatasetSplitter{
-		Dataset: dataset,
-	}
-	return splitter
-}
-
 func TestTransform(t *testing.T) {
 
 	splitter := create8020Splitter()
@@ -124,6 +92,38 @@ func TestTransform(t *testing.T) {
 	assert.Equals(t, len(trainingResult["bar"]), 4)
 	assert.Equals(t, len(testResult["foo"]), 1)
 
+}
+
+func create5050Splitter() DatasetSplitter {
+	dataset := Dataset{
+		TrainingDataset: TrainingDataset{
+			SplitPercentage: 0.5,
+		},
+		TestDataset: TestDataset{
+			SplitPercentage: 0.5,
+		},
+	}
+
+	splitter := DatasetSplitter{
+		Dataset: dataset,
+	}
+	return splitter
+}
+
+func create8020Splitter() DatasetSplitter {
+	dataset := Dataset{
+		TrainingDataset: TrainingDataset{
+			SplitPercentage: 0.8,
+		},
+		TestDataset: TestDataset{
+			SplitPercentage: 0.2,
+		},
+	}
+
+	splitter := DatasetSplitter{
+		Dataset: dataset,
+	}
+	return splitter
 }
 
 func TestValidateValid(t *testing.T) {

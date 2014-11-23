@@ -13,6 +13,7 @@ func init() {
 		"JOB_SCHEDULER",
 		"NSQ_WORKER",
 		"DATASET_SPLITTER",
+		"SOLVER",
 		"TRAINING_JOB",
 		"TEST",
 	}

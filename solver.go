@@ -189,8 +189,9 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) er
 		}
 
 		toc, err := untarGzWithToc(reader, destDirectoryToUse)
+		tocWithLabels := addLabelsToToc(toc)
 
-		for _, tocEntry := range toc {
+		for _, tocEntry := range tocWithLabels {
 			logg.LogTo("TRAINING_JOB", "tocEntry %v", tocEntry)
 		}
 		if err != nil {
@@ -203,6 +204,56 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) er
 
 	}
 	return nil
+
+}
+
+/*
+Given a toc:
+
+    Q/Verdana-5-0.png
+    R/Arial-5-0.png
+
+Add a numeric label to each line, eg:
+
+    Q/Verdana-5-0.png 27
+    R/Arial-5-0.png 28
+
+Where the label starts at 0 and is incremented for
+each new directory found.
+
+*/
+func addLabelsToToc(tableOfContents []string) []string {
+
+	currentDirectory := ""
+	labelIndex := 0
+	tocWithLabels := []string{}
+
+	for _, tocEntry := range tableOfContents {
+
+		dir := path.Dir(tocEntry)
+		logg.LogTo("SOLVER", dir)
+
+		if currentDirectory == "" {
+			// we're on the first directory
+			currentDirectory = dir
+		} else {
+			// we're not on the first directory, but
+			// are we on a new directory?
+			if dir == currentDirectory {
+				// nope, use curentLabelIndex
+			} else {
+				// yes, so increment label index
+				labelIndex += 1
+			}
+			currentDirectory = dir
+		}
+
+		tocEntryWithLabel := fmt.Sprintf("%v %v", tocEntry, labelIndex)
+		tocWithLabels = append(tocWithLabels, tocEntryWithLabel)
+
+	}
+
+	return tocWithLabels
 
 }
 
