@@ -178,8 +178,8 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) er
 		if err != nil {
 			return err
 		}
+		defer reader.Close()
 
-		// write stream contents to destDirectory, and return table of contents slice
 		toc, err := untarGzWithToc(reader, destDirectory)
 		logg.LogTo("TRAINING_JOB", "toc %v", toc)
 		if err != nil {
