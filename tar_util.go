@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/couchbaselabs/logg"
 )
 
 type tarFile struct {
@@ -79,18 +81,34 @@ func writeToDest(hdr *tar.Header, tr *tar.Reader, destDirectory string) error {
 	// write stream to file in work directory
 	destPath := filepath.Join(destDirectory, hdr.Name)
 
-	// does dir exist? if not, make it
-	mkdir(filepath.Dir(destPath))
+	logg.LogTo("TRAINING_JOB", "writeToDest called with: %v hdr: %+v", destPath, hdr)
 
-	f, err := os.Create(destPath)
-	if err != nil {
-		return err
-	}
-	w := bufio.NewWriter(f)
-	defer w.Flush()
-	_, err = io.Copy(w, tr)
-	if err != nil {
-		return err
+	switch hdr.Typeflag {
+	case tar.TypeDir:
+		logg.LogTo("TRAINING_JOB", "%v is a directory", destPath)
+		// does dir exist? if not, make it
+		logg.LogTo("TRAINING_JOB", "calling mkdir on %v", destPath)
+		if err := mkdir(destPath); err != nil {
+			logg.LogTo("TRAINING_JOB", "mkdir failed on %v", destPath)
+			return err
+		}
+
+	default:
+
+		logg.LogTo("TRAINING_JOB", "calling os.Create on %v", destPath)
+		f, err := os.Create(destPath)
+		if err != nil {
+			logg.LogTo("TRAINING_JOB", "calling os.Create failed on %v", destPath)
+			return err
+		}
+		w := bufio.NewWriter(f)
+		defer w.Flush()
+		_, err = io.Copy(w, tr)
+		if err != nil {
+			logg.LogTo("TRAINING_JOB", "io.Copy failed: %v", err)
+			return err
+		}
+
 	}
 	return nil
 
