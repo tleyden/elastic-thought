@@ -60,7 +60,9 @@ func untarWithToc(reader io.Reader, destDirectory string) ([]string, error) {
 		}
 
 		// add to toc
-		toc = append(toc, hdr.Name)
+		if hdr.Typeflag != tar.TypeDir {
+			toc = append(toc, hdr.Name)
+		}
 
 	}
 
@@ -90,13 +92,9 @@ func writeToDest(hdr *tar.Header, tr *tar.Reader, destDirectory string) error {
 		return fmt.Errorf(msg)
 	}
 
-	logg.LogTo("TRAINING_JOB", "writeToDest called with: %v hdr: %+v", destPath, hdr)
-
 	switch hdr.Typeflag {
 	case tar.TypeDir:
-		logg.LogTo("TRAINING_JOB", "%v is a directory", destPath)
 		// does dir exist? if not, make it
-		logg.LogTo("TRAINING_JOB", "calling mkdir on %v", destPath)
 		if err := mkdir(destPath); err != nil {
 			logg.LogTo("TRAINING_JOB", "mkdir failed on %v", destPath)
 			return err
@@ -113,7 +111,6 @@ func writeToDest(hdr *tar.Header, tr *tar.Reader, destDirectory string) error {
 			return err
 		}
 
-		logg.LogTo("TRAINING_JOB", "calling os.Create on %v", destPath)
 		f, err := os.Create(destPath)
 		if err != nil {
 			logg.LogTo("TRAINING_JOB", "calling os.Create failed on %v", destPath)

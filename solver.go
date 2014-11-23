@@ -189,12 +189,17 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) er
 		}
 
 		toc, err := untarGzWithToc(reader, destDirectoryToUse)
-		logg.LogTo("TRAINING_JOB", "toc %v", toc)
+
+		for _, tocEntry := range toc {
+			logg.LogTo("TRAINING_JOB", "tocEntry %v", tocEntry)
+		}
 		if err != nil {
 			return err
 		}
 
 		// write table of contents to destDirectory
+		// each toc entry is of form:
+		// training_images/C/Arial-6-5.png 12 (where 12 is numeric label)
 
 	}
 	return nil
