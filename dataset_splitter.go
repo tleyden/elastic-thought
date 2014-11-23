@@ -2,6 +2,7 @@ package elasticthought
 
 import (
 	"archive/tar"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"path"
@@ -41,9 +42,13 @@ func (d DatasetSplitter) Run() {
 	prTrain, pwTrain := io.Pipe()
 	prTest, pwTest := io.Pipe()
 
+	// Wrap in gzip writers
+	pwGzTest := gzip.NewWriter(pwTest)
+	pwGzTrain := gzip.NewWriter(pwTrain)
+
 	// Create tar writers on the write end of the pipes
-	tarWriterTesting := tar.NewWriter(pwTest)
-	tarWriterTraining := tar.NewWriter(pwTrain)
+	tarWriterTesting := tar.NewWriter(pwGzTest)
+	tarWriterTraining := tar.NewWriter(pwGzTrain)
 
 	// Create a cbfs client
 	cbfs, err := cbfsclient.New(d.Configuration.CbfsUrl)
@@ -70,6 +75,8 @@ func (d DatasetSplitter) Run() {
 		// piped writers is not enough.
 		defer pwTest.Close()
 		defer pwTrain.Close()
+		defer pwGzTest.Close()
+		defer pwGzTrain.Close()
 
 		logg.LogTo("DATASET_SPLITTER", "Calling transform")
 		err = d.transform(tr, tarWriterTraining, tarWriterTesting)
