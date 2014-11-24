@@ -181,27 +181,29 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) er
 		}
 		defer reader.Close()
 
-		destDirectoryToUse := ""
+		subdirectory := ""
 		destTocFile := ""
 		if artificactPath == trainingArtifact {
-			destDirectoryToUse = path.Join(destDirectory, "training-data")
+			subdirectory = "training-data"
 			destTocFile = path.Join(destDirectory, "training")
 		} else {
-			destDirectoryToUse = path.Join(destDirectory, "test-data")
+			subdirectory = "test-data"
 			destTocFile = path.Join(destDirectory, "test")
 		}
+		destDirectoryToUse := path.Join(destDirectory, subdirectory)
 
 		toc, err := untarGzWithToc(reader, destDirectoryToUse)
 		tocWithLabels := addLabelsToToc(toc)
+		tocWithSubdir := addParentDirToToc(tocWithLabels, subdirectory)
 
-		for _, tocEntry := range tocWithLabels {
+		for _, tocEntry := range tocWithSubdir {
 			logg.LogTo("TRAINING_JOB", "tocEntry %v", tocEntry)
 		}
 		if err != nil {
 			return err
 		}
 
-		writeTocToFile(tocWithLabels, destTocFile)
+		writeTocToFile(tocWithSubdir, destTocFile)
 
 	}
 	return nil
@@ -224,6 +226,34 @@ func writeTocToFile(toc []string, destFile string) error {
 	}
 
 	return nil
+}
+
+/*
+Given a toc:
+
+    Q/Verdana-5-0.png 27
+    R/Arial-5-0.png 28
+
+And a parent dir, eg, "training-data", generate a new TOC:
+
+    training-data/Q/Verdana-5-0.png 27
+    training-data/R/Arial-5-0.png 28
+
+*/
+func addParentDirToToc(tableOfContents []string, dir string) []string {
+
+	tocWithDir := []string{}
+	for _, tocEntry := range tableOfContents {
+		components := strings.Split(tocEntry, " ")
+		file := components[0]
+		label := components[1]
+		file = path.Join(dir, file)
+		line := fmt.Sprintf("%v %v", file, label)
+		tocWithDir = append(tocWithDir, line)
+	}
+
+	return tocWithDir
+
 }
 
 /*
