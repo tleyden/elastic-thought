@@ -182,10 +182,13 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) er
 		defer reader.Close()
 
 		destDirectoryToUse := ""
+		destTocFile := ""
 		if artificactPath == trainingArtifact {
-			destDirectoryToUse = path.Join(destDirectory, "training")
+			destDirectoryToUse = path.Join(destDirectory, "training-data")
+			destTocFile = path.Join(destDirectory, "training")
 		} else {
-			destDirectoryToUse = path.Join(destDirectory, "test")
+			destDirectoryToUse = path.Join(destDirectory, "test-data")
+			destTocFile = path.Join(destDirectory, "test")
 		}
 
 		toc, err := untarGzWithToc(reader, destDirectoryToUse)
@@ -198,13 +201,29 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) er
 			return err
 		}
 
-		// write table of contents to destDirectory
-		// each toc entry is of form:
-		// training_images/C/Arial-6-5.png 12 (where 12 is numeric label)
+		writeTocToFile(tocWithLabels, destTocFile)
 
 	}
 	return nil
 
+}
+
+func writeTocToFile(toc []string, destFile string) error {
+	f, err := os.Create(destFile)
+	if err != nil {
+		logg.LogTo("SOLVER", "calling os.Create failed on %v", destFile)
+		return err
+	}
+	w := bufio.NewWriter(f)
+	defer w.Flush()
+	for _, tocEntry := range toc {
+		tocEntryNewline := fmt.Sprintf("%v\n", tocEntry)
+		if _, err := w.WriteString(tocEntryNewline); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 /*
