@@ -1,10 +1,8 @@
 package elasticthought
 
 import (
-	"bufio"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
@@ -68,18 +66,17 @@ func (j TrainingJob) runCaffe() error {
 		return fmt.Errorf("Error running caffe: StdoutPipe(). Err: %v", err)
 	}
 
-	/*	stderr, err := cmd.StderrPipe()
-		if err != nil {
-			return fmt.Errorf("Error running caffe: StderrPipe(). Err: %v", err)
-		}
-	*/
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("Error running caffe: StderrPipe(). Err: %v", err)
+	}
 
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("Error running caffe: cmd.Start(). Err: %v", err)
 	}
 
 	// read from stdout, stderr and write to
-	if err := j.saveCmdOutputToFiles(stdout); err != nil {
+	if err := j.saveCmdOutputToFiles(stdout, stderr); err != nil {
 		return fmt.Errorf("Error running caffe: saveCmdOutput. Err: %v", err)
 	}
 
@@ -91,22 +88,50 @@ func (j TrainingJob) runCaffe() error {
 
 }
 
-func (j TrainingJob) saveCmdOutputToFiles(stdout io.ReadCloser) error {
+func (j TrainingJob) saveCmdOutputToFiles(stdout, stderr io.ReadCloser) error {
+
+	j.createWorkDirectory()
 
 	stdoutFile := path.Join(j.getWorkDirectory(), "stdout")
+	stderrFile := path.Join(j.getWorkDirectory(), "stderr")
 
-	f, err := os.Create(stdoutFile)
-	if err != nil {
-		return err
-	}
-	w := bufio.NewWriter(f)
-	defer w.Flush()
-	_, err = io.Copy(w, stdout)
-	if err != nil {
-		return err
+	logg.LogTo("TRAINING_JOB", "stdoutfile: %v", stdoutFile)
+
+	stdOutDoneChan := make(chan error, 1)
+	stdErrDoneChan := make(chan error, 1)
+
+	// spawn goroutines to read from stdout/stderr
+	go func() {
+		if err := streamToFile(stdout, stdoutFile); err != nil {
+			stdOutDoneChan <- err
+		} else {
+			stdOutDoneChan <- nil
+		}
+
+	}()
+
+	go func() {
+		if err := streamToFile(stderr, stderrFile); err != nil {
+			stdErrDoneChan <- err
+		} else {
+			stdErrDoneChan <- nil
+		}
+
+	}()
+
+	// wait for goroutines
+	stdOutResult := <-stdOutDoneChan
+	stdErrResult := <-stdErrDoneChan
+
+	// check for errors
+	results := []error{stdOutResult, stdErrResult}
+	for _, result := range results {
+		if result != nil {
+			return fmt.Errorf("Saving cmd output failed: %v", result)
+		}
 	}
 
-	logg.LogTo("TRAINING_JOB", "wrote stdout to file: %v", tempFile)
+	logg.LogTo("TRAINING_JOB", "wrote stdout to file: %v, stderr: %v", stdoutFile, stderrFile)
 
 	return nil
 }

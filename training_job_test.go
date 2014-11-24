@@ -9,7 +9,10 @@ import (
 
 func TestRunCaffe(t *testing.T) {
 
+	config := *NewDefaultConfiguration()
 	trainingJob := NewTrainingJob()
+	trainingJob.Configuration = config
+
 	trainingJob.Id = "training_job"
 	err := trainingJob.runCaffe()
 	logg.LogTo("TEST", "err: %v", err)

@@ -125,8 +125,8 @@ func (d DatasetSplitter) Run() {
 	results := []error{transformResult, cbfsTestResult, cbfsTrainResult}
 	for _, result := range results {
 		if result != nil {
-			logg.LogTo("DATASET_SPLITTER", "Setting dataset to failed: %v", transformResult)
-			d.Dataset.Failed(db, fmt.Errorf("%v", transformResult))
+			logg.LogTo("DATASET_SPLITTER", "Setting dataset to failed: %v", result)
+			d.Dataset.Failed(db, fmt.Errorf("%v", result))
 			return
 		}
 	}
