@@ -11,6 +11,7 @@ func TestRunCaffe(t *testing.T) {
 
 	config := *NewDefaultConfiguration()
 	trainingJob := NewTrainingJob()
+	trainingJob.createWorkDirectory()
 	trainingJob.Configuration = config
 
 	trainingJob.Id = "training_job"

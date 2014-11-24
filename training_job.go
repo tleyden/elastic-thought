@@ -1,12 +1,15 @@
 package elasticthought
 
 import (
+	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 
+	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
 	"github.com/tleyden/go-couch"
 )
@@ -84,25 +87,63 @@ func (j TrainingJob) runCaffe() error {
 		return fmt.Errorf("Error running caffe: cmd.Wait(). Err: %v", err)
 	}
 
+	if err := j.saveCmdOutputToCbfs(j.getStdoutPath()); err != nil {
+		return fmt.Errorf("Error running caffe: could not save output to cbfs. Err: %v", err)
+	}
+
+	if err := j.saveCmdOutputToCbfs(j.getStdErrPath()); err != nil {
+		return fmt.Errorf("Error running caffe: could not save output to cbfs. Err: %v", err)
+	}
+
+	return nil
+
+}
+
+func (j TrainingJob) getStdoutPath() string {
+	return path.Join(j.getWorkDirectory(), "stdout")
+}
+
+func (j TrainingJob) getStdErrPath() string {
+	return path.Join(j.getWorkDirectory(), "stderr")
+}
+
+func (j TrainingJob) saveCmdOutputToCbfs(sourcePath string) error {
+
+	base := path.Base(sourcePath)
+	destPath := fmt.Sprintf("%v/%v", j.Id, base)
+
+	cbfs, err := cbfsclient.New(j.Configuration.CbfsUrl)
+	if err != nil {
+		return err
+	}
+	options := cbfsclient.PutOptions{
+		ContentType: "text/plain",
+	}
+
+	logg.LogTo("TRAINING_JOB", "save to  destPath: %v", destPath)
+	f, err := os.Open(sourcePath)
+	if err != nil {
+		return err
+	}
+
+	r := bufio.NewReader(f)
+
+	if err := cbfs.Put("", destPath, r, options); err != nil {
+		return fmt.Errorf("Error writing %v to cbfs: %v", destPath, err)
+	}
+	logg.LogTo("TRAINING_JOB", "Wrote %v to cbfs", destPath)
 	return nil
 
 }
 
 func (j TrainingJob) saveCmdOutputToFiles(stdout, stderr io.ReadCloser) error {
 
-	j.createWorkDirectory()
-
-	stdoutFile := path.Join(j.getWorkDirectory(), "stdout")
-	stderrFile := path.Join(j.getWorkDirectory(), "stderr")
-
-	logg.LogTo("TRAINING_JOB", "stdoutfile: %v", stdoutFile)
-
 	stdOutDoneChan := make(chan error, 1)
 	stdErrDoneChan := make(chan error, 1)
 
 	// spawn goroutines to read from stdout/stderr
 	go func() {
-		if err := streamToFile(stdout, stdoutFile); err != nil {
+		if err := streamToFile(stdout, j.getStdoutPath()); err != nil {
 			stdOutDoneChan <- err
 		} else {
 			stdOutDoneChan <- nil
@@ -111,7 +152,7 @@ func (j TrainingJob) saveCmdOutputToFiles(stdout, stderr io.ReadCloser) error {
 	}()
 
 	go func() {
-		if err := streamToFile(stderr, stderrFile); err != nil {
+		if err := streamToFile(stderr, j.getStdErrPath()); err != nil {
 			stdErrDoneChan <- err
 		} else {
 			stdErrDoneChan <- nil
@@ -130,8 +171,6 @@ func (j TrainingJob) saveCmdOutputToFiles(stdout, stderr io.ReadCloser) error {
 			return fmt.Errorf("Saving cmd output failed: %v", result)
 		}
 	}
-
-	logg.LogTo("TRAINING_JOB", "wrote stdout to file: %v, stderr: %v", stdoutFile, stderrFile)
 
 	return nil
 }
