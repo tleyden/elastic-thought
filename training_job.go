@@ -2,8 +2,11 @@ package elasticthought
 
 import (
 	"fmt"
+	"io"
+	"os/exec"
 	"path/filepath"
 
+	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
 	"github.com/tleyden/go-couch"
 )
@@ -35,36 +38,107 @@ func (j TrainingJob) Run() {
 
 	logg.LogTo("TRAINING_JOB", "Run() called!")
 
+	if err := j.extractData(); err != nil {
+		j.recordProcessingError(err)
+		return
+	}
+
+	if err := j.runCaffe(); err != nil {
+		j.recordProcessingError(err)
+		return
+	}
+
+	j.FinishedSuccessfully(j.Configuration.DbConnection(), "")
+
+}
+
+// call caffe train --solver=<work-dir>/spec.prototxt
+func (j TrainingJob) runCaffe() error {
+
+	specPrototxt := "spec.prototxt"
+	cmdArgs := []string{"train", fmt.Sprintf("--solver=%v", specPrototxt)}
+	caffePath := "caffe"
+
+	cmd := exec.Command(caffePath, cmdArgs...)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("Error running caffe: StdoutPipe(). Err: %v", err)
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("Error running caffe: StderrPipe(). Err: %v", err)
+	}
+
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("Error running caffe: cmd.Start(). Err: %v", err)
+	}
+
+	// read from stdout, stderr and write to files
+	if err := j.saveCmdOutputToFiles(stdout, stderr); err != nil {
+		return fmt.Errorf("Error running caffe: saveCmdOutput. Err: %v", err)
+	}
+
+	if err := cmd.Wait(); err != nil {
+		return fmt.Errorf("Error running caffe: cmd.Wait(). Err: %v", err)
+	}
+
+	return nil
+
+}
+
+func (j TrainingJob) saveCmdOutputToCbfs(stdout, stderr io.ReadCloser) error {
+
+	logg.LogTo("TRAINING_JOB", "saveCmdOut called with: %v, %v", stdout, stderr)
+
+	writeToCbfs := func(r io.ReadCloser, dest string) error {
+		cbfs, err := cbfsclient.New(j.Configuration.CbfsUrl)
+		if err != nil {
+			return err
+		}
+		options := cbfsclient.PutOptions{
+			ContentType: "text/plain",
+		}
+		destPath := fmt.Sprintf("%v/%v", j.Id, dest)
+		logg.LogTo("TRAINING_JOB", "saveCmdOut destPath: %v", destPath)
+		if err := cbfs.Put("", destPath, r, options); err != nil {
+			return fmt.Errorf("Error writing %v to cbfs: %v", destPath, err)
+		}
+		logg.LogTo("TRAINING_JOB", "Wrote %v to cbfs", destPath)
+		return nil
+	}
+
+	if err := writeToCbfs(stdout, "stdout"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (j TrainingJob) extractData() error {
+
 	// get the solver associated with this training job
 	solver, err := j.getSolver()
 	if err != nil {
-		errMsg := fmt.Errorf("Error getting solver: %+v.  Err: %v", j, err)
-		j.recordProcessingError(errMsg)
-		return
+		return fmt.Errorf("Error getting solver: %+v.  Err: %v", j, err)
 	}
 
 	// create a work directory based on config, eg, /usr/lib/elasticthought/<job-id>
 	if err := j.createWorkDirectory(); err != nil {
-		errMsg := fmt.Errorf("Error creating work dir: %+v.  Err: %v", j, err)
-		j.recordProcessingError(errMsg)
-		return
+		return fmt.Errorf("Error creating work dir: %+v.  Err: %v", j, err)
 	}
 
 	// read prototext from cbfs, write to work dir
 	if err := j.saveSpecification(*solver); err != nil {
-		errMsg := fmt.Errorf("Error saving specifcation: %+v.  Err: %v", j, err)
-		j.recordProcessingError(errMsg)
-		return
+		return fmt.Errorf("Error saving specifcation: %+v.  Err: %v", j, err)
 	}
 
 	// download and untar the training and test .tar.gz files associated w/ solver
 	if err := j.saveTrainTestData(*solver); err != nil {
-		errMsg := fmt.Errorf("Error saving train/test data: %+v.  Err: %v", j, err)
-		j.recordProcessingError(errMsg)
-		return
+		return fmt.Errorf("Error saving train/test data: %+v.  Err: %v", j, err)
 	}
 
-	// call caffe train --solver=<work-dir>/spec.prototxt
+	return nil
 
 }
 
@@ -148,6 +222,24 @@ func (j TrainingJob) Failed(db couch.Database, processingErr error) error {
 
 	j.ProcessingState = Failed
 	j.ProcessingLog = fmt.Sprintf("%v", processingErr)
+
+	// TODO: retry if 409 error
+	_, err := db.Edit(j)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+// Update the state to record that it succeeded
+// Codereview: de-dupe
+func (j TrainingJob) FinishedSuccessfully(db couch.Database, logPath string) error {
+
+	j.ProcessingState = FinishedSuccessfully
+	j.ProcessingLog = logPath
 
 	// TODO: retry if 409 error
 	_, err := db.Edit(j)
