@@ -1,12 +1,14 @@
 package elasticthought
 
 import (
+	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 
-	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
 	"github.com/tleyden/go-couch"
 )
@@ -66,17 +68,18 @@ func (j TrainingJob) runCaffe() error {
 		return fmt.Errorf("Error running caffe: StdoutPipe(). Err: %v", err)
 	}
 
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return fmt.Errorf("Error running caffe: StderrPipe(). Err: %v", err)
-	}
+	/*	stderr, err := cmd.StderrPipe()
+		if err != nil {
+			return fmt.Errorf("Error running caffe: StderrPipe(). Err: %v", err)
+		}
+	*/
 
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("Error running caffe: cmd.Start(). Err: %v", err)
 	}
 
-	// read from stdout, stderr and write to files
-	if err := j.saveCmdOutputToFiles(stdout, stderr); err != nil {
+	// read from stdout, stderr and write to
+	if err := j.saveCmdOutputToFiles(stdout); err != nil {
 		return fmt.Errorf("Error running caffe: saveCmdOutput. Err: %v", err)
 	}
 
@@ -88,30 +91,23 @@ func (j TrainingJob) runCaffe() error {
 
 }
 
-func (j TrainingJob) saveCmdOutputToCbfs(stdout, stderr io.ReadCloser) error {
+func (j TrainingJob) saveCmdOutputToFiles(stdout io.ReadCloser) error {
 
-	logg.LogTo("TRAINING_JOB", "saveCmdOut called with: %v, %v", stdout, stderr)
+	stdoutFile := path.Join(j.getWorkDirectory(), "stdout")
 
-	writeToCbfs := func(r io.ReadCloser, dest string) error {
-		cbfs, err := cbfsclient.New(j.Configuration.CbfsUrl)
-		if err != nil {
-			return err
-		}
-		options := cbfsclient.PutOptions{
-			ContentType: "text/plain",
-		}
-		destPath := fmt.Sprintf("%v/%v", j.Id, dest)
-		logg.LogTo("TRAINING_JOB", "saveCmdOut destPath: %v", destPath)
-		if err := cbfs.Put("", destPath, r, options); err != nil {
-			return fmt.Errorf("Error writing %v to cbfs: %v", destPath, err)
-		}
-		logg.LogTo("TRAINING_JOB", "Wrote %v to cbfs", destPath)
-		return nil
-	}
-
-	if err := writeToCbfs(stdout, "stdout"); err != nil {
+	f, err := os.Create(stdoutFile)
+	if err != nil {
 		return err
 	}
+	w := bufio.NewWriter(f)
+	defer w.Flush()
+	_, err = io.Copy(w, stdout)
+	if err != nil {
+		return err
+	}
+
+	logg.LogTo("TRAINING_JOB", "wrote stdout to file: %v", tempFile)
+
 	return nil
 }
 
