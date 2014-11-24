@@ -21,6 +21,8 @@ type TrainingJob struct {
 	ProcessingLog   string          `json:"processing-log"`
 	UserID          string          `json:"user-id"`
 	SolverId        string          `json:"solver-id" binding:"required"`
+	StdOutUrl       string          `json:"std-out-url"`
+	StdErrUrl       string          `json:"std-err-url"`
 
 	// had to make exported, due to https://github.com/gin-gonic/gin/pull/123
 	// waiting for this to get merged into master branch, since go get
@@ -50,6 +52,9 @@ func (j TrainingJob) Run() {
 		j.recordProcessingError(err)
 		return
 	}
+
+	j.StdOutUrl = j.getStdOutCbfsUrl()
+	j.StdErrUrl = j.getStdErrCbfsUrl()
 
 	j.FinishedSuccessfully(j.Configuration.DbConnection(), "")
 
@@ -87,7 +92,7 @@ func (j TrainingJob) runCaffe() error {
 		return fmt.Errorf("Error running caffe: cmd.Wait(). Err: %v", err)
 	}
 
-	if err := j.saveCmdOutputToCbfs(j.getStdoutPath()); err != nil {
+	if err := j.saveCmdOutputToCbfs(j.getStdOutPath()); err != nil {
 		return fmt.Errorf("Error running caffe: could not save output to cbfs. Err: %v", err)
 	}
 
@@ -99,12 +104,20 @@ func (j TrainingJob) runCaffe() error {
 
 }
 
-func (j TrainingJob) getStdoutPath() string {
+func (j TrainingJob) getStdOutPath() string {
 	return path.Join(j.getWorkDirectory(), "stdout")
 }
 
 func (j TrainingJob) getStdErrPath() string {
 	return path.Join(j.getWorkDirectory(), "stderr")
+}
+
+func (j TrainingJob) getStdOutCbfsUrl() string {
+	return fmt.Sprintf("%v/%v/%v", CBFS_URI_PREFIX, j.Id, path.Base(j.getStdOutPath()))
+}
+
+func (j TrainingJob) getStdErrCbfsUrl() string {
+	return fmt.Sprintf("%v/%v/%v", CBFS_URI_PREFIX, j.Id, path.Base(j.getStdErrPath()))
 }
 
 func (j TrainingJob) saveCmdOutputToCbfs(sourcePath string) error {
@@ -143,7 +156,7 @@ func (j TrainingJob) saveCmdOutputToFiles(stdout, stderr io.ReadCloser) error {
 
 	// spawn goroutines to read from stdout/stderr
 	go func() {
-		if err := streamToFile(stdout, j.getStdoutPath()); err != nil {
+		if err := streamToFile(stdout, j.getStdOutPath()); err != nil {
 			stdOutDoneChan <- err
 		} else {
 			stdOutDoneChan <- nil
