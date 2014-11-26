@@ -18,8 +18,9 @@ import (
 // A solver can generate trained models, which ban be used to make predictions
 type Solver struct {
 	ElasticThoughtDoc
-	DatasetId        string `json:"dataset-id"`
-	SpecificationUrl string `json:"specification-url" binding:"required"`
+	DatasetId           string `json:"dataset-id"`
+	SpecificationUrl    string `json:"specification-url" binding:"required"`
+	SpecificationNetUrl string `json:"specification-net-url" binding:"required"`
 }
 
 // Create a new solver.  If you don't use this, you must set the
@@ -56,29 +57,25 @@ func (s Solver) Insert(db couch.Database) (*Solver, error) {
 // and update solver object's solver-spec-url with cbfs url
 func (s Solver) SaveSpec(db couch.Database, cbfs *cbfsclient.Client) (*Solver, error) {
 
-	// open stream to source url
-	url := s.SpecificationUrl
-	resp, err := http.Get(url)
-	if err != nil {
-		errMsg := fmt.Errorf("Error doing GET on: %v.  %v", url, err)
-		return nil, errMsg
+	// save solver
+	destPath := fmt.Sprintf("%v/solver.prototxt", s.Id)
+	sourceUrl := s.SpecificationUrl
+	if err := s.saveUrlToCbfs(cbfs, destPath, sourceUrl); err != nil {
+		return nil, err
 	}
-	defer resp.Body.Close()
-
-	// save to cbfs
-	options := cbfsclient.PutOptions{
-		ContentType: "text/plain",
-	}
-	destPath := fmt.Sprintf("%v/spec.prototxt", s.Id)
-	if err := cbfs.Put("", destPath, resp.Body, options); err != nil {
-		errMsg := fmt.Errorf("Error writing %v to cbfs: %v", destPath, err)
-		return nil, errMsg
-	}
-	logg.LogTo("REST", "Wrote %v to cbfs", destPath)
 
 	// update solver with cbfs url
-	cbfsUrl := fmt.Sprintf("%v%v", CBFS_URI_PREFIX, destPath)
-	s.SpecificationUrl = cbfsUrl
+	s.SpecificationUrl = fmt.Sprintf("%v%v", CBFS_URI_PREFIX, destPath)
+
+	// save solver-net
+	destPath = fmt.Sprintf("%v/solver-net.prototxt", s.Id)
+	sourceUrl = s.SpecificationNetUrl
+	if err := s.saveUrlToCbfs(cbfs, destPath, sourceUrl); err != nil {
+		return nil, err
+	}
+
+	// update solver-net with cbfs url
+	s.SpecificationNetUrl = fmt.Sprintf("%v%v", CBFS_URI_PREFIX, destPath)
 
 	// save
 	solver, err := s.Save(db)
@@ -87,6 +84,29 @@ func (s Solver) SaveSpec(db couch.Database, cbfs *cbfsclient.Client) (*Solver, e
 	}
 
 	return solver, nil
+}
+
+func (s Solver) saveUrlToCbfs(cbfs *cbfsclient.Client, destPath, sourceUrl string) error {
+
+	// open stream to source url
+	url := s.SpecificationUrl
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("Error doing GET on: %v.  %v", url, err)
+	}
+	defer resp.Body.Close()
+
+	// save to cbfs
+	options := cbfsclient.PutOptions{
+		ContentType: "text/plain",
+	}
+
+	if err := cbfs.Put("", destPath, resp.Body, options); err != nil {
+		return fmt.Errorf("Error writing %v to cbfs: %v", destPath, err)
+	}
+	logg.LogTo("REST", "Wrote %v to cbfs", destPath)
+	return nil
+
 }
 
 // Saves the solver to the db, returns latest rev
@@ -113,14 +133,32 @@ func (s Solver) Save(db couch.Database) (*Solver, error) {
 // As the filename, use the last part of the url path from the SpecificationUrl
 func (s Solver) SaveSpecification(config Configuration, destDirectory string) error {
 
-	// strip leading cbfs://
+	// specification
 	specUrlPath, err := s.SpecificationUrlPath()
 	if err != nil {
 		return err
 	}
+	if err := s.writeCbfsFile(config, destDirectory, specUrlPath); err != nil {
+		return err
+	}
+
+	// specification-net
+	specNetUrlPath, err := s.SpecificationNetUrlPath()
+	if err != nil {
+		return err
+	}
+	if err := s.writeCbfsFile(config, destDirectory, specNetUrlPath); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Get a file from cbfs and write it locally
+func (s Solver) writeCbfsFile(config Configuration, destDirectory, sourceUrl string) error {
 
 	// get filename, eg, if path is foo/spec.txt, get spec.txt
-	_, specUrlFilename := filepath.Split(specUrlPath)
+	_, sourceFilename := filepath.Split(sourceUrl)
 
 	// use cbfs client to open stream
 
@@ -130,14 +168,14 @@ func (s Solver) SaveSpecification(config Configuration, destDirectory string) er
 	}
 
 	// get from cbfs
-	logg.LogTo("TRAINING_JOB", "Cbfs get %v", specUrlPath)
-	reader, err := cbfs.Get(specUrlPath)
+	logg.LogTo("TRAINING_JOB", "Cbfs get %v", sourceUrl)
+	reader, err := cbfs.Get(sourceUrl)
 	if err != nil {
 		return err
 	}
 
 	// write stream to file in work directory
-	destPath := filepath.Join(destDirectory, specUrlFilename)
+	destPath := filepath.Join(destDirectory, sourceFilename)
 	f, err := os.Create(destPath)
 	if err != nil {
 		return err
@@ -152,6 +190,7 @@ func (s Solver) SaveSpecification(config Configuration, destDirectory string) er
 	logg.LogTo("TRAINING_JOB", "Wrote to %v", destPath)
 
 	return nil
+
 }
 
 // Download and untar the training and test .tar.gz files associated w/ solver,
@@ -310,6 +349,17 @@ func addLabelsToToc(tableOfContents []string) []string {
 func (s Solver) SpecificationUrlPath() (string, error) {
 
 	specUrl := s.SpecificationUrl
+	if !strings.HasPrefix(specUrl, CBFS_URI_PREFIX) {
+		return "", fmt.Errorf("Expected %v to start with %v", specUrl, CBFS_URI_PREFIX)
+	}
+
+	return strings.Replace(specUrl, CBFS_URI_PREFIX, "", 1), nil
+
+}
+
+func (s Solver) SpecificationNetUrlPath() (string, error) {
+
+	specUrl := s.SpecificationNetUrl
 	if !strings.HasPrefix(specUrl, CBFS_URI_PREFIX) {
 		return "", fmt.Errorf("Expected %v to start with %v", specUrl, CBFS_URI_PREFIX)
 	}
