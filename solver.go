@@ -89,12 +89,15 @@ func (s Solver) SaveSpec(db couch.Database, cbfs *cbfsclient.Client) (*Solver, e
 func (s Solver) saveUrlToCbfs(cbfs *cbfsclient.Client, destPath, sourceUrl string) error {
 
 	// open stream to source url
-	url := s.SpecificationUrl
-	resp, err := http.Get(url)
+	resp, err := http.Get(sourceUrl)
 	if err != nil {
-		return fmt.Errorf("Error doing GET on: %v.  %v", url, err)
+		return fmt.Errorf("Error doing GET on: %v.  %v", sourceUrl, err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("%v response to GET on: %v", resp.StatusCode, sourceUrl)
+	}
 
 	// save to cbfs
 	options := cbfsclient.PutOptions{
