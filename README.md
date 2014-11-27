@@ -43,3 +43,9 @@ It uses the following components for storing data / blobs:
 
 Under construction.
 
+## Todo
+
+- Validate solver.prototxt: 
+  - it should assert "net" arg is empty
+  - the worker should rewrite the solver_mode CPU/GPU based on worker capabilities 
+
