@@ -82,6 +82,10 @@ func (j TrainingJob) runCaffe() error {
 	logg.LogTo("TRAINING_JOB", "Running %v with args %v", caffePath, cmdArgs)
 	cmd := exec.Command(caffePath, cmdArgs...)
 
+	// set the directory where the command will be run in (important
+	// because we depend on relative file paths to work)
+	cmd.Dir = j.getWorkDirectory()
+
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return fmt.Errorf("Error running caffe: StdoutPipe(). Err: %v", err)
