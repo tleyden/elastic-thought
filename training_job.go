@@ -101,8 +101,10 @@ func (j TrainingJob) runCaffe() error {
 		return fmt.Errorf("Error running caffe: saveCmdOutput. Err: %v", err)
 	}
 
+	var runCommandErr error
+
 	if err := cmd.Wait(); err != nil {
-		return fmt.Errorf("Error running caffe: cmd.Wait(). Err: %v", err)
+		runCommandErr = err
 	}
 
 	if err := j.saveCmdOutputToCbfs(j.getStdOutPath()); err != nil {
@@ -113,7 +115,7 @@ func (j TrainingJob) runCaffe() error {
 		return fmt.Errorf("Error running caffe: could not save output to cbfs. Err: %v", err)
 	}
 
-	return nil
+	return runCommandErr
 
 }
 

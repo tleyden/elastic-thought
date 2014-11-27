@@ -2,6 +2,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/couchbaselabs/logg"
 	"github.com/gin-gonic/gin"
 	et "github.com/tleyden/elastic-thought"
@@ -14,6 +16,10 @@ func init() {
 func main() {
 
 	config := *(et.NewDefaultConfiguration()) // TODO: get these vals from cmd line args
+
+	if err := et.EnvironmentSanityCheck(config); err != nil {
+		logg.LogError(fmt.Errorf("Failed environment sanity check: %v", err))
+	}
 
 	// TODO: make this a config to choose either the in process job runner
 	// or an NSQJobRunner

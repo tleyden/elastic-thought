@@ -9,6 +9,7 @@ func init() {
 	LogKeys = []string{
 		"CLI",
 		"REST",
+		"ELASTIC_THOUGHT",
 		"CHANGES",
 		"JOB_SCHEDULER",
 		"NSQ_WORKER",
