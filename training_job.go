@@ -63,8 +63,17 @@ func (j TrainingJob) Run() {
 // call caffe train --solver=<work-dir>/spec.prototxt
 func (j TrainingJob) runCaffe() error {
 
-	specPrototxt := "spec.prototxt"
-	cmdArgs := []string{"train", fmt.Sprintf("--solver=%v", specPrototxt)}
+	// get the solver associated with this training job
+	solver, err := j.getSolver()
+	if err != nil {
+		return fmt.Errorf("Error getting solver: %+v.  Err: %v", j, err)
+	}
+
+	// filename of solver prototxt, (ie, "solver.prototxt")
+	_, solverFilename := filepath.Split(solver.SpecificationUrl)
+
+	// build command args
+	cmdArgs := []string{"train", fmt.Sprintf("--solver=%v", solverFilename)}
 	caffePath := "caffe"
 
 	cmd := exec.Command(caffePath, cmdArgs...)
