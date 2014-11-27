@@ -43,6 +43,9 @@ func (j TrainingJob) Run() {
 
 	logg.LogTo("TRAINING_JOB", "Run() called!")
 
+	j.StdOutUrl = j.getStdOutCbfsUrl()
+	j.StdErrUrl = j.getStdErrCbfsUrl()
+
 	if err := j.extractData(); err != nil {
 		j.recordProcessingError(err)
 		return
@@ -52,9 +55,6 @@ func (j TrainingJob) Run() {
 		j.recordProcessingError(err)
 		return
 	}
-
-	j.StdOutUrl = j.getStdOutCbfsUrl()
-	j.StdErrUrl = j.getStdErrCbfsUrl()
 
 	j.FinishedSuccessfully(j.Configuration.DbConnection(), "")
 
