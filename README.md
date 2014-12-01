@@ -40,10 +40,10 @@ Although not shown, all components would be running inside of [Docker](https://w
 
 ## Design goals
 
-* 100% Open Source (Apache 2 / BSD)
+* 100% Open Source (Apache 2 / BSD), including all components used.
 * Architected to enable *warehouse scale* computing
 * No IAAS lockin -- easily migrate between AWS, GCE, or your own private data center
-
+* Ability to scale *down* as well as up
 
 ## Documentation 
 
