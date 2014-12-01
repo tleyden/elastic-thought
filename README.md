@@ -5,7 +5,7 @@ Scalable REST API wrapper for the [Caffe](caffe.berkeleyvision.org) deep learnin
 
 ![ElasticThought Components](http://tleyden-misc.s3.amazonaws.com/blog_images/elasticthought-components.png)
 
-* [CoreOS](https://coreos.com/) / [Docker](https://www.docker.com/) - OS / Container
+
 * [Caffe](http://caffe.berkeleyvision.org/) - core deep learning framework
 * [Couchbase Server](http://www.couchbase.com/nosql-databases/couchbase-server) - NoSQL Database used as system of record
 * [Sync Gateway](https://github.com/couchbase/sync_gateway) - REST adapter layer for Couchbase Server + Mobile Sync gateway
@@ -19,7 +19,11 @@ Here is what a typical cluster might look like:
 
 ![ElasticThought Deployment](http://tleyden-misc.s3.amazonaws.com/blog_images/elasticthought-stack.png) 
 
-Although not shown, all components are running inside of docker containers.
+If running on AWS, each [CoreOS](https://coreos.com/) instance would be running on its own EC2 instance.
+
+Although not shown, all components would be running inside of [Docker](https://www.docker.com/) containers.
+
+[CoreOS Fleet](https://coreos.com/docs/launching-containers/launching/launching-containers-fleet/) would be leveraged to auto-restart any failed components, including Caffe workers.
 
 ## Roadmap
 
@@ -40,6 +44,8 @@ Although not shown, all components are running inside of docker containers.
 * [Godocs](http://godoc.org/github.com/tleyden/elastic-thought)
 
 ## Quick Start
+
+*Note: this will be much easier after everything is packaged as fleetctl scripts, for the meantime these are just notes to myself*
 
 # Install go1.3 or later
 
