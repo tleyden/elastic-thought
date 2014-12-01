@@ -7,7 +7,7 @@ Scalable REST API wrapper for the [Caffe](caffe.berkeleyvision.org) deep learnin
 
 
 * [Caffe](http://caffe.berkeleyvision.org/) - core deep learning framework
-* [Couchbase Server](http://www.couchbase.com/nosql-databases/couchbase-server) - Distributed document database used as an object store
+* [Couchbase Server](http://www.couchbase.com/nosql-databases/couchbase-server) - Distributed document database used as an object store ([source code](https://github.com/couchbase/manifest))
 * [Sync Gateway](https://github.com/couchbase/sync_gateway) - REST adapter layer for Couchbase Server + Mobile Sync gateway
 * [CBFS](https://github.com/couchbaselabs/cbfs) - Couchbase Distributed File System used as blob store
 * [NSQ](http://nsq.io/) - Distributed message queue
@@ -36,6 +36,13 @@ Although not shown, all components would be running inside of [Docker](https://w
 1. Attempt to add support for other deep learning frameworks: pylearn2, cuda-convnet, etc.
 1. Build a Web App on top of the REST API that leverages [PouchDB](https://github.com/pouchdb/pouchdb)
 1. Build Android and iOS mobile apps on top of the REST API that leverages [Couchbase Mobile](https://github.com/couchbase/couchbase-lite-android)
+
+
+## Design goals
+
+* 100% Open Source (Apache 2 / BSD)
+* Architected to enable *warehouse scale* computing
+* No IAAS lockin -- easily migrate between AWS, GCE, or your own private data center
 
 
 ## Documentation 
