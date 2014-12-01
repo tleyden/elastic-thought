@@ -35,7 +35,7 @@ Although not shown, all components would be running inside of [Docker](https://w
 1. Ability to auto-scale worker instances up and down based on how many jobs are in the message queue.
 1. Attempt to add support for other deep learning frameworks: pylearn2, cuda-convnet, etc.
 1. Build a Web App on top of the REST API that leverages [PouchDB](https://github.com/pouchdb/pouchdb)
-1. Build Android and iOS mobile apps on top of the REST API that leverage [Couchbase Mobile](https://github.com/couchbase/mobile)
+1. Build Android and iOS mobile apps on top of the REST API that leverages [Couchbase Mobile](https://github.com/couchbase/mobile)
 
 
 ## Documentation 
