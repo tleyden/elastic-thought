@@ -99,15 +99,9 @@ Related resources of the **Training API**
     + Body
 
             { 
-                "engine": "caffe",
-                "caffe": {
-                    "specification-url": "http://s3.com/mnist_solver.prototxt",
-                    "specification-net-url": "http://s3.com/mnist_train_test.prototxt",
-                    "environment": {
-                        "training-source": "dataset-uuid/training",
-                        "testing-source": "dataset-uuid/testing"
-                    }
-                }
+                "dataset-id": "<dataset-uuid>",
+		"specification-url": "http://s3.com/mnist_solver.prototxt",
+                "specification-net-url": "http://s3.com/mnist_train_test.prototxt"
             }
 
 + Response 201 (application/json)
@@ -135,8 +129,7 @@ After a solver is defined, create a training job that will use the solver to tra
 
         { 
             "id": "training-job-uuid",
-            "status": "/training-jobs/{training-job-uuid}/status",
-            "logs": "/training-jobs/{training-job-uuid}/logs"
+            "processing-state": "pending"
         }
         
 ## Training Job Status [/training-jobs/{id}/status]
