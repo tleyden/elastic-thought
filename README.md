@@ -7,7 +7,7 @@ Scalable REST API wrapper for the [Caffe](caffe.berkeleyvision.org) deep learnin
 
 
 * [Caffe](http://caffe.berkeleyvision.org/) - core deep learning framework
-* [Couchbase Server](http://www.couchbase.com/nosql-databases/couchbase-server) - NoSQL Database used as system of record
+* [Couchbase Server](http://www.couchbase.com/nosql-databases/couchbase-server) - Clustered document database used as an object store
 * [Sync Gateway](https://github.com/couchbase/sync_gateway) - REST adapter layer for Couchbase Server + Mobile Sync gateway
 * [CBFS](https://github.com/couchbaselabs/cbfs) - Couchbase Distributed File System used as blob store
 * [NSQ](http://nsq.io/) - Distributed message queue
