@@ -100,17 +100,17 @@ func (j TrainingJob) runCaffe() error {
 		return fmt.Errorf("Error running caffe: cmd.Start(). Err: %v", err)
 	}
 
-	// read from stdout, stderr and write to
+	// read from stdout, stderr and write to temp files
 	if err := j.saveCmdOutputToFiles(stdout, stderr); err != nil {
 		return fmt.Errorf("Error running caffe: saveCmdOutput. Err: %v", err)
 	}
 
-	var runCommandErr error
+	// wait for the command to complete
+	runCommandErr := cmd.Wait()
 
-	if err := cmd.Wait(); err != nil {
-		runCommandErr = err
-	}
-
+	// read from temp files and write to cbfs.
+	// initially I tried to write the stdout/stderr streams directly
+	// to cbfs, but ran into an error related to the io.Seeker interface.
 	if err := j.saveCmdOutputToCbfs(j.getStdOutPath()); err != nil {
 		return fmt.Errorf("Error running caffe: could not save output to cbfs. Err: %v", err)
 	}
@@ -168,14 +168,18 @@ func (j TrainingJob) saveCmdOutputToCbfs(sourcePath string) error {
 
 }
 
-func (j TrainingJob) saveCmdOutputToFiles(stdout, stderr io.ReadCloser) error {
+func (j TrainingJob) saveCmdOutputToFiles(cmdStdout, cmdStderr io.ReadCloser) error {
 
 	stdOutDoneChan := make(chan error, 1)
 	stdErrDoneChan := make(chan error, 1)
 
+	// also, Tee everything to this processes' stdout/stderr
+	cmdStderrTee := io.TeeReader(cmdStderr, os.Stderr)
+	cmdStdoutTee := io.TeeReader(cmdStdout, os.Stdout)
+
 	// spawn goroutines to read from stdout/stderr
 	go func() {
-		if err := streamToFile(stdout, j.getStdOutPath()); err != nil {
+		if err := streamToFile(cmdStdoutTee, j.getStdOutPath()); err != nil {
 			stdOutDoneChan <- err
 		} else {
 			stdOutDoneChan <- nil
@@ -184,7 +188,7 @@ func (j TrainingJob) saveCmdOutputToFiles(stdout, stderr io.ReadCloser) error {
 	}()
 
 	go func() {
-		if err := streamToFile(stderr, j.getStdErrPath()); err != nil {
+		if err := streamToFile(cmdStderrTee, j.getStdErrPath()); err != nil {
 			stdErrDoneChan <- err
 		} else {
 			stdErrDoneChan <- nil

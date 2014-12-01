@@ -87,6 +87,7 @@ $ ./run.sh config.json
   - it should assert "net" arg is empty
   - it should add a value for "net", which should be absolute path to net prototxt file
   - the worker should rewrite the solver_mode CPU/GPU based on worker capabilities 
+- Add ability to cancel a training job in progress
 
 ## License
 

@@ -13,7 +13,7 @@ func mkdir(directory string) error {
 	return nil
 }
 
-func streamToFile(r io.ReadCloser, path string) error {
+func streamToFile(r io.Reader, path string) error {
 
 	f, err := os.Create(path)
 	if err != nil {
