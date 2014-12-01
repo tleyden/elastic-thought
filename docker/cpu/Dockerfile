@@ -15,11 +15,9 @@ RUN apt-get update && \
 
 RUN mkdir -p $GOPATH
 
-# Since Go 1.3 is required, and ubuntu 14.04 still uses Go 1.2
-
-# Install Go 1.3 manually
-RUN curl -O https://storage.googleapis.com/golang/go1.3.1.linux-amd64.tar.gz
-RUN tar -C /usr/local -xzf go1.3.1.linux-amd64.tar.gz
+# Install Go 1.3 manually (since Go 1.3 is required, and ubuntu 14.04 still uses Go 1.2)
+RUN curl -O https://storage.googleapis.com/golang/go1.3.1.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go1.3.1.linux-amd64.tar.gz
 
 # Go get ElasticThought
 RUN go get -u -v -t github.com/tleyden/elastic-thought

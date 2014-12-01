@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -53,24 +54,68 @@ func (s Solver) Insert(db couch.Database) (*Solver, error) {
 
 }
 
+// download contents of solver-spec-url and make the following modifications:
+// - Replace net with "solver-net.prototxt"
+// - Replace snapshot_prefix with "snapshot"
+// - Replace solver_mode with CPU or GPU (whatever is appropriate for this worker)
+func (s Solver) modifiedSpecification() ([]byte, error) {
+
+	// open stream to source url
+	resp, err := http.Get(s.SpecificationUrl)
+	if err != nil {
+		return nil, fmt.Errorf("Error doing GET on: %v.  %v", s.SpecificationUrl, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("%v response to GET on: %v", resp.StatusCode, s.SpecificationUrl)
+	}
+
+	sourceBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("Error reading body from: %v.  %v", s.SpecificationUrl, err)
+	}
+
+	return modifySpecification(sourceBytes)
+
+}
+
+func modifySpecification(sourceBytes []byte) ([]byte, error) {
+
+	// read into object with protobuf
+
+	// modify object fields
+
+	// write into bytes with protobuf
+
+	return nil, nil
+
+}
+
 // download contents of solver-spec-url into cbfs://<solver-id>/spec.prototxt
 // and update solver object's solver-spec-url with cbfs url
 func (s Solver) SaveSpec(db couch.Database, cbfs *cbfsclient.Client) (*Solver, error) {
 
-	// save solver
+	// rewrite the solver specification
+	specificationBytes, err := s.modifiedSpecification()
+	if err != nil {
+		return nil, err
+	}
+
+	// save rewritten solver to cbfs
 	destPath := fmt.Sprintf("%v/solver.prototxt", s.Id)
-	sourceUrl := s.SpecificationUrl
-	if err := s.saveUrlToCbfs(cbfs, destPath, sourceUrl); err != nil {
+	if err := s.saveBytesToCbfs(cbfs, destPath, specificationBytes); err != nil {
 		return nil, err
 	}
 
 	// update solver with cbfs url
 	s.SpecificationUrl = fmt.Sprintf("%v%v", CBFS_URI_PREFIX, destPath)
 
+	// TODO: need to modify solver-net as well
+
 	// save solver-net
 	destPath = fmt.Sprintf("%v/solver-net.prototxt", s.Id)
-	sourceUrl = s.SpecificationNetUrl
-	if err := s.saveUrlToCbfs(cbfs, destPath, sourceUrl); err != nil {
+	if err := s.saveUrlToCbfs(cbfs, destPath, s.SpecificationNetUrl); err != nil {
 		return nil, err
 	}
 
@@ -84,6 +129,10 @@ func (s Solver) SaveSpec(db couch.Database, cbfs *cbfsclient.Client) (*Solver, e
 	}
 
 	return solver, nil
+}
+
+func (s Solver) saveBytesToCbfs(cbfs *cbfsclient.Client, destPath string, bytes []byte) error {
+	return nil
 }
 
 func (s Solver) saveUrlToCbfs(cbfs *cbfsclient.Client, destPath, sourceUrl string) error {
