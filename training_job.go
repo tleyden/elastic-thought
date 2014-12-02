@@ -225,7 +225,7 @@ func (j TrainingJob) extractData() error {
 	}
 
 	// read prototext from cbfs, write to work dir
-	if err := j.saveSpecification(*solver); err != nil {
+	if err := j.writeSpecToFile(*solver); err != nil {
 		return fmt.Errorf("Error saving specifcation: %+v.  Err: %v", j, err)
 	}
 
@@ -279,9 +279,9 @@ func (j TrainingJob) getSolver() (*Solver, error) {
 	return solver, nil
 }
 
-func (j TrainingJob) saveSpecification(s Solver) error {
+func (j TrainingJob) writeSpecToFile(s Solver) error {
 
-	if err := s.SaveSpecification(j.Configuration, j.getWorkDirectory()); err != nil {
+	if err := s.writeSpecToFile(j.Configuration, j.getWorkDirectory()); err != nil {
 		return err
 	}
 	logg.LogTo("TRAINING_JOB", "Saved specification: %v", j.getWorkDirectory())

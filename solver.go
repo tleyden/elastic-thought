@@ -82,7 +82,7 @@ func (s Solver) modifiedSpecification() ([]byte, error) {
 
 func modifySpecification(sourceBytes []byte) ([]byte, error) {
 
-	// read into object with protobuf
+	// read into object with protobuf (must have already generated go protobuf code)
 
 	// modify object fields
 
@@ -94,7 +94,7 @@ func modifySpecification(sourceBytes []byte) ([]byte, error) {
 
 // download contents of solver-spec-url into cbfs://<solver-id>/spec.prototxt
 // and update solver object's solver-spec-url with cbfs url
-func (s Solver) SaveSpec(db couch.Database, cbfs *cbfsclient.Client) (*Solver, error) {
+func (s Solver) DownloadSpecToCbfs(db couch.Database, cbfs *cbfsclient.Client) (*Solver, error) {
 
 	// rewrite the solver specification
 	specificationBytes, err := s.modifiedSpecification()
@@ -183,7 +183,7 @@ func (s Solver) Save(db couch.Database) (*Solver, error) {
 
 // Save the content in the SpecificationUrl to the given directory.
 // As the filename, use the last part of the url path from the SpecificationUrl
-func (s Solver) SaveSpecification(config Configuration, destDirectory string) error {
+func (s Solver) writeSpecToFile(config Configuration, destDirectory string) error {
 
 	// specification
 	specUrlPath, err := s.SpecificationUrlPath()

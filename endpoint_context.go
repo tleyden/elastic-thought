@@ -157,7 +157,7 @@ func (e EndpointContext) CreateSolverEndpoint(c *gin.Context) {
 	// download contents of specification-url into cbfs://<solver-id>/spec.prototxt
 	// and update solver object's specification-url with cbfs url.
 	// ditto for specification-net-url
-	solver, err = solver.SaveSpec(db, cbfs)
+	solver, err = solver.DownloadSpecToCbfs(db, cbfs)
 	if err != nil {
 		c.Fail(500, err)
 		return
