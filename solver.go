@@ -2,6 +2,7 @@ package elasticthought
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,6 +14,8 @@ import (
 
 	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
+	"github.com/golang/protobuf/proto"
+	"github.com/tleyden/elastic-thought/caffe"
 	"github.com/tleyden/go-couch"
 )
 
@@ -58,7 +61,7 @@ func (s Solver) Insert(db couch.Database) (*Solver, error) {
 // - Replace net with "solver-net.prototxt"
 // - Replace snapshot_prefix with "snapshot"
 // - Replace solver_mode with CPU or GPU (whatever is appropriate for this worker)
-func (s Solver) modifiedSpecification() ([]byte, error) {
+func (s Solver) getModifiedSolverSpec() ([]byte, error) {
 
 	// open stream to source url
 	resp, err := http.Get(s.SpecificationUrl)
@@ -76,19 +79,30 @@ func (s Solver) modifiedSpecification() ([]byte, error) {
 		return nil, fmt.Errorf("Error reading body from: %v.  %v", s.SpecificationUrl, err)
 	}
 
-	return modifySpecification(sourceBytes)
+	return getModifiedSolverSpec(string(sourceBytes))
 
 }
 
-func modifySpecification(sourceBytes []byte) ([]byte, error) {
+func getModifiedSolverSpec(source string) ([]byte, error) {
 
 	// read into object with protobuf (must have already generated go protobuf code)
+	solverParam := &caffe.SolverParameter{}
+
+	if err := proto.UnmarshalText(source, solverParam); err != nil {
+		return nil, err
+	}
+
+	logg.LogTo("SOLVER", "solverParam: %+v", solverParam)
 
 	// modify object fields
+	solverParam.Net = proto.String("solver-net.prototxt")
 
-	// write into bytes with protobuf
+	buf := new(bytes.Buffer)
+	if err := proto.MarshalText(buf, solverParam); err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	return buf.Bytes(), nil
 
 }
 
@@ -97,14 +111,14 @@ func modifySpecification(sourceBytes []byte) ([]byte, error) {
 func (s Solver) DownloadSpecToCbfs(db couch.Database, cbfs *cbfsclient.Client) (*Solver, error) {
 
 	// rewrite the solver specification
-	specificationBytes, err := s.modifiedSpecification()
+	solverSpecBytes, err := s.getModifiedSolverSpec()
 	if err != nil {
 		return nil, err
 	}
 
 	// save rewritten solver to cbfs
 	destPath := fmt.Sprintf("%v/solver.prototxt", s.Id)
-	if err := s.saveBytesToCbfs(cbfs, destPath, specificationBytes); err != nil {
+	if err := s.saveBytesToCbfs(cbfs, destPath, solverSpecBytes); err != nil {
 		return nil, err
 	}
 
