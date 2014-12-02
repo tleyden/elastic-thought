@@ -75,11 +75,14 @@ func TestGetModifiedSolverSpec(t *testing.T) {
 	assert.True(t, err == nil)
 	assert.True(t, len(modifiedBytes) != 0)
 
+	logg.LogTo("TEST", "modified prototxt: %v", string(modifiedBytes))
+
 	// instantiate proto object based on modified bytes
 	solverParam := &caffe.SolverParameter{}
 	err = proto.UnmarshalText(string(modifiedBytes), solverParam)
 	assert.True(t, err == nil)
 	assert.True(t, solverParam.Net != nil)
 	assert.Equals(t, *(solverParam.Net), "solver-net.prototxt")
+	assert.Equals(t, *(solverParam.SnapshotPrefix), "snapshot")
 
 }

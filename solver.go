@@ -92,10 +92,9 @@ func getModifiedSolverSpec(source string) ([]byte, error) {
 		return nil, err
 	}
 
-	logg.LogTo("SOLVER", "solverParam: %+v", solverParam)
-
 	// modify object fields
 	solverParam.Net = proto.String("solver-net.prototxt")
+	solverParam.SnapshotPrefix = proto.String("snapshot")
 
 	buf := new(bytes.Buffer)
 	if err := proto.MarshalText(buf, solverParam); err != nil {
