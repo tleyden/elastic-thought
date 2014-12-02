@@ -5,7 +5,7 @@ layers {
   top: "data"
   top: "label"
   image_data_param {
-    source: "training"
+    source: "will_be_replaced"
     batch_size: 5
   }
   include: { phase: TRAIN }
@@ -17,7 +17,7 @@ layers {
   top: "data"
   top: "label"
   image_data_param {
-    source: "test"
+    source: "will_be_replaced"
     batch_size: 10
   }
   include: { phase: TEST }

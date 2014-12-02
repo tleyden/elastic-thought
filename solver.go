@@ -60,26 +60,35 @@ func (s Solver) Insert(db couch.Database) (*Solver, error) {
 // download contents of solver-spec-url and make the following modifications:
 // - Replace net with "solver-net.prototxt"
 // - Replace snapshot_prefix with "snapshot"
-// - Replace solver_mode with CPU or GPU (whatever is appropriate for this worker)
 func (s Solver) getModifiedSolverSpec() ([]byte, error) {
+	return getModifiedSpec(s.SpecificationUrl, getModifiedSolverSpec)
+}
+
+// download contents of solver-spec-net-url and make the following modifications:
+// - Replace layers / image_data_param / source with "train" and "test"
+func (s Solver) getModifiedSolverNetSpec() ([]byte, error) {
+	return getModifiedSpec(s.SpecificationNetUrl, getModifiedSolverNetSpec)
+}
+
+func getModifiedSpec(url string, modifier func(string) ([]byte, error)) ([]byte, error) {
 
 	// open stream to source url
-	resp, err := http.Get(s.SpecificationUrl)
+	resp, err := http.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("Error doing GET on: %v.  %v", s.SpecificationUrl, err)
+		return nil, fmt.Errorf("Error doing GET on: %v.  %v", url, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("%v response to GET on: %v", resp.StatusCode, s.SpecificationUrl)
+		return nil, fmt.Errorf("%v response to GET on: %v", resp.StatusCode, url)
 	}
 
 	sourceBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("Error reading body from: %v.  %v", s.SpecificationUrl, err)
+		return nil, fmt.Errorf("Error reading body from: %v.  %v", url, err)
 	}
 
-	return getModifiedSolverSpec(string(sourceBytes))
+	return modifier(string(sourceBytes))
 
 }
 
@@ -105,6 +114,38 @@ func getModifiedSolverSpec(source string) ([]byte, error) {
 
 }
 
+func getModifiedSolverNetSpec(source string) ([]byte, error) {
+
+	// read into object with protobuf (must have already generated go protobuf code)
+	netParam := &caffe.NetParameter{}
+
+	if err := proto.UnmarshalText(source, netParam); err != nil {
+		return nil, err
+	}
+
+	// modify object fields
+	for _, layerParam := range netParam.Layers {
+		if *layerParam.Type != caffe.LayerParameter_IMAGE_DATA {
+			continue
+		}
+
+		if layerParam.IsTrainingPhase() {
+			layerParam.ImageDataParam.Source = proto.String("training")
+		}
+		if layerParam.IsTestingPhase() {
+			layerParam.ImageDataParam.Source = proto.String("testing")
+		}
+	}
+
+	buf := new(bytes.Buffer)
+	if err := proto.MarshalText(buf, netParam); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+
+}
+
 // download contents of solver-spec-url into cbfs://<solver-id>/spec.prototxt
 // and update solver object's solver-spec-url with cbfs url
 func (s Solver) DownloadSpecToCbfs(db couch.Database, cbfs *cbfsclient.Client) (*Solver, error) {
@@ -117,18 +158,24 @@ func (s Solver) DownloadSpecToCbfs(db couch.Database, cbfs *cbfsclient.Client) (
 
 	// save rewritten solver to cbfs
 	destPath := fmt.Sprintf("%v/solver.prototxt", s.Id)
-	if err := s.saveBytesToCbfs(cbfs, destPath, solverSpecBytes); err != nil {
+	reader := bytes.NewReader(solverSpecBytes)
+	if err := s.saveToCbfs(cbfs, destPath, reader); err != nil {
 		return nil, err
 	}
 
 	// update solver with cbfs url
 	s.SpecificationUrl = fmt.Sprintf("%v%v", CBFS_URI_PREFIX, destPath)
 
-	// TODO: need to modify solver-net as well
+	// rewrite the solver net specification
+	solverSpecNetBytes, err := s.getModifiedSolverNetSpec()
+	if err != nil {
+		return nil, err
+	}
 
-	// save solver-net
+	// save rewritten solver to cbfs
 	destPath = fmt.Sprintf("%v/solver-net.prototxt", s.Id)
-	if err := s.saveUrlToCbfs(cbfs, destPath, s.SpecificationNetUrl); err != nil {
+	reader = bytes.NewReader(solverSpecNetBytes)
+	if err := s.saveToCbfs(cbfs, destPath, reader); err != nil {
 		return nil, err
 	}
 
@@ -144,8 +191,19 @@ func (s Solver) DownloadSpecToCbfs(db couch.Database, cbfs *cbfsclient.Client) (
 	return solver, nil
 }
 
-func (s Solver) saveBytesToCbfs(cbfs *cbfsclient.Client, destPath string, bytes []byte) error {
+func (s Solver) saveToCbfs(cbfs *cbfsclient.Client, destPath string, reader io.Reader) error {
+
+	// save to cbfs
+	options := cbfsclient.PutOptions{
+		ContentType: "text/plain",
+	}
+
+	if err := cbfs.Put("", destPath, reader, options); err != nil {
+		return fmt.Errorf("Error writing %v to cbfs: %v", destPath, err)
+	}
+	logg.LogTo("REST", "Wrote %v to cbfs", destPath)
 	return nil
+
 }
 
 func (s Solver) saveUrlToCbfs(cbfs *cbfsclient.Client, destPath, sourceUrl string) error {
@@ -160,17 +218,7 @@ func (s Solver) saveUrlToCbfs(cbfs *cbfsclient.Client, destPath, sourceUrl strin
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("%v response to GET on: %v", resp.StatusCode, sourceUrl)
 	}
-
-	// save to cbfs
-	options := cbfsclient.PutOptions{
-		ContentType: "text/plain",
-	}
-
-	if err := cbfs.Put("", destPath, resp.Body, options); err != nil {
-		return fmt.Errorf("Error writing %v to cbfs: %v", destPath, err)
-	}
-	logg.LogTo("REST", "Wrote %v to cbfs", destPath)
-	return nil
+	return s.saveToCbfs(cbfs, destPath, resp.Body)
 
 }
 

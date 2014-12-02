@@ -86,3 +86,107 @@ func TestGetModifiedSolverSpec(t *testing.T) {
 	assert.Equals(t, *(solverParam.SnapshotPrefix), "snapshot")
 
 }
+
+func TestGetModifiedSolverNetSpec(t *testing.T) {
+
+	protoText := `
+	    name: "alpha"
+	    layers {
+	      name: "alpha"
+	      type: IMAGE_DATA
+	      top: "data"
+	      top: "label"
+	      image_data_param {
+		source: "will_be_replaced"
+		batch_size: 5
+	      }
+	      include: { phase: TRAIN }
+	    }
+	    layers {
+
+	      name: "alpha"
+	      type: IMAGE_DATA
+	      top: "data"
+	      top: "label"
+	      image_data_param {
+		source: "will_be_replaced"
+		batch_size: 10
+	      }
+	      include: { phase: TEST }
+	    }
+
+	    layers {
+	      name: "conv1"
+	      type: CONVOLUTION
+	      bottom: "data"
+	      top: "conv1"
+	      blobs_lr: 1
+	      blobs_lr: 2
+	      convolution_param {
+		num_output: 20
+		kernel_size: 5
+		stride: 1
+		weight_filler {
+		  type: "xavier"
+		}
+		bias_filler {
+		  type: "constant"
+		}
+	      }
+	    }`
+
+	modifiedBytes, err := getModifiedSolverNetSpec(protoText)
+	if err != nil {
+		logg.LogError(err)
+	}
+	assert.True(t, err == nil)
+	assert.True(t, len(modifiedBytes) != 0)
+
+	// instantiate proto object based on modified bytes
+	netParam := &caffe.NetParameter{}
+	err = proto.UnmarshalText(string(modifiedBytes), netParam)
+	assert.True(t, err == nil)
+
+	for _, layerParam := range netParam.Layers {
+
+		if *layerParam.Type != caffe.LayerParameter_IMAGE_DATA {
+			continue
+		}
+
+		// is this the training phase or testing phase?
+		if layerParam.IsTrainingPhase() {
+			// get the image data param and make sure the source
+			// is "training"
+			logg.LogTo("TEST", "is training")
+			assert.Equals(t, layerParam.GetImageDataSource(), "training")
+		}
+		if layerParam.IsTestingPhase() {
+			logg.LogTo("TEST", "is testing")
+			assert.Equals(t, layerParam.GetImageDataSource(), "testing")
+
+		}
+
+	}
+
+}
+
+func TestNetParameter(t *testing.T) {
+
+	// this test does nothing, was just trying to figure out
+	// the < vs { issue
+
+	layer := &caffe.LayerParameter{}
+	layer.Name = proto.String("layer")
+
+	netParam := &caffe.NetParameter{}
+	netParam.Name = proto.String("net")
+
+	netParam.Layers = []*caffe.LayerParameter{layer}
+
+	marshalled := proto.MarshalTextString(netParam)
+
+	// TODO: why is it using < and > instead of { and } ?
+
+	logg.LogTo("TEST", "text marshalled: %v", marshalled)
+
+}
