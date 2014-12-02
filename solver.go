@@ -130,10 +130,10 @@ func getModifiedSolverNetSpec(source string) ([]byte, error) {
 		}
 
 		if layerParam.IsTrainingPhase() {
-			layerParam.ImageDataParam.Source = proto.String("training")
+			layerParam.ImageDataParam.Source = proto.String(TRAINING_INDEX)
 		}
 		if layerParam.IsTestingPhase() {
-			layerParam.ImageDataParam.Source = proto.String("testing")
+			layerParam.ImageDataParam.Source = proto.String(TESTING_INDEX)
 		}
 	}
 
@@ -337,10 +337,10 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) er
 		destTocFile := ""
 		if artificactPath == trainingArtifact {
 			subdirectory = "training-data"
-			destTocFile = path.Join(destDirectory, "training")
+			destTocFile = path.Join(destDirectory, TRAINING_INDEX)
 		} else {
 			subdirectory = "test-data"
-			destTocFile = path.Join(destDirectory, "test")
+			destTocFile = path.Join(destDirectory, TESTING_INDEX)
 		}
 		destDirectoryToUse := path.Join(destDirectory, subdirectory)
 

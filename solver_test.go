@@ -158,11 +158,11 @@ func TestGetModifiedSolverNetSpec(t *testing.T) {
 			// get the image data param and make sure the source
 			// is "training"
 			logg.LogTo("TEST", "is training")
-			assert.Equals(t, layerParam.GetImageDataSource(), "training")
+			assert.Equals(t, layerParam.GetImageDataSource(), TRAINING_INDEX)
 		}
 		if layerParam.IsTestingPhase() {
 			logg.LogTo("TEST", "is testing")
-			assert.Equals(t, layerParam.GetImageDataSource(), "testing")
+			assert.Equals(t, layerParam.GetImageDataSource(), TESTING_INDEX)
 
 		}
 
