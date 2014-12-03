@@ -1,6 +1,18 @@
 
 Scalable REST API wrapper for the [Caffe](caffe.berkeleyvision.org) deep learning framework. 
 
+## The problem
+
+After using Caffe for a while, I started finding it inconvenient to run things on my own laptop.  Often I'd kick off a job and then need to throw my laptop in my backpack and run out the door, and the job would stop running.  
+
+I came to the realization that I needed to run Caffe in the cloud, and came up with the following requirements:
+
+* Run multiple training jobs in parallel
+* Queue up a lot of training jobs at once 
+* Tune the number of workers that process jobs on the queue 
+* Interact with it via a REST API (and later build Web/Mobile apps on top of it)
+* Support teams: multi-tenancy to allow multiple users to interact with it, where each user only sees their own data
+
 ## Components
 
 ![ElasticThought Components](http://tleyden-misc.s3.amazonaws.com/blog_images/elasticthought-components.png)
@@ -50,6 +62,15 @@ Although not shown, all components would be running inside of [Docker](https://w
 * [REST API](http://docs.elasticthought.apiary.io/)
 * [Godocs](http://godoc.org/github.com/tleyden/elastic-thought)
 
+## Grid Computing
+
+ElasticThought is not trying to be a grid computing (aka distributed computation) solution.  
+
+For that, check out:
+
+* [ParameterServer](http://parameterserver.org/)
+* [Caffe Issue 876](https://github.com/BVLC/caffe/issues/876)
+
 ## Quick Start
 
 *Note: this will be much easier after everything is packaged as fleetctl scripts, for the meantime these are just notes to myself*
@@ -88,6 +109,10 @@ $ ./run.sh config.json
   - it should add a value for "net", which should be absolute path to net prototxt file
   - the worker should rewrite the solver_mode CPU/GPU based on worker capabilities 
 - Add ability to cancel a training job in progress
+
+## Related Work
+
+
 
 ## License
 
