@@ -264,7 +264,7 @@ func (j TrainingJob) getWorkDirectory() string {
 func (j TrainingJob) createWorkDirectory() error {
 	workDir := j.getWorkDirectory()
 	logg.LogTo("TRAINING_JOB", "Creating dir: %v", workDir)
-	return mkdir(workDir)
+	return Mkdir(workDir)
 }
 
 func (j TrainingJob) getSolver() (*Solver, error) {

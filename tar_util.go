@@ -95,7 +95,7 @@ func writeToDest(hdr *tar.Header, tr *tar.Reader, destDirectory string) error {
 	switch hdr.Typeflag {
 	case tar.TypeDir:
 		// does dir exist? if not, make it
-		if err := mkdir(destPath); err != nil {
+		if err := Mkdir(destPath); err != nil {
 			logg.LogTo("TRAINING_JOB", "mkdir failed on %v", destPath)
 			return err
 		}
@@ -106,7 +106,7 @@ func writeToDest(hdr *tar.Header, tr *tar.Reader, destDirectory string) error {
 		// this is a workaround for the fact that we don't have directory
 		// entries on both of our split tars.
 		destPathDir := path.Dir(destPath)
-		if err := mkdir(destPathDir); err != nil {
+		if err := Mkdir(destPathDir); err != nil {
 			logg.LogTo("TRAINING_JOB", "mkdir failed on %v", destPath)
 			return err
 		}
