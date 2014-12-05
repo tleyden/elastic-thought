@@ -40,10 +40,11 @@ func TestJsonEncode(t *testing.T) {
 
 	// create a dataset struct
 	dataset := NewDataset()
-	dataset.DatafileID = "dfid"
 	dataset.ProcessingState = FinishedSuccessfully
 	dataset.TrainingDataset.SplitPercentage = 0.7
+	dataset.TrainingDataset.DatafileID = "dfid"
 	dataset.TestDataset.SplitPercentage = 0.3
+	dataset.TestDataset.DatafileID = "dfid"
 	dataset.Id = "dsid"
 
 	// marshal dataset -> json

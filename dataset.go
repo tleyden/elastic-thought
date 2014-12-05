@@ -15,7 +15,6 @@ to be used for a particular purpose.  The typical example would involve:
 */
 type Dataset struct {
 	ElasticThoughtDoc
-	DatafileID      string          `json:"datafile-id" binding:"required"`
 	ProcessingState ProcessingState `json:"processing-state"`
 	TrainingDataset TrainingDataset `json:"training" binding:"required"`
 	TestDataset     TestDataset     `json:"test" binding:"required"`
@@ -23,11 +22,13 @@ type Dataset struct {
 }
 
 type TrainingDataset struct {
+	DatafileID      string  `json:"datafile-id" binding:"required"`
 	SplitPercentage float64 `json:"split-percentage"`
 	Url             string  `json:"url"`
 }
 
 type TestDataset struct {
+	DatafileID      string  `json:"datafile-id" binding:"required"`
 	SplitPercentage float64 `json:"split-percentage"`
 	Url             string  `json:"url"`
 }
@@ -63,12 +64,42 @@ func (d Dataset) Insert(db couch.Database) (*Dataset, error) {
 }
 
 // Find and return the datafile associated with this dataset
-func (d Dataset) GetDatafile(db couch.Database) (*Datafile, error) {
+func (d Dataset) GetSplittableDatafile(db couch.Database) (*Datafile, error) {
+	if !d.isSplittable() {
+		return nil, fmt.Errorf("This dataset is not splittable")
+	}
+
+	// if its splittable, then the trainingset and the testset should have the
+	// same datafile id
+	if d.TrainingDataset.DatafileID != d.TestDataset.DatafileID {
+		return nil, fmt.Errorf("Datafile id's for this dataset don't match")
+	}
+
+	// choose either datafile id since they are the same
+	datafileId := d.TrainingDataset.DatafileID
+
 	datafile := &Datafile{}
-	if err := db.Retrieve(d.DatafileID, datafile); err != nil {
+	if err := db.Retrieve(datafileId, datafile); err != nil {
 		return nil, err
 	}
 	return datafile, nil
+}
+
+// Is this dataset splittable or has it already been split?
+func (d Dataset) isSplittable() bool {
+
+	// the trainingset and the testset should have the same datafile id
+	if d.TrainingDataset.DatafileID != d.TestDataset.DatafileID {
+		return false
+	}
+
+	// the split percentages should both be non-zero
+	if int(d.TrainingDataset.SplitPercentage) == 0 || int(d.TestDataset.SplitPercentage) == 0 {
+		return false
+	}
+
+	return true
+
 }
 
 // Update the dataset state to record that it finished successfully

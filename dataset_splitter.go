@@ -23,9 +23,9 @@ func (d DatasetSplitter) Run() {
 
 	// Find the datafile object associated with dataset
 	db := d.Configuration.DbConnection()
-	datafile, err := d.Dataset.GetDatafile(db)
+	datafile, err := d.Dataset.GetSplittableDatafile(db)
 	if err != nil {
-		errMsg := fmt.Errorf("Error looking up datafile with id: %v.  Error: %v", d.Dataset.DatafileID, err)
+		errMsg := fmt.Errorf("Error looking up datafile: %+v.  Error: %v", d.Dataset, err)
 		d.recordProcessingError(errMsg)
 		return
 	}
