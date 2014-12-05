@@ -101,6 +101,8 @@ func (e EndpointContext) CreateDataSetsEndpoint(c *gin.Context) {
 		return
 	}
 
+	logg.LogTo("REST", "dataset: %+v", dataset)
+
 	// save dataset in db
 	dataset, err := dataset.Insert(db)
 	if err != nil {

@@ -32,6 +32,8 @@ func CreateJob(config Configuration, jobDescriptor JobDescriptor) (Runnable, err
 			return nil, errMsg
 		}
 
+		logg.LogTo("JOB_SCHEDULER", "retrieved dataset %v from db: %+v", doc.Id, dataset)
+
 		return DatasetSplitter{
 			Configuration: config,
 			Dataset:       *dataset,

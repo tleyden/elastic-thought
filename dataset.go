@@ -3,6 +3,7 @@ package elasticthought
 import (
 	"fmt"
 
+	"github.com/couchbaselabs/logg"
 	"github.com/tleyden/go-couch"
 )
 
@@ -69,6 +70,8 @@ func (d Dataset) GetSplittableDatafile(db couch.Database) (*Datafile, error) {
 	if !d.isSplittable() {
 		return nil, fmt.Errorf("This dataset is not splittable")
 	}
+
+	logg.LogTo("DATASET_SPLITTER", "Looking up data file: %v", d.TrainingDataset.DatafileID)
 
 	// choose either datafile id since they are the same
 	return FindDatafile(db, d.TrainingDataset.DatafileID)

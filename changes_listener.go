@@ -127,7 +127,7 @@ func (c ChangesListener) handleDatasetChange(change couch.Change, doc ElasticTho
 		return
 	}
 
-	logg.LogTo("CHANGES", "convert to  dataset: %+v", dataset)
+	logg.LogTo("CHANGES", "convert to dataset: %+v", dataset)
 
 	// check the state, only schedule if state == pending
 	if dataset.ProcessingState != Pending {
