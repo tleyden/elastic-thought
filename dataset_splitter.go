@@ -21,6 +21,17 @@ type DatasetSplitter struct {
 // Run this job
 func (d DatasetSplitter) Run() {
 
+	switch d.Dataset.isSplittable() {
+	case true:
+		d.SplitDatafile()
+	default:
+		d.DownloadDatafiles()
+	}
+
+}
+
+func (d DatasetSplitter) SplitDatafile() {
+
 	// Find the datafile object associated with dataset
 	db := d.Configuration.DbConnection()
 	datafile, err := d.Dataset.GetSplittableDatafile(db)
@@ -129,6 +140,59 @@ func (d DatasetSplitter) Run() {
 			d.Dataset.Failed(db, fmt.Errorf("%v", result))
 			return
 		}
+	}
+
+	// Update the state of the dataset to be finished
+	d.Dataset.FinishedSuccessfully(db)
+
+}
+
+func (d DatasetSplitter) DownloadDatafiles() {
+
+	// Create a cbfs client
+	cbfs, err := cbfsclient.New(d.Configuration.CbfsUrl)
+	options := cbfsclient.PutOptions{
+		ContentType: "application/x-gzip",
+	}
+	if err != nil {
+		errMsg := fmt.Errorf("Error creating cbfs client: %v", err)
+		d.recordProcessingError(errMsg)
+		return
+	}
+
+	db := d.Configuration.DbConnection()
+
+	source2destEntries := []struct {
+		Url      string
+		DestPath string
+	}{
+		{
+			Url:      d.Dataset.GetTrainingDatafileUrl(db),
+			DestPath: d.Dataset.TrainingArtifactPath(),
+		},
+		{
+			Url:      d.Dataset.GetTestingDatafileUrl(db),
+			DestPath: d.Dataset.TestingArtifactPath(),
+		},
+	}
+
+	for _, source2destEntry := range source2destEntries {
+
+		// open tar.gz stream to source
+		// Open the url -- content type should be application/x-gzip
+		tr, err := openTarGzStream(source2destEntry.Url)
+		if err != nil {
+			errMsg := fmt.Errorf("Error opening tar.gz stream to: %v. Err %v", source2destEntry.Url, err)
+			d.recordProcessingError(errMsg)
+			return
+		}
+
+		if err := cbfs.Put("", source2destEntry.DestPath, tr, options); err != nil {
+			errMsg := fmt.Errorf("Error writing %v to cbfs: %v", source2destEntry.DestPath, err)
+			d.recordProcessingError(errMsg)
+			return
+		}
+
 	}
 
 	// Update the state of the dataset to be finished

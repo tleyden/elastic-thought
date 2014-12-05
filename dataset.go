@@ -65,24 +65,42 @@ func (d Dataset) Insert(db couch.Database) (*Dataset, error) {
 
 // Find and return the datafile associated with this dataset
 func (d Dataset) GetSplittableDatafile(db couch.Database) (*Datafile, error) {
+
 	if !d.isSplittable() {
 		return nil, fmt.Errorf("This dataset is not splittable")
 	}
 
-	// if its splittable, then the trainingset and the testset should have the
-	// same datafile id
-	if d.TrainingDataset.DatafileID != d.TestDataset.DatafileID {
-		return nil, fmt.Errorf("Datafile id's for this dataset don't match")
-	}
-
 	// choose either datafile id since they are the same
-	datafileId := d.TrainingDataset.DatafileID
+	return FindDatafile(db, d.TrainingDataset.DatafileID)
 
-	datafile := &Datafile{}
-	if err := db.Retrieve(datafileId, datafile); err != nil {
-		return nil, err
+}
+
+// Get the training datafile object
+func (d Dataset) GetTrainingDatafile(db couch.Database) (*Datafile, error) {
+	return FindDatafile(db, d.TrainingDataset.DatafileID)
+}
+
+// Get the testing datafile object
+func (d Dataset) GetTestingDatafile(db couch.Database) (*Datafile, error) {
+	return FindDatafile(db, d.TestDataset.DatafileID)
+}
+
+// Get the source url associated with the training datafile
+func (d Dataset) GetTrainingDatafileUrl(db couch.Database) string {
+	datafile, err := d.GetTrainingDatafile(db)
+	if err != nil {
+		return fmt.Sprintf("error getting training datafile url: %v", err)
 	}
-	return datafile, nil
+	return datafile.Url
+}
+
+// Get the source url associated with the testing datafile
+func (d Dataset) GetTestingDatafileUrl(db couch.Database) string {
+	datafile, err := d.GetTestingDatafile(db)
+	if err != nil {
+		return fmt.Sprintf("error getting testing datafile url: %v", err)
+	}
+	return datafile.Url
 }
 
 // Is this dataset splittable or has it already been split?
