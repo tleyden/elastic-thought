@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"net/http"
 	"path"
 	"strings"
 
@@ -180,18 +181,34 @@ func (d DatasetSplitter) DownloadDatafiles() {
 
 		// open tar.gz stream to source
 		// Open the url -- content type should be application/x-gzip
-		tr, err := openTarGzStream(source2destEntry.Url)
-		if err != nil {
-			errMsg := fmt.Errorf("Error opening tar.gz stream to: %v. Err %v", source2destEntry.Url, err)
-			d.recordProcessingError(errMsg)
-			return
-		}
 
-		if err := cbfs.Put("", source2destEntry.DestPath, tr, options); err != nil {
-			errMsg := fmt.Errorf("Error writing %v to cbfs: %v", source2destEntry.DestPath, err)
-			d.recordProcessingError(errMsg)
-			return
-		}
+		func() {
+
+			resp, err := http.Get(source2destEntry.Url)
+			defer resp.Body.Close()
+
+			if err != nil {
+				errMsg := fmt.Errorf("Error opening stream to: %v. Err %v", source2destEntry.Url, err)
+				d.recordProcessingError(errMsg)
+				return
+			}
+			gzipReader, err := gzip.NewReader(resp.Body)
+			if err != nil {
+				errMsg := fmt.Errorf("Error opening gz stream to: %v. Err %v", source2destEntry.Url, err)
+				d.recordProcessingError(errMsg)
+				return
+			}
+			tr := tar.NewReader(gzipReader)
+
+			if err := cbfs.Put("", source2destEntry.DestPath, tr, options); err != nil {
+				errMsg := fmt.Errorf("Error writing %v to cbfs: %v", source2destEntry.DestPath, err)
+				d.recordProcessingError(errMsg)
+				return
+			}
+
+			logg.LogTo("DATASET_SPLITTER", "Wrote %v to cbfs", source2destEntry.DestPath)
+
+		}()
 
 	}
 
