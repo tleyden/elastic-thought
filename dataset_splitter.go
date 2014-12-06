@@ -192,15 +192,8 @@ func (d DatasetSplitter) DownloadDatafiles() {
 				d.recordProcessingError(errMsg)
 				return
 			}
-			gzipReader, err := gzip.NewReader(resp.Body)
-			if err != nil {
-				errMsg := fmt.Errorf("Error opening gz stream to: %v. Err %v", source2destEntry.Url, err)
-				d.recordProcessingError(errMsg)
-				return
-			}
-			tr := tar.NewReader(gzipReader)
 
-			if err := cbfs.Put("", source2destEntry.DestPath, tr, options); err != nil {
+			if err := cbfs.Put("", source2destEntry.DestPath, resp.Body, options); err != nil {
 				errMsg := fmt.Errorf("Error writing %v to cbfs: %v", source2destEntry.DestPath, err)
 				d.recordProcessingError(errMsg)
 				return
