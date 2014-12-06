@@ -190,13 +190,13 @@ func (d DatasetSplitter) DownloadDatafiles() {
 		func() {
 
 			resp, err := http.Get(source2destEntry.Url)
-			defer resp.Body.Close()
 
 			if err != nil {
 				errMsg := fmt.Errorf("Error opening stream to: %v. Err %v", source2destEntry.Url, err)
 				d.recordProcessingError(errMsg)
 				return
 			}
+			defer resp.Body.Close()
 
 			if err := cbfs.Put("", source2destEntry.DestPath, resp.Body, options); err != nil {
 				errMsg := fmt.Errorf("Error writing %v to cbfs: %v", source2destEntry.DestPath, err)
