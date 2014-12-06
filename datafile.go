@@ -107,7 +107,7 @@ func (d Datafile) HasValidId() bool {
 	return len(d.Id) > 0
 }
 
-// Copy the contents of Datafile.Url to CBFS and return the cbfs url
+// Copy the contents of Datafile.Url to CBFS and return the cbfs dest path
 func (d Datafile) CopyToCBFS(db couch.Database, cbfs *cbfsclient.Client) (string, error) {
 
 	if !d.HasValidId() {
@@ -156,7 +156,6 @@ func (d Datafile) CopyToCBFS(db couch.Database, cbfs *cbfsclient.Client) (string
 
 	logg.LogTo("MODEL", "copied datafile url %v to cbfs: %v", d.Url, destPath)
 
-	// update datafile with new url
-	return fmt.Sprintf("%v%v", CBFS_URI_PREFIX, destPath), nil
+	return destPath, nil
 
 }

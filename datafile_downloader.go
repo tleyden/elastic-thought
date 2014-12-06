@@ -29,14 +29,17 @@ func (d DatafileDownloader) Run() {
 
 	// copy url contents to cbfs
 	logg.LogTo("DATAFILE_DOWNLOADER", "copytocbfs: %+v %v %v", d, db, cbfs)
-	cbfsUrl, err := d.Datafile.CopyToCBFS(db, cbfs)
+	cbfsDestPath, err := d.Datafile.CopyToCBFS(db, cbfs)
 	if err != nil {
 		d.recordProcessingError(err)
 		return
 	}
 
-	// Update the state of the dataset to be finished
+	// build a url to the cbfs file
+	cbfsUrl := fmt.Sprintf("%v/%v", d.Configuration.CbfsUrl, cbfsDestPath)
 	d.Datafile.Url = cbfsUrl
+
+	// Update the state of the dataset to be finished
 	if err := d.Datafile.FinishedSuccessfully(db); err != nil {
 		errMsg := fmt.Errorf("Error marking datafile %+v finished: %v", d, err)
 		d.recordProcessingError(errMsg)
