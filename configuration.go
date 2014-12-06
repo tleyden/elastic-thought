@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
 	"github.com/tleyden/go-couch"
 )
@@ -40,4 +41,9 @@ func (c Configuration) DbConnection() couch.Database {
 		logg.LogPanic("%v", err)
 	}
 	return db
+}
+
+// Create a new cbfs client based on url stored in config
+func (c Configuration) NewCbfsClient() (*cbfsclient.Client, error) {
+	return cbfsclient.New(c.CbfsUrl)
 }

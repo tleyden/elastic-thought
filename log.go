@@ -10,6 +10,7 @@ func init() {
 		"CLI",
 		"REST",
 		"ELASTIC_THOUGHT",
+		"MODEL",
 		"CHANGES",
 		"JOB_SCHEDULER",
 		"NSQ_WORKER",
