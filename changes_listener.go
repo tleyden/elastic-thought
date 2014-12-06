@@ -9,7 +9,12 @@ import (
 	"github.com/tleyden/go-couch"
 )
 
-// A changes listener listens for changes on the _changes feed and reacts to them
+// A changes listener listens for changes on the _changes feed and reacts to them.
+// The changes listener currently runs as a goroutine in the httpd process, and
+// so the system only currently supports having a single httpd process, because otherwise
+// there would be multiple changes listeners on the same changes feed, which will
+// cause duplicate jobs to get kicked off.  If the system needs to support multiple
+// http processes, then the changes listener needs to run in its own process.
 type ChangesListener struct {
 	Configuration Configuration
 	Database      couch.Database
@@ -82,6 +87,8 @@ func (c ChangesListener) processChanges(changes couch.Changes) {
 		}
 
 		switch doc.Type {
+		case DOC_TYPE_DATAFILE:
+			c.handleDatafileChange(change, doc)
 		case DOC_TYPE_DATASET:
 			c.handleDatasetChange(change, doc)
 		case DOC_TYPE_TRAINING_JOB:
@@ -132,6 +139,31 @@ func (c ChangesListener) handleDatasetChange(change couch.Change, doc ElasticTho
 	// check the state, only schedule if state == pending
 	if dataset.ProcessingState != Pending {
 		logg.LogTo("CHANGES", "Dataset state != pending: %+v", dataset)
+		return
+	}
+
+	job := NewJobDescriptor(doc.Id)
+	c.JobScheduler.ScheduleJob(*job)
+
+}
+
+func (c ChangesListener) handleDatafileChange(change couch.Change, doc ElasticThoughtDoc) {
+
+	logg.LogTo("CHANGES", "got a datafile doc: %+v", doc)
+
+	// create a Datafile doc from the ElasticThoughtDoc
+	datafile := &Datafile{}
+	if err := c.Database.Retrieve(change.Id, &datafile); err != nil {
+		errMsg := fmt.Errorf("Didn't retrieve: %v - %v", change.Id, err)
+		logg.LogError(errMsg)
+		return
+	}
+
+	logg.LogTo("CHANGES", "convert to datafile: %+v", datafile)
+
+	// check the state, only schedule if state == pending
+	if datafile.ProcessingState != Pending {
+		logg.LogTo("CHANGES", "Datafile state != pending: %+v", datafile)
 		return
 	}
 

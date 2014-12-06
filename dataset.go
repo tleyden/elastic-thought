@@ -17,9 +17,9 @@ to be used for a particular purpose.  The typical example would involve:
 type Dataset struct {
 	ElasticThoughtDoc
 	ProcessingState ProcessingState `json:"processing-state"`
+	ProcessingLog   string          `json:"processing-log"`
 	TrainingDataset TrainingDataset `json:"training" binding:"required"`
 	TestDataset     TestDataset     `json:"test" binding:"required"`
-	ProcessingLog   string          `json:"processing-log"`
 }
 
 type TrainingDataset struct {
@@ -124,6 +124,7 @@ func (d Dataset) isSplittable() bool {
 }
 
 // Update the dataset state to record that it finished successfully
+// Codereview: de-dupe with datafile FinishedSuccessfully
 func (d Dataset) FinishedSuccessfully(db couch.Database) error {
 
 	d.ProcessingState = FinishedSuccessfully
@@ -140,6 +141,7 @@ func (d Dataset) FinishedSuccessfully(db couch.Database) error {
 }
 
 // Update the dataset state to record that it failed
+// Codereview: datafile.go has same method
 func (d Dataset) Failed(db couch.Database, processingErr error) error {
 
 	d.ProcessingState = Failed

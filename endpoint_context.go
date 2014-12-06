@@ -81,19 +81,6 @@ func (e EndpointContext) CreateDataFileEndpoint(c *gin.Context) {
 		return
 	}
 
-	// create a new cbfs client
-	cbfs, err := e.Configuration.NewCbfsClient()
-	if err != nil {
-		errMsg := fmt.Sprintf("Error creating cbfs client: %v", err)
-		c.Fail(500, errors.New(errMsg))
-		return
-	}
-
-	// copy url contents to cbfs
-	// TODO: this should be moved to a worker so that
-	// it's robust against server restarts
-	go datafile.CopyToCBFS(db, cbfs)
-
 	c.JSON(201, gin.H{"id": datafile.Id})
 
 }

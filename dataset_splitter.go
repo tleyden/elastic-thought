@@ -145,6 +145,11 @@ func (d DatasetSplitter) SplitDatafile() {
 
 	// Update the state of the dataset to be finished
 	d.Dataset.FinishedSuccessfully(db)
+	if err := d.Dataset.FinishedSuccessfully(db); err != nil {
+		errMsg := fmt.Errorf("Error marking dataset %+v finished: %v", d, err)
+		d.recordProcessingError(errMsg)
+		return
+	}
 
 }
 
@@ -206,7 +211,11 @@ func (d DatasetSplitter) DownloadDatafiles() {
 	}
 
 	// Update the state of the dataset to be finished
-	d.Dataset.FinishedSuccessfully(db)
+	if err := d.Dataset.FinishedSuccessfully(db); err != nil {
+		errMsg := fmt.Errorf("Error marking dataset %+v finished: %v", d, err)
+		d.recordProcessingError(errMsg)
+		return
+	}
 
 }
 

@@ -21,6 +21,24 @@ func CreateJob(config Configuration, jobDescriptor JobDescriptor) (Runnable, err
 
 	// based on document type, create the correct Runnable
 	switch doc.Type {
+	case DOC_TYPE_DATAFILE:
+
+		// create a Datafile doc
+		datafile := &Datafile{}
+		err = db.Retrieve(doc.Id, &datafile)
+		if err != nil {
+			errMsg := fmt.Errorf("Didn't retrieve: %v - %v", doc.Id, err)
+			logg.LogError(errMsg)
+			return nil, errMsg
+		}
+
+		logg.LogTo("JOB_SCHEDULER", "retrieved datafile %v from db: %+v", doc.Id, datafile)
+
+		return DatafileDownloader{
+			Configuration: config,
+			Datafile:      *datafile,
+		}, nil
+
 	case DOC_TYPE_DATASET:
 
 		// create a Dataset doc

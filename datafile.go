@@ -17,8 +17,10 @@ import (
 // A single datafile can be used to create any number of dataset objects.
 type Datafile struct {
 	ElasticThoughtDoc
-	UserID string `json:"user-id"`
-	Url    string `json:"url" binding:"required"`
+	ProcessingState ProcessingState `json:"processing-state"`
+	ProcessingLog   string          `json:"processing-log"`
+	UserID          string          `json:"user-id"`
+	Url             string          `json:"url" binding:"required"`
 }
 
 // Create a new datafile
@@ -72,26 +74,62 @@ func (d Datafile) Save(db couch.Database) (*Datafile, error) {
 
 }
 
+// Mark this datafile as having finished processing succesfully
+func (d Datafile) FinishedSuccessfully(db couch.Database) error {
+
+	d.ProcessingState = FinishedSuccessfully
+
+	if _, err := d.Save(db); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+// Update the dataset state to record that it failed
+// Codereview: datafile.go has same method
+func (d Datafile) Failed(db couch.Database, processingErr error) error {
+
+	d.ProcessingState = Failed
+	d.ProcessingLog = fmt.Sprintf("%v", processingErr)
+
+	if _, err := d.Save(db); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
 // Does this datafile have a valid Id?
 func (d Datafile) HasValidId() bool {
 	return len(d.Id) > 0
 }
 
-// Copy the contents of Datafile.Url to CBFS and update the Datafile.Url to point to that
-func (d Datafile) CopyToCBFS(db couch.Database, cbfs *cbfsclient.Client) {
+// Copy the contents of Datafile.Url to CBFS and return the cbfs url
+func (d Datafile) CopyToCBFS(db couch.Database, cbfs *cbfsclient.Client) (string, error) {
 
 	if !d.HasValidId() {
 		errMsg := fmt.Errorf("Datafile: %+v must have an id", d)
 		logg.LogError(errMsg)
-		return
+		return "", errMsg
 	}
+
+	if len(d.Url) == 0 {
+		errMsg := fmt.Errorf("Datafile: %+v must have a non empty url", d)
+		logg.LogError(errMsg)
+		return "", errMsg
+	}
+
+	logg.LogTo("MODEL", "datafile url: |%v|", d.Url)
 
 	// figure out dest path to save to on cbfs
 	u, err := url.Parse(d.Url)
 	if err != nil {
 		errMsg := fmt.Errorf("Error parsing: %v. Err %v", d.Url, err)
 		logg.LogError(errMsg)
-		return
+		return "", errMsg
 	}
 	urlPath := u.Path
 	_, filename := path.Split(urlPath)
@@ -99,12 +137,12 @@ func (d Datafile) CopyToCBFS(db couch.Database, cbfs *cbfsclient.Client) {
 
 	// open input stream to url
 	resp, err := http.Get(d.Url)
-	defer resp.Body.Close()
 	if err != nil {
 		errMsg := fmt.Errorf("Error opening: %v. Err %v", d.Url, err)
 		logg.LogError(errMsg)
-		return
+		return "", errMsg
 	}
+	defer resp.Body.Close()
 
 	// write to cbfs
 	options := cbfsclient.PutOptions{
@@ -113,16 +151,12 @@ func (d Datafile) CopyToCBFS(db couch.Database, cbfs *cbfsclient.Client) {
 	if err := cbfs.Put("", destPath, resp.Body, options); err != nil {
 		errMsg := fmt.Errorf("Error writing %v to cbfs: %v", destPath, err)
 		logg.LogError(errMsg)
-		return
+		return "", errMsg
 	}
 
+	logg.LogTo("MODEL", "copied datafile url %v to cbfs: %v", d.Url, destPath)
+
 	// update datafile with new url
-	d.Url = fmt.Sprintf("%v%v", CBFS_URI_PREFIX, destPath)
-	_, err = d.Save(db)
-	if err != nil {
-		errMsg := fmt.Errorf("Error saving: %+v. Err %v", d, err)
-		logg.LogError(errMsg)
-		return
-	}
+	return fmt.Sprintf("%v%v", CBFS_URI_PREFIX, destPath), nil
 
 }
