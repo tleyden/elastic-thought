@@ -71,7 +71,24 @@ For that, check out:
 * [ParameterServer](http://parameterserver.org/)
 * [Caffe Issue 876](https://github.com/BVLC/caffe/issues/876)
 
-## Quick Start
+## Kick things off: Aws
+
+### Launch EC2 instances via CloudFormation script
+
+* [Launch Stack](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#cstack=sn%7ECouchbase-CoreOS%7Cturl%7Ehttp://tleyden-misc.s3.amazonaws.com/elastic-thought/cloudformation/elastic_thought.template)
+* Choose 3 node cluster with m3.medium instance type
+* All other values should be default
+
+### Kick off Couchbase Server
+
+* See http://tleyden.github.io/blog/2014/11/01/running-couchbase-cluster-under-coreos-on-aws/
+
+### Kick off CBFS
+
+* http://tleyden.github.io/blog/2014/11/14/running-cbfs/
+ 
+
+## Kick things off: Local 
 
 *Note: this will be much easier after everything is packaged as fleetctl scripts, for the meantime these are just notes to myself*
 
@@ -100,6 +117,12 @@ $ ./run.sh config.json
 # Start cbfs
 
 # Start Couchbase Server
+
+# Start worker in docker image
+
+* Run docker image with bin/bash
+* Update configuration.go urls to point to 10.0.2.2
+* emacs -nw ../../../../couchbaselabs/cbfs/client/put.go and apply hack
 
 
 ## Todo
