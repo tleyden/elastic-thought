@@ -46,11 +46,14 @@ done
 echo "Couchbase Server bootstrap ip: $COUCHBASE_CLUSTER"
 
 # wait until all couchbase nodes come up
+echo "Wait until $numnodes Couchbase Servers running"
+NUM_COUCHBASE_SERVERS="0"
 while [ "$NUM_COUCHBASE_SERVERS" -ne $numnodes ]; do
     echo Retrying...
-    NUM_COUCHBASE_SERVERS=sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli server-list -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD | wc -l
+    NUM_COUCHBASE_SERVERS=$(sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli server-list -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD | wc -l)
     sleep 5
 done
+echo "Done waiting: $numnodes Couchbase Servers are running"
 
 # rebalance cluster
 untilsuccessful sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli rebalance -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD
