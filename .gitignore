@@ -13,3 +13,6 @@ local.properties
 build
 cli/config.json
 cli-main/cli-main
+
+cli/worker/worker
+cli/httpd/httpd
