@@ -45,6 +45,13 @@ done
 
 echo "Couchbase Server bootstrap ip: $COUCHBASE_CLUSTER"
 
+# wait until all couchbase nodes come up
+while [ "$NUM_COUCHBASE_SERVERS" -ne $numnodes ]; do
+    echo Retrying...
+    NUM_COUCHBASE_SERVERS=sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli server-list -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD | wc -l
+    sleep 5
+done
+
 # rebalance cluster
 untilsuccessful sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli rebalance -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD
 
@@ -56,23 +63,10 @@ git clone https://github.com/tleyden/elastic-thought.git
 cd elastic-thought/docker/fleet && fleetctl submit cbfs_node@.service && fleetctl submit cbfs_announce@.service && cd ~
 for i in `seq 1 $numnodes`; do fleetctl start cbfs_node@$i.service; fleetctl start cbfs_announce@$i.service; done
 
-# wait for all 3 cbfs nodes to come up 
-while [ -z "$CBFS_UP" ]; do
-    COUNTER=0
-    for i in `seq 1 $numnodes`; do 
-	NODE_UP=$(etcdctl get /services/cbfs/cbfs_node@$i)
-	if [ -n $NODE_UP ]; then
-	    COUNTER=$[$COUNTER +1]
-	fi
-    done
-    if (( $COUNTER == 4 )); then
-	CBFS_UP="true"
-    else
-	echo "Sleeping .. will retry"
-	sleep 5
-    fi 
+# wait for all cbfs nodes to come up 
+for i in `seq 1 $numnodes`; do 
+    untilsuccessful etcdctl get /services/cbfs/cbfs_node@$i
 done
-
 
 # create elastic-thought bucket
 untilsuccessful sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli bucket-create -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD --bucket=elastic-thought --bucket-ramsize=1024
@@ -92,23 +86,10 @@ mkdir sync-gateway && \
   chmod +x cluster-init.sh && \
   ./cluster-init.sh -n $numnodes -c "master" -g http://$ip:8484/sync_gw_config.json
 
-# wait for all 3 sync gw nodes to come up 
-while [ -z "$SYNC_GW_UP" ]; do
-    COUNTER=0
-    for i in `seq 1 $numnodes`; do 
-	NODE_UP=$(etcdctl get /services/sync_gw/sync_gw_node@$i)
-	if [ -n $NODE_UP ]; then
-	    COUNTER=$[$COUNTER +1]
-	fi
-    done
-    if (( $COUNTER == 4 )); then
-	SYNC_GW_UP="true"
-    else
-	echo "Sleeping .. will retry"
-	sleep 5
-    fi 
+# wait for all sync gw nodes to come up 
+for i in `seq 1 $numnodes`; do 
+    untilsuccessful etcdctl get /services/sync_gw/sync_gw_node@$i
 done
-
 
 
 # Todo: use coreos init for this
