@@ -81,14 +81,17 @@ For that, check out:
 
 ### Kick off Couchbase Server
 
-* See http://tleyden.github.io/blog/2014/11/01/running-couchbase-cluster-under-coreos-on-aws/
+* Ssh into one of the machines (doesn't matter which): `ssh -A core@ec2-54-160-96-153.compute-1.amazonaws.com`
+* wget https://raw.githubusercontent.com/couchbaselabs/couchbase-server-docker/master/scripts/cluster-init.sh
+* chmod +x cluster-init.sh
+* ./cluster-init.sh -v 3.0.1 -n 3 -u "user:passw0rd"
 
 ### Kick off ElasticThought
 
 ```
-$ wget https://raw.githubusercontent.com/tleyden/elastic-thought/master/docker/scripts/elasticthought-coreos-init.sh
-$ chmod +x elasticthought-coreos-init.sh
-$ ./elasticthought-coreos-init.sh
+$ wget https://raw.githubusercontent.com/tleyden/elastic-thought/master/docker/scripts/elasticthought-cluster-init.sh
+$ chmod +x elasticthought-cluster-init.sh
+$ ./elasticthought-cluster-init.sh
 ```
 
 After this finishes, you should be able to access the API on the public ip of the same machine you ran the script from.  (if not, find public ip of node where elasticthought httpd is running)
