@@ -2,6 +2,12 @@
 # TODO: this script needs to wait for the couchbase bootstrap node to be running
 # before executing
 
+# wait for couchbase server to come up
+# TODO: come up with better way than this
+echo "Sleeping 60 seconds to wait for Couchbase Server"
+sleep 60
+
+
 # get couchbase cluster ip from etcd
 COUCHBASE_CLUSTER=$(etcdctl get /services/couchbase/bootstrap_ip)
 
@@ -27,6 +33,7 @@ fleetctl start cbfs_node.*.service
 
 # wait for cbfs nodes to come up
 # TODO: come up with better way than this
+echo "Sleeping 60 seconds to wait for CBFS"
 sleep 60
 
 # create elastic-thought bucket
@@ -49,9 +56,11 @@ mkdir sync-gateway && \
 
 # wait for sync gw and nsq to come up 
 # TODO: come up with better way than this
+echo "Sleeping 60 seconds to wait for Sync Gateway"
 sleep 60
 
 # kick off elasticthought httpd-worker (goroutine)
+echo "Starting elastic thought httpd (blocking call)"
 sudo docker run --net=host tleyden5iwx/elastic-thought httpd 
 
 # TODO: 
