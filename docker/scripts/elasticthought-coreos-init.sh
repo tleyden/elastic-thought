@@ -47,14 +47,14 @@ mkdir sync-gateway && \
   chmod +x cluster-init.sh && \
   ./cluster-init.sh -n 3 -c "master" -g http://$ip:8484/sync_gw_config.json
 
-# kick off nsq (3 nodes)
-
-
 # wait for sync gw and nsq to come up 
 # TODO: come up with better way than this
 sleep 60
 
-# kick off elasticthought httpd
+# kick off elasticthought httpd-worker (goroutine)
+sudo docker run --net=host tleyden5iwx/elastic-thought httpd 
 
-
+# TODO: 
+# kick off nsqlookupd + sidekick
+# kick off nsq (3 nodes)
 # kick off elasticthought worker (caffe worker)
