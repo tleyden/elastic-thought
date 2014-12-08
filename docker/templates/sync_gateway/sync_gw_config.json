@@ -2,7 +2,7 @@
 	"log": ["CRUD", "HTTP+"],
 	"databases": {
 		"elastic-thought": {
-                        "server":"http://COUCHBASE_IP",
+                        "server":"http://COUCHBASE_IP_PORT",
 		        "bucket":"elastic-thought",
 			"sync": `
 function(doc){
