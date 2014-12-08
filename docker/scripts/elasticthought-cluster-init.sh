@@ -63,7 +63,7 @@ while [ -z "$CBFS_UP" ]; do
 	NODE_UP=$(etcdctl get /services/cbfs/cbfs_node@$i)
 	if [ -n $NODE_UP ]; then
 	    COUNTER=$[$COUNTER +1]
-	done 
+	fi
     done
     if (( $COUNTER == 4 )); then
 	CBFS_UP="true"
@@ -99,7 +99,7 @@ while [ -z "$SYNC_GW_UP" ]; do
 	NODE_UP=$(etcdctl get /services/sync_gw/sync_gw_node@$i)
 	if [ -n $NODE_UP ]; then
 	    COUNTER=$[$COUNTER +1]
-	done 
+	fi
     done
     if (( $COUNTER == 4 )); then
 	SYNC_GW_UP="true"
