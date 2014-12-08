@@ -59,6 +59,7 @@ mkdir sync-gateway && \
 echo "Sleeping to wait for Sync Gateway"
 sleep 180 
 
+# Todo: use coreos init for this
 # kick off elasticthought httpd-worker (goroutine)
 echo "Starting elastic thought httpd (blocking call)"
 sudo docker run --net=host tleyden5iwx/elastic-thought httpd 
