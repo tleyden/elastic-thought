@@ -2,6 +2,14 @@
 # TODO: this script needs to wait for the couchbase bootstrap node to be running
 # before executing
 
+function untilsuccessful() {
+	"$@"
+	while [ $? -ne 0 ]; do
+		echo Retrying...
+		sleep 1
+		"$@"
+	done
+}
 
 while getopts ":v:n:u:" opt; do
       case $opt in
@@ -13,11 +21,20 @@ while getopts ":v:n:u:" opt; do
       esac
 done
 
+# parse user/pass into variables
+IFS=':' read -a array <<< "$userpass"
+CB_USERNAME=${array[0]}
+CB_PASSWORD=${array[1]}
 
 # Kick off couchbase cluster 
 wget https://raw.githubusercontent.com/couchbaselabs/couchbase-server-docker/master/scripts/cluster-init.sh
 chmod +x cluster-init.sh
 ./cluster-init.sh -v $version -n $numnodes -u $userpass
+
+if [ $? -ne 0 ]; then
+    echo "Error executing cluster-init.sh"
+    exit 1 
+fi
 
 # Wait until bootstrap node is up
 while [ -z "$COUCHBASE_CLUSTER" ]; do
@@ -28,14 +45,8 @@ done
 
 echo "Couchbase Server bootstrap ip: $COUCHBASE_CLUSTER"
 
-
 # rebalance cluster
-sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli rebalance -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD
-
-# parse user/pass into variables
-IFS=':' read -a array <<< "$userpass"
-CB_USERNAME=${array[0]}
-CB_PASSWORD=${array[1]}
+untilsuccessful sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli rebalance -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD
 
 # create cbfs bucket
 sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli bucket-create -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD --bucket=cbfs --bucket-ramsize=512
