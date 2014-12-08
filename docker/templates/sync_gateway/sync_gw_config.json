@@ -1,0 +1,16 @@
+{
+	"log": ["CRUD", "HTTP+"],
+	"databases": {
+		"elastic-thought": {
+                        "server":"http://COUCHBASE_IP",
+		        "bucket":"elastic-thought",
+			"sync": `
+function(doc){
+	channel(doc.channels);
+}`,
+			"users": {
+				"GUEST": {"disabled": false, "all_channels": ["*"], "admin_channels": ["*"]}
+			}
+		}
+	}
+}

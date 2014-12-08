@@ -16,4 +16,10 @@ wget https://raw.githubusercontent.com/tleyden/elastic-thought/master/docker/fle
 for i in `seq 1 3`; do cp cbfs_node.service.template cbfs_node.$i.service; done
 fleetctl start cbfs_node.*.service
 
+# kick off sync gateway (1 node)
 
+
+# kick off nsq (3 nodes)
+
+
+# kick off elasticthought httpd
