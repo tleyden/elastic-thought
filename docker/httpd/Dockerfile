@@ -20,8 +20,10 @@ RUN curl -O https://storage.googleapis.com/golang/go1.3.1.linux-amd64.tar.gz && 
     tar -C /usr/local -xzf go1.3.1.linux-amd64.tar.gz
 
 # Go get ElasticThought
-RUN go get -u -v -t github.com/tleyden/elastic-thought
+RUN go get -u -v -t github.com/tleyden/elastic-thought && \
+    go get -u -v -t github.com/tleyden/elastic-thought/cli/httpd && \
+    go get -u -v -t github.com/tleyden/elastic-thought/cli/worker
 
 # Copy binaries 
-RUN cp /opt/go/src/github.com/tleyden/elastic-thought/cli/worker/worker /usr/local/bin && \
-    cp /opt/go/src/github.com/tleyden/elastic-thought/cli/httpd/httpd /usr/local/bin
+RUN cp /opt/go/bin/worker /usr/local/bin && \
+    cp /opt/go/bin/httpd /usr/local/bin

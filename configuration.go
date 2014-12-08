@@ -30,7 +30,7 @@ type Configuration struct {
 func NewDefaultConfiguration() *Configuration {
 
 	config := &Configuration{
-		DbUrl:         "http://localhost:4985/elasticthought",
+		DbUrl:         "http://localhost:4985/elastic-thought",
 		CbfsUrl:       "http://localhost:8484",
 		NsqLookupdUrl: "127.0.0.1:4161",
 		NsqdUrl:       "127.0.0.1:4150",
