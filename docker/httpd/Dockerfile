@@ -24,4 +24,4 @@ RUN go get -u -v -t github.com/tleyden/elastic-thought
 
 # Copy binaries 
 RUN cp /opt/go/src/github.com/tleyden/elastic-thought/cli/worker/worker /usr/local/bin && \
-    cp /opt/go/src/github.com/tleyden/elastic-thought/cli/httpd /usr/local/bin
+    cp /opt/go/src/github.com/tleyden/elastic-thought/cli/httpd/httpd /usr/local/bin

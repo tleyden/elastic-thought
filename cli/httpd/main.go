@@ -20,12 +20,12 @@ func main() {
 		return
 	}
 
-	var jobScheduler JobScheduler
+	var jobScheduler et.JobScheduler
 
 	switch config.QueueType {
-	case Nsq:
+	case et.Nsq:
 		jobScheduler = et.NewNsqJobScheduler(config)
-	case Goroutine:
+	case et.Goroutine:
 		jobScheduler = et.NewInProcessJobScheduler(config)
 	default:
 		logg.LogFatal("Unexpected queue type: %v", config.QueueType)
