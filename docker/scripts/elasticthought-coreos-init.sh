@@ -27,34 +27,34 @@ fleetctl start cbfs_node.*.service
 
 # wait for cbfs nodes to come up
 # TODO: come up with better way than this
-sleep 30
+sleep 60
 
 # create elastic-thought bucket
 sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli bucket-create -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD --bucket=elastic-thought --bucket-ramsize=1024
 
 # run sed on sync gateway config template
 COUCHBASE_IP_PORT=$COUCHBASE_CLUSTER:8091
-sed -i -e "s/COUCHBASE_IP_PORT/${COUCHBASE_IP_PORT}/" elastic-thought/docker/templates/sync_gateway/sync_gw_config.json
-
-# copy to /tmp
-cp elastic-thought/docker/templates/sync_gateway/sync_gw_config.json /tmp 
+sed -e "s/COUCHBASE_IP_PORT/${COUCHBASE_IP_PORT}/" elastic-thought/docker/templates/sync_gateway/sync_gw_config.json > /tmp/sync_gw_config.json
 
 # upload to cbfs
 ip=$(hostname -i | tr -d ' ')
 sudo docker run --net=host -v /tmp:/tmp tleyden5iwx/cbfs cbfsclient http://$ip:8484/ upload /tmp/sync_gw_config.json /sync_gw_config.json 
 
-# kick off sync gateway (1 node)
+# kick off sync gateway 
 mkdir sync-gateway && \
   cd sync-gateway && \
   wget https://raw.githubusercontent.com/tleyden/sync-gateway-coreos/master/scripts/cluster-init.sh && \
   chmod +x cluster-init.sh && \
-  ./cluster-init.sh -n 1 -c "master" -g http://$ip:8484/sync_gw_config.json
+  ./cluster-init.sh -n 3 -c "master" -g http://$ip:8484/sync_gw_config.json
 
 # kick off nsq (3 nodes)
 
 
-# wait for sync gw to come up 
+# wait for sync gw and nsq to come up 
 # TODO: come up with better way than this
-sleep 30
+sleep 60
 
 # kick off elasticthought httpd
+
+
+# kick off elasticthought worker (caffe worker)
