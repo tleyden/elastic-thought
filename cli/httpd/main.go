@@ -20,10 +20,16 @@ func main() {
 		return
 	}
 
-	// TODO: make this a config to choose either the in process job runner
-	// or an NSQJobRunner
-	jobScheduler := et.NewInProcessJobScheduler(config)
-	// jobScheduler := et.NewNsqJobScheduler(config)
+	var jobScheduler JobScheduler
+
+	switch config.QueueType {
+	case Nsq:
+		jobScheduler = et.NewNsqJobScheduler(config)
+	case Goroutine:
+		jobScheduler = et.NewInProcessJobScheduler(config)
+	default:
+		logg.LogFatal("Unexpected queue type: %v", config.QueueType)
+	}
 
 	context := &et.EndpointContext{
 		Configuration: config,

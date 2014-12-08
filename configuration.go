@@ -9,6 +9,13 @@ import (
 	"github.com/tleyden/go-couch"
 )
 
+type QueueType int
+
+const (
+	Nsq QueueType = iota
+	Goroutine
+)
+
 // Holds configuration values that are used throughout the application
 type Configuration struct {
 	DbUrl         string
@@ -17,6 +24,7 @@ type Configuration struct {
 	NsqdUrl       string
 	NsqdTopic     string
 	WorkDirectory string
+	QueueType     QueueType
 }
 
 func NewDefaultConfiguration() *Configuration {
@@ -28,6 +36,7 @@ func NewDefaultConfiguration() *Configuration {
 		NsqdUrl:       "127.0.0.1:4150",
 		NsqdTopic:     "elastic-thought",
 		WorkDirectory: "/tmp/elastic-thought",
+		QueueType:     Goroutine,
 	}
 	return config
 
