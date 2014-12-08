@@ -4,8 +4,8 @@
 
 # wait for couchbase server to come up
 # TODO: come up with better way than this
-echo "Sleeping 60 seconds to wait for Couchbase Server"
-sleep 60
+echo "Sleeping to wait for Couchbase Server"
+sleep 180
 
 
 # get couchbase cluster ip from etcd
@@ -33,8 +33,8 @@ fleetctl start cbfs_node.*.service
 
 # wait for cbfs nodes to come up
 # TODO: come up with better way than this
-echo "Sleeping 60 seconds to wait for CBFS"
-sleep 60
+echo "Sleeping to wait for CBFS"
+sleep 180 
 
 # create elastic-thought bucket
 sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli bucket-create -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD --bucket=elastic-thought --bucket-ramsize=1024
@@ -56,8 +56,8 @@ mkdir sync-gateway && \
 
 # wait for sync gw and nsq to come up 
 # TODO: come up with better way than this
-echo "Sleeping 60 seconds to wait for Sync Gateway"
-sleep 60
+echo "Sleeping to wait for Sync Gateway"
+sleep 180 
 
 # kick off elasticthought httpd-worker (goroutine)
 echo "Starting elastic thought httpd (blocking call)"
