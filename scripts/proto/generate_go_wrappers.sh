@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 
 # Pin to a particular version of caffe.proto, so it doesn't change unexpectedly
-wget https://raw.githubusercontent.com/BVLC/caffe/7c3c089a59c9f0301ec57a2b1317c588e2be5a8e/src/caffe/proto/caffe.proto
+# Master branch
+# wget https://raw.githubusercontent.com/BVLC/caffe/7c3c089a59c9f0301ec57a2b1317c588e2be5a8e/src/caffe/proto/caffe.proto
+
+# Try dev version of caffe.proto, since I'm getting an error
+# "unknown field name "is_color" in caffe.ImageDataParameter"
+wget https://raw.githubusercontent.com/BVLC/caffe/dev/src/caffe/proto/caffe.proto
 
 # This requires some dependencies to work, see http://tleyden.github.io/blog/2014/12/02/getting-started-with-go-and-protocol-buffers/
 protoc --go_out=. *.proto

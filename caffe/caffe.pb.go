@@ -29,7 +29,7 @@ It has these top-level messages:
 	DropoutParameter
 	DummyDataParameter
 	EltwiseParameter
-	ThresholdParameter
+	ExpParameter
 	HDF5DataParameter
 	HDF5OutputParameter
 	HingeLossParameter
@@ -46,6 +46,7 @@ It has these top-level messages:
 	SliceParameter
 	SoftmaxParameter
 	TanHParameter
+	ThresholdParameter
 	WindowDataParameter
 	V0LayerParameter
 */
@@ -168,7 +169,7 @@ func (x *SolverParameter_SolverType) UnmarshalJSON(data []byte) error {
 // line above the enum. Update the next available ID when you add a new
 // LayerType.
 //
-// LayerType next available ID: 38 (last added: CONTRASTIVE_LOSS)
+// LayerType next available ID: 39 (last added: EXP)
 type LayerParameter_LayerType int32
 
 const (
@@ -188,6 +189,7 @@ const (
 	LayerParameter_DUMMY_DATA                 LayerParameter_LayerType = 32
 	LayerParameter_EUCLIDEAN_LOSS             LayerParameter_LayerType = 7
 	LayerParameter_ELTWISE                    LayerParameter_LayerType = 25
+	LayerParameter_EXP                        LayerParameter_LayerType = 38
 	LayerParameter_FLATTEN                    LayerParameter_LayerType = 8
 	LayerParameter_HDF5_DATA                  LayerParameter_LayerType = 9
 	LayerParameter_HDF5_OUTPUT                LayerParameter_LayerType = 10
@@ -229,6 +231,7 @@ var LayerParameter_LayerType_name = map[int32]string{
 	32: "DUMMY_DATA",
 	7:  "EUCLIDEAN_LOSS",
 	25: "ELTWISE",
+	38: "EXP",
 	8:  "FLATTEN",
 	9:  "HDF5_DATA",
 	10: "HDF5_OUTPUT",
@@ -269,6 +272,7 @@ var LayerParameter_LayerType_value = map[string]int32{
 	"DUMMY_DATA":                32,
 	"EUCLIDEAN_LOSS":            7,
 	"ELTWISE":                   25,
+	"EXP":                       38,
 	"FLATTEN":                   8,
 	"HDF5_DATA":                 9,
 	"HDF5_OUTPUT":               10,
@@ -858,13 +862,17 @@ type Datum struct {
 	Data  []byte `protobuf:"bytes,4,opt,name=data" json:"data,omitempty"`
 	Label *int32 `protobuf:"varint,5,opt,name=label" json:"label,omitempty"`
 	// Optionally, the datum could also hold float data.
-	FloatData        []float32 `protobuf:"fixed32,6,rep,name=float_data" json:"float_data,omitempty"`
-	XXX_unrecognized []byte    `json:"-"`
+	FloatData []float32 `protobuf:"fixed32,6,rep,name=float_data" json:"float_data,omitempty"`
+	// If true data contains an encoded image that need to be decoded
+	Encoded          *bool  `protobuf:"varint,7,opt,name=encoded,def=0" json:"encoded,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
 }
 
 func (m *Datum) Reset()         { *m = Datum{} }
 func (m *Datum) String() string { return proto.CompactTextString(m) }
 func (*Datum) ProtoMessage()    {}
+
+const Default_Datum_Encoded bool = false
 
 func (m *Datum) GetChannels() int32 {
 	if m != nil && m.Channels != nil {
@@ -906,6 +914,13 @@ func (m *Datum) GetFloatData() []float32 {
 		return m.FloatData
 	}
 	return nil
+}
+
+func (m *Datum) GetEncoded() bool {
+	if m != nil && m.Encoded != nil {
+		return *m.Encoded
+	}
+	return Default_Datum_Encoded
 }
 
 type FillerParameter struct {
@@ -1054,7 +1069,7 @@ func (m *NetParameter) GetState() *NetState {
 // NOTE
 // Update the next available ID when you add a new SolverParameter field.
 //
-// SolverParameter next available ID: 33 (last added: test_initialization)
+// SolverParameter next available ID: 35 (last added: stepvalue)
 type SolverParameter struct {
 	// Proto filename for the train net, possibly combined with one or more
 	// test nets.
@@ -1085,7 +1100,9 @@ type SolverParameter struct {
 	BaseLr             *float32 `protobuf:"fixed32,5,opt,name=base_lr" json:"base_lr,omitempty"`
 	// the number of iterations between displaying info. If display = 0, no info
 	// will be displayed.
-	Display     *int32   `protobuf:"varint,6,opt,name=display" json:"display,omitempty"`
+	Display *int32 `protobuf:"varint,6,opt,name=display" json:"display,omitempty"`
+	// Display the loss averaged over the last average_loss iterations
+	AverageLoss *int32   `protobuf:"varint,33,opt,name=average_loss,def=1" json:"average_loss,omitempty"`
 	MaxIter     *int32   `protobuf:"varint,7,opt,name=max_iter" json:"max_iter,omitempty"`
 	LrPolicy    *string  `protobuf:"bytes,8,opt,name=lr_policy" json:"lr_policy,omitempty"`
 	Gamma       *float32 `protobuf:"fixed32,9,opt,name=gamma" json:"gamma,omitempty"`
@@ -1095,9 +1112,12 @@ type SolverParameter struct {
 	// regularization types supported: L1 and L2
 	// controlled by weight_decay
 	RegularizationType *string `protobuf:"bytes,29,opt,name=regularization_type,def=L2" json:"regularization_type,omitempty"`
-	Stepsize           *int32  `protobuf:"varint,13,opt,name=stepsize" json:"stepsize,omitempty"`
-	Snapshot           *int32  `protobuf:"varint,14,opt,name=snapshot,def=0" json:"snapshot,omitempty"`
-	SnapshotPrefix     *string `protobuf:"bytes,15,opt,name=snapshot_prefix" json:"snapshot_prefix,omitempty"`
+	// the stepsize for learning rate policy "step"
+	Stepsize *int32 `protobuf:"varint,13,opt,name=stepsize" json:"stepsize,omitempty"`
+	// the stepsize for learning rate policy "multistep"
+	Stepvalue      []int32 `protobuf:"varint,34,rep,name=stepvalue" json:"stepvalue,omitempty"`
+	Snapshot       *int32  `protobuf:"varint,14,opt,name=snapshot,def=0" json:"snapshot,omitempty"`
+	SnapshotPrefix *string `protobuf:"bytes,15,opt,name=snapshot_prefix" json:"snapshot_prefix,omitempty"`
 	// whether to snapshot diff in the results or not. Snapshotting diff will help
 	// debugging but the final protocol buffer size will be much larger.
 	SnapshotDiff *bool                       `protobuf:"varint,16,opt,name=snapshot_diff,def=0" json:"snapshot_diff,omitempty"`
@@ -1126,6 +1146,7 @@ func (*SolverParameter) ProtoMessage()    {}
 const Default_SolverParameter_TestInterval int32 = 0
 const Default_SolverParameter_TestComputeLoss bool = false
 const Default_SolverParameter_TestInitialization bool = true
+const Default_SolverParameter_AverageLoss int32 = 1
 const Default_SolverParameter_RegularizationType string = "L2"
 const Default_SolverParameter_Snapshot int32 = 0
 const Default_SolverParameter_SnapshotDiff bool = false
@@ -1235,6 +1256,13 @@ func (m *SolverParameter) GetDisplay() int32 {
 	return 0
 }
 
+func (m *SolverParameter) GetAverageLoss() int32 {
+	if m != nil && m.AverageLoss != nil {
+		return *m.AverageLoss
+	}
+	return Default_SolverParameter_AverageLoss
+}
+
 func (m *SolverParameter) GetMaxIter() int32 {
 	if m != nil && m.MaxIter != nil {
 		return *m.MaxIter
@@ -1289,6 +1317,13 @@ func (m *SolverParameter) GetStepsize() int32 {
 		return *m.Stepsize
 	}
 	return 0
+}
+
+func (m *SolverParameter) GetStepvalue() []int32 {
+	if m != nil {
+		return m.Stepvalue
+	}
+	return nil
 }
 
 func (m *SolverParameter) GetSnapshot() int32 {
@@ -1366,12 +1401,15 @@ type SolverState struct {
 	Iter             *int32       `protobuf:"varint,1,opt,name=iter" json:"iter,omitempty"`
 	LearnedNet       *string      `protobuf:"bytes,2,opt,name=learned_net" json:"learned_net,omitempty"`
 	History          []*BlobProto `protobuf:"bytes,3,rep,name=history" json:"history,omitempty"`
+	CurrentStep      *int32       `protobuf:"varint,4,opt,name=current_step,def=0" json:"current_step,omitempty"`
 	XXX_unrecognized []byte       `json:"-"`
 }
 
 func (m *SolverState) Reset()         { *m = SolverState{} }
 func (m *SolverState) String() string { return proto.CompactTextString(m) }
 func (*SolverState) ProtoMessage()    {}
+
+const Default_SolverState_CurrentStep int32 = 0
 
 func (m *SolverState) GetIter() int32 {
 	if m != nil && m.Iter != nil {
@@ -1392,6 +1430,13 @@ func (m *SolverState) GetHistory() []*BlobProto {
 		return m.History
 	}
 	return nil
+}
+
+func (m *SolverState) GetCurrentStep() int32 {
+	if m != nil && m.CurrentStep != nil {
+		return *m.CurrentStep
+	}
+	return Default_SolverState_CurrentStep
 }
 
 type NetState struct {
@@ -1488,7 +1533,7 @@ func (m *NetStateRule) GetNotStage() []string {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available ID: 41 (last added: contrastive_loss_param)
+// LayerParameter next available ID: 42 (last added: exp_param)
 type LayerParameter struct {
 	Bottom []string `protobuf:"bytes,2,rep,name=bottom" json:"bottom,omitempty"`
 	Top    []string `protobuf:"bytes,3,rep,name=top" json:"top,omitempty"`
@@ -1528,6 +1573,7 @@ type LayerParameter struct {
 	DropoutParam         *DropoutParameter         `protobuf:"bytes,12,opt,name=dropout_param" json:"dropout_param,omitempty"`
 	DummyDataParam       *DummyDataParameter       `protobuf:"bytes,26,opt,name=dummy_data_param" json:"dummy_data_param,omitempty"`
 	EltwiseParam         *EltwiseParameter         `protobuf:"bytes,24,opt,name=eltwise_param" json:"eltwise_param,omitempty"`
+	ExpParam             *ExpParameter             `protobuf:"bytes,41,opt,name=exp_param" json:"exp_param,omitempty"`
 	Hdf5DataParam        *HDF5DataParameter        `protobuf:"bytes,13,opt,name=hdf5_data_param" json:"hdf5_data_param,omitempty"`
 	Hdf5OutputParam      *HDF5OutputParameter      `protobuf:"bytes,14,opt,name=hdf5_output_param" json:"hdf5_output_param,omitempty"`
 	HingeLossParam       *HingeLossParameter       `protobuf:"bytes,29,opt,name=hinge_loss_param" json:"hinge_loss_param,omitempty"`
@@ -1706,6 +1752,13 @@ func (m *LayerParameter) GetEltwiseParam() *EltwiseParameter {
 	return nil
 }
 
+func (m *LayerParameter) GetExpParam() *ExpParameter {
+	if m != nil {
+		return m.ExpParam
+	}
+	return nil
+}
+
 func (m *LayerParameter) GetHdf5DataParam() *HDF5DataParameter {
 	if m != nil {
 		return m.Hdf5DataParam
@@ -1856,9 +1909,14 @@ type TransformationParameter struct {
 	// Specify if we want to randomly mirror data.
 	Mirror *bool `protobuf:"varint,2,opt,name=mirror,def=0" json:"mirror,omitempty"`
 	// Specify if we would like to randomly crop an image.
-	CropSize         *uint32 `protobuf:"varint,3,opt,name=crop_size,def=0" json:"crop_size,omitempty"`
-	MeanFile         *string `protobuf:"bytes,4,opt,name=mean_file" json:"mean_file,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	CropSize *uint32 `protobuf:"varint,3,opt,name=crop_size,def=0" json:"crop_size,omitempty"`
+	// mean_file and mean_value cannot be specified at the same time
+	MeanFile *string `protobuf:"bytes,4,opt,name=mean_file" json:"mean_file,omitempty"`
+	// if specified can be repeated once (would substract it from all the channels)
+	// or can be repeated the same number of times as channels
+	// (would subtract them from the corresponding channel)
+	MeanValue        []float32 `protobuf:"fixed32,5,rep,name=mean_value" json:"mean_value,omitempty"`
+	XXX_unrecognized []byte    `json:"-"`
 }
 
 func (m *TransformationParameter) Reset()         { *m = TransformationParameter{} }
@@ -1895,6 +1953,13 @@ func (m *TransformationParameter) GetMeanFile() string {
 		return *m.MeanFile
 	}
 	return ""
+}
+
+func (m *TransformationParameter) GetMeanValue() []float32 {
+	if m != nil {
+		return m.MeanValue
+	}
+	return nil
 }
 
 // Message that stores parameters used by AccuracyLayer
@@ -2138,7 +2203,7 @@ type DataParameter struct {
 	// The rand_skip variable is for the data layer to skip a few data points
 	// to avoid all asynchronous sgd clients to start at the same point. The skip
 	// point would be set as rand_skip * rand(0,1). Note that rand_skip should not
-	// be larger than the number of keys in the leveldb.
+	// be larger than the number of keys in the database.
 	RandSkip *uint32           `protobuf:"varint,7,opt,name=rand_skip,def=0" json:"rand_skip,omitempty"`
 	Backend  *DataParameter_DB `protobuf:"varint,8,opt,name=backend,enum=caffe.DataParameter_DB,def=0" json:"backend,omitempty"`
 	// DEPRECATED. See TransformationParameter. For data pre-processing, we can do
@@ -2336,23 +2401,44 @@ func (m *EltwiseParameter) GetStableProdGrad() bool {
 	return Default_EltwiseParameter_StableProdGrad
 }
 
-// Message that stores parameters used by ThresholdLayer
-type ThresholdParameter struct {
-	Threshold        *float32 `protobuf:"fixed32,1,opt,name=threshold,def=0" json:"threshold,omitempty"`
+// Message that stores parameters used by ExpLayer
+type ExpParameter struct {
+	// ExpLayer computes outputs y = base ^ (shift + scale * x), for base > 0.
+	// Or if base is set to the default (-1), base is set to e,
+	// so y = exp(shift + scale * x).
+	Base             *float32 `protobuf:"fixed32,1,opt,name=base,def=-1" json:"base,omitempty"`
+	Scale            *float32 `protobuf:"fixed32,2,opt,name=scale,def=1" json:"scale,omitempty"`
+	Shift            *float32 `protobuf:"fixed32,3,opt,name=shift,def=0" json:"shift,omitempty"`
 	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *ThresholdParameter) Reset()         { *m = ThresholdParameter{} }
-func (m *ThresholdParameter) String() string { return proto.CompactTextString(m) }
-func (*ThresholdParameter) ProtoMessage()    {}
+func (m *ExpParameter) Reset()         { *m = ExpParameter{} }
+func (m *ExpParameter) String() string { return proto.CompactTextString(m) }
+func (*ExpParameter) ProtoMessage()    {}
 
-const Default_ThresholdParameter_Threshold float32 = 0
+const Default_ExpParameter_Base float32 = -1
+const Default_ExpParameter_Scale float32 = 1
+const Default_ExpParameter_Shift float32 = 0
 
-func (m *ThresholdParameter) GetThreshold() float32 {
-	if m != nil && m.Threshold != nil {
-		return *m.Threshold
+func (m *ExpParameter) GetBase() float32 {
+	if m != nil && m.Base != nil {
+		return *m.Base
 	}
-	return Default_ThresholdParameter_Threshold
+	return Default_ExpParameter_Base
+}
+
+func (m *ExpParameter) GetScale() float32 {
+	if m != nil && m.Scale != nil {
+		return *m.Scale
+	}
+	return Default_ExpParameter_Scale
+}
+
+func (m *ExpParameter) GetShift() float32 {
+	if m != nil && m.Shift != nil {
+		return *m.Shift
+	}
+	return Default_ExpParameter_Shift
 }
 
 // Message that stores parameters used by HDF5DataLayer
@@ -2427,13 +2513,15 @@ type ImageDataParameter struct {
 	// The rand_skip variable is for the data layer to skip a few data points
 	// to avoid all asynchronous sgd clients to start at the same point. The skip
 	// point would be set as rand_skip * rand(0,1). Note that rand_skip should not
-	// be larger than the number of keys in the leveldb.
+	// be larger than the number of keys in the database.
 	RandSkip *uint32 `protobuf:"varint,7,opt,name=rand_skip,def=0" json:"rand_skip,omitempty"`
 	// Whether or not ImageLayer should shuffle the list of files at every epoch.
 	Shuffle *bool `protobuf:"varint,8,opt,name=shuffle,def=0" json:"shuffle,omitempty"`
 	// It will also resize images if new_height or new_width are not zero.
 	NewHeight *uint32 `protobuf:"varint,9,opt,name=new_height,def=0" json:"new_height,omitempty"`
 	NewWidth  *uint32 `protobuf:"varint,10,opt,name=new_width,def=0" json:"new_width,omitempty"`
+	// Specify if the images are color or gray
+	IsColor *bool `protobuf:"varint,11,opt,name=is_color,def=1" json:"is_color,omitempty"`
 	// DEPRECATED. See TransformationParameter. For data pre-processing, we can do
 	// simple scaling and subtracting the data mean, if provided. Note that the
 	// mean subtraction is always carried out before scaling.
@@ -2444,8 +2532,9 @@ type ImageDataParameter struct {
 	CropSize *uint32 `protobuf:"varint,5,opt,name=crop_size,def=0" json:"crop_size,omitempty"`
 	// DEPRECATED. See TransformationParameter. Specify if we want to randomly mirror
 	// data.
-	Mirror           *bool  `protobuf:"varint,6,opt,name=mirror,def=0" json:"mirror,omitempty"`
-	XXX_unrecognized []byte `json:"-"`
+	Mirror           *bool   `protobuf:"varint,6,opt,name=mirror,def=0" json:"mirror,omitempty"`
+	RootFolder       *string `protobuf:"bytes,12,opt,name=root_folder,def=" json:"root_folder,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
 }
 
 func (m *ImageDataParameter) Reset()         { *m = ImageDataParameter{} }
@@ -2456,6 +2545,7 @@ const Default_ImageDataParameter_RandSkip uint32 = 0
 const Default_ImageDataParameter_Shuffle bool = false
 const Default_ImageDataParameter_NewHeight uint32 = 0
 const Default_ImageDataParameter_NewWidth uint32 = 0
+const Default_ImageDataParameter_IsColor bool = true
 const Default_ImageDataParameter_Scale float32 = 1
 const Default_ImageDataParameter_CropSize uint32 = 0
 const Default_ImageDataParameter_Mirror bool = false
@@ -2502,6 +2592,13 @@ func (m *ImageDataParameter) GetNewWidth() uint32 {
 	return Default_ImageDataParameter_NewWidth
 }
 
+func (m *ImageDataParameter) GetIsColor() bool {
+	if m != nil && m.IsColor != nil {
+		return *m.IsColor
+	}
+	return Default_ImageDataParameter_IsColor
+}
+
 func (m *ImageDataParameter) GetScale() float32 {
 	if m != nil && m.Scale != nil {
 		return *m.Scale
@@ -2528,6 +2625,13 @@ func (m *ImageDataParameter) GetMirror() bool {
 		return *m.Mirror
 	}
 	return Default_ImageDataParameter_Mirror
+}
+
+func (m *ImageDataParameter) GetRootFolder() string {
+	if m != nil && m.RootFolder != nil {
+		return *m.RootFolder
+	}
+	return ""
 }
 
 // Message that stores parameters InfogainLossLayer
@@ -2597,6 +2701,7 @@ type LRNParameter struct {
 	Alpha            *float32                 `protobuf:"fixed32,2,opt,name=alpha,def=1" json:"alpha,omitempty"`
 	Beta             *float32                 `protobuf:"fixed32,3,opt,name=beta,def=0.75" json:"beta,omitempty"`
 	NormRegion       *LRNParameter_NormRegion `protobuf:"varint,4,opt,name=norm_region,enum=caffe.LRNParameter_NormRegion,def=0" json:"norm_region,omitempty"`
+	K                *float32                 `protobuf:"fixed32,5,opt,name=k,def=1" json:"k,omitempty"`
 	XXX_unrecognized []byte                   `json:"-"`
 }
 
@@ -2608,6 +2713,7 @@ const Default_LRNParameter_LocalSize uint32 = 5
 const Default_LRNParameter_Alpha float32 = 1
 const Default_LRNParameter_Beta float32 = 0.75
 const Default_LRNParameter_NormRegion LRNParameter_NormRegion = LRNParameter_ACROSS_CHANNELS
+const Default_LRNParameter_K float32 = 1
 
 func (m *LRNParameter) GetLocalSize() uint32 {
 	if m != nil && m.LocalSize != nil {
@@ -2635,6 +2741,13 @@ func (m *LRNParameter) GetNormRegion() LRNParameter_NormRegion {
 		return *m.NormRegion
 	}
 	return Default_LRNParameter_NormRegion
+}
+
+func (m *LRNParameter) GetK() float32 {
+	if m != nil && m.K != nil {
+		return *m.K
+	}
+	return Default_LRNParameter_K
 }
 
 // Message that stores parameters used by MemoryDataLayer
@@ -2713,17 +2826,20 @@ type PoolingParameter struct {
 	Pool *PoolingParameter_PoolMethod `protobuf:"varint,1,opt,name=pool,enum=caffe.PoolingParameter_PoolMethod,def=0" json:"pool,omitempty"`
 	// Pad, kernel size, and stride are all given as a single value for equal
 	// dimensions in height and width or as Y, X pairs.
-	Pad              *uint32                  `protobuf:"varint,4,opt,name=pad,def=0" json:"pad,omitempty"`
-	PadH             *uint32                  `protobuf:"varint,9,opt,name=pad_h,def=0" json:"pad_h,omitempty"`
-	PadW             *uint32                  `protobuf:"varint,10,opt,name=pad_w,def=0" json:"pad_w,omitempty"`
-	KernelSize       *uint32                  `protobuf:"varint,2,opt,name=kernel_size" json:"kernel_size,omitempty"`
-	KernelH          *uint32                  `protobuf:"varint,5,opt,name=kernel_h" json:"kernel_h,omitempty"`
-	KernelW          *uint32                  `protobuf:"varint,6,opt,name=kernel_w" json:"kernel_w,omitempty"`
-	Stride           *uint32                  `protobuf:"varint,3,opt,name=stride,def=1" json:"stride,omitempty"`
-	StrideH          *uint32                  `protobuf:"varint,7,opt,name=stride_h" json:"stride_h,omitempty"`
-	StrideW          *uint32                  `protobuf:"varint,8,opt,name=stride_w" json:"stride_w,omitempty"`
-	Engine           *PoolingParameter_Engine `protobuf:"varint,11,opt,name=engine,enum=caffe.PoolingParameter_Engine,def=0" json:"engine,omitempty"`
-	XXX_unrecognized []byte                   `json:"-"`
+	Pad        *uint32                  `protobuf:"varint,4,opt,name=pad,def=0" json:"pad,omitempty"`
+	PadH       *uint32                  `protobuf:"varint,9,opt,name=pad_h,def=0" json:"pad_h,omitempty"`
+	PadW       *uint32                  `protobuf:"varint,10,opt,name=pad_w,def=0" json:"pad_w,omitempty"`
+	KernelSize *uint32                  `protobuf:"varint,2,opt,name=kernel_size" json:"kernel_size,omitempty"`
+	KernelH    *uint32                  `protobuf:"varint,5,opt,name=kernel_h" json:"kernel_h,omitempty"`
+	KernelW    *uint32                  `protobuf:"varint,6,opt,name=kernel_w" json:"kernel_w,omitempty"`
+	Stride     *uint32                  `protobuf:"varint,3,opt,name=stride,def=1" json:"stride,omitempty"`
+	StrideH    *uint32                  `protobuf:"varint,7,opt,name=stride_h" json:"stride_h,omitempty"`
+	StrideW    *uint32                  `protobuf:"varint,8,opt,name=stride_w" json:"stride_w,omitempty"`
+	Engine     *PoolingParameter_Engine `protobuf:"varint,11,opt,name=engine,enum=caffe.PoolingParameter_Engine,def=0" json:"engine,omitempty"`
+	// If global_pooling then it will pool over the size of the bottom by doing
+	// kernel_h = bottom->height and kernel_w = bottom->width
+	GlobalPooling    *bool  `protobuf:"varint,12,opt,name=global_pooling,def=0" json:"global_pooling,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
 }
 
 func (m *PoolingParameter) Reset()         { *m = PoolingParameter{} }
@@ -2736,6 +2852,7 @@ const Default_PoolingParameter_PadH uint32 = 0
 const Default_PoolingParameter_PadW uint32 = 0
 const Default_PoolingParameter_Stride uint32 = 1
 const Default_PoolingParameter_Engine PoolingParameter_Engine = PoolingParameter_DEFAULT
+const Default_PoolingParameter_GlobalPooling bool = false
 
 func (m *PoolingParameter) GetPool() PoolingParameter_PoolMethod {
 	if m != nil && m.Pool != nil {
@@ -2812,6 +2929,13 @@ func (m *PoolingParameter) GetEngine() PoolingParameter_Engine {
 		return *m.Engine
 	}
 	return Default_PoolingParameter_Engine
+}
+
+func (m *PoolingParameter) GetGlobalPooling() bool {
+	if m != nil && m.GlobalPooling != nil {
+		return *m.GlobalPooling
+	}
+	return Default_PoolingParameter_GlobalPooling
 }
 
 // Message that stores parameters used by PowerLayer
@@ -2935,7 +3059,7 @@ func (m *SliceParameter) GetSlicePoint() []uint32 {
 	return nil
 }
 
-// Message that stores parameters used by SoftmaxLayer, SoftMaxWithLossLayer
+// Message that stores parameters used by SoftmaxLayer, SoftmaxWithLossLayer
 type SoftmaxParameter struct {
 	Engine           *SoftmaxParameter_Engine `protobuf:"varint,1,opt,name=engine,enum=caffe.SoftmaxParameter_Engine,def=0" json:"engine,omitempty"`
 	XXX_unrecognized []byte                   `json:"-"`
@@ -2954,7 +3078,7 @@ func (m *SoftmaxParameter) GetEngine() SoftmaxParameter_Engine {
 	return Default_SoftmaxParameter_Engine
 }
 
-// Message that stores parameters used by SigmoidLayer
+// Message that stores parameters used by TanHLayer
 type TanHParameter struct {
 	Engine           *TanHParameter_Engine `protobuf:"varint,1,opt,name=engine,enum=caffe.TanHParameter_Engine,def=0" json:"engine,omitempty"`
 	XXX_unrecognized []byte                `json:"-"`
@@ -2971,6 +3095,25 @@ func (m *TanHParameter) GetEngine() TanHParameter_Engine {
 		return *m.Engine
 	}
 	return Default_TanHParameter_Engine
+}
+
+// Message that stores parameters used by ThresholdLayer
+type ThresholdParameter struct {
+	Threshold        *float32 `protobuf:"fixed32,1,opt,name=threshold,def=0" json:"threshold,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
+}
+
+func (m *ThresholdParameter) Reset()         { *m = ThresholdParameter{} }
+func (m *ThresholdParameter) String() string { return proto.CompactTextString(m) }
+func (*ThresholdParameter) ProtoMessage()    {}
+
+const Default_ThresholdParameter_Threshold float32 = 0
+
+func (m *ThresholdParameter) GetThreshold() float32 {
+	if m != nil && m.Threshold != nil {
+		return *m.Threshold
+	}
+	return Default_ThresholdParameter_Threshold
 }
 
 // Message that stores parameters used by WindowDataLayer
@@ -3000,7 +3143,11 @@ type WindowDataParameter struct {
 	// Mode for cropping out a detection window
 	// warp: cropped window is warped to a fixed size and aspect ratio
 	// square: the tightest square around the window is cropped
-	CropMode         *string `protobuf:"bytes,11,opt,name=crop_mode,def=warp" json:"crop_mode,omitempty"`
+	CropMode *string `protobuf:"bytes,11,opt,name=crop_mode,def=warp" json:"crop_mode,omitempty"`
+	// cache_images: will load all images in memory for faster access
+	CacheImages *bool `protobuf:"varint,12,opt,name=cache_images,def=0" json:"cache_images,omitempty"`
+	// append root_folder to locate images
+	RootFolder       *string `protobuf:"bytes,13,opt,name=root_folder,def=" json:"root_folder,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
 
@@ -3016,6 +3163,7 @@ const Default_WindowDataParameter_BgThreshold float32 = 0.5
 const Default_WindowDataParameter_FgFraction float32 = 0.25
 const Default_WindowDataParameter_ContextPad uint32 = 0
 const Default_WindowDataParameter_CropMode string = "warp"
+const Default_WindowDataParameter_CacheImages bool = false
 
 func (m *WindowDataParameter) GetSource() string {
 	if m != nil && m.Source != nil {
@@ -3094,6 +3242,20 @@ func (m *WindowDataParameter) GetCropMode() string {
 	return Default_WindowDataParameter_CropMode
 }
 
+func (m *WindowDataParameter) GetCacheImages() bool {
+	if m != nil && m.CacheImages != nil {
+		return *m.CacheImages
+	}
+	return Default_WindowDataParameter_CacheImages
+}
+
+func (m *WindowDataParameter) GetRootFolder() string {
+	if m != nil && m.RootFolder != nil {
+		return *m.RootFolder
+	}
+	return ""
+}
+
 // DEPRECATED: V0LayerParameter is the old way of specifying layer parameters
 // in Caffe.  We keep this message type around for legacy support.
 type V0LayerParameter struct {
@@ -3113,6 +3275,7 @@ type V0LayerParameter struct {
 	LocalSize    *uint32                      `protobuf:"varint,13,opt,name=local_size,def=5" json:"local_size,omitempty"`
 	Alpha        *float32                     `protobuf:"fixed32,14,opt,name=alpha,def=1" json:"alpha,omitempty"`
 	Beta         *float32                     `protobuf:"fixed32,15,opt,name=beta,def=0.75" json:"beta,omitempty"`
+	K            *float32                     `protobuf:"fixed32,22,opt,name=k,def=1" json:"k,omitempty"`
 	// For data layers, specify the data source
 	Source *string `protobuf:"bytes,16,opt,name=source" json:"source,omitempty"`
 	// For data pre-processing, we can do simple scaling and subtracting the
@@ -3136,7 +3299,7 @@ type V0LayerParameter struct {
 	// The rand_skip variable is for the data layer to skip a few data points
 	// to avoid all asynchronous sgd clients to start at the same point. The skip
 	// point would be set as rand_skip * rand(0,1). Note that rand_skip should not
-	// be larger than the number of keys in the leveldb.
+	// be larger than the number of keys in the database.
 	RandSkip *uint32 `protobuf:"varint,53,opt,name=rand_skip,def=0" json:"rand_skip,omitempty"`
 	// Fields related to detection (det_*)
 	// foreground (object) overlap threshold
@@ -3181,6 +3344,7 @@ const Default_V0LayerParameter_DropoutRatio float32 = 0.5
 const Default_V0LayerParameter_LocalSize uint32 = 5
 const Default_V0LayerParameter_Alpha float32 = 1
 const Default_V0LayerParameter_Beta float32 = 0.75
+const Default_V0LayerParameter_K float32 = 1
 const Default_V0LayerParameter_Scale float32 = 1
 const Default_V0LayerParameter_Cropsize uint32 = 0
 const Default_V0LayerParameter_Mirror bool = false
@@ -3300,6 +3464,13 @@ func (m *V0LayerParameter) GetBeta() float32 {
 		return *m.Beta
 	}
 	return Default_V0LayerParameter_Beta
+}
+
+func (m *V0LayerParameter) GetK() float32 {
+	if m != nil && m.K != nil {
+		return *m.K
+	}
+	return Default_V0LayerParameter_K
 }
 
 func (m *V0LayerParameter) GetSource() string {
