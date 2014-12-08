@@ -2,23 +2,38 @@
 # TODO: this script needs to wait for the couchbase bootstrap node to be running
 # before executing
 
-# wait for couchbase server to come up
-# TODO: come up with better way than this
-echo "Sleeping to wait for Couchbase Server"
-sleep 180
+
+while getopts ":v:n:u:" opt; do
+      case $opt in
+        v  ) version=$OPTARG ;;
+        n  ) numnodes=$OPTARG ;;
+        u  ) userpass=$OPTARG ;;
+        \? ) echo $usage
+             exit 1 ;; 
+      esac
+done
 
 
-# get couchbase cluster ip from etcd
-COUCHBASE_CLUSTER=$(etcdctl get /services/couchbase/bootstrap_ip)
+# Kick off couchbase cluster 
+wget https://raw.githubusercontent.com/couchbaselabs/couchbase-server-docker/master/scripts/cluster-init.sh
+chmod +x cluster-init.sh
+./cluster-init.sh -v $version -n $numnodes -u $userpass
 
-if [ -z "$COUCHBASE_CLUSTER" ]; then
-    echo "COUCHBASE_CLUSTER is empty"
-    exit 1 
-fi
+# Wait until bootstrap node is up
+while [ -z "$COUCHBASE_CLUSTER" ]; do
+    echo Retrying...
+    COUCHBASE_CLUSTER=$(etcdctl get /services/couchbase/bootstrap_ip)
+    sleep 5
+done
 
-# get usrname/pass from etcd
-CB_USERNAME_PASSWORD=$(etcdctl get /services/couchbase/userpass)
-IFS=':' read -a array <<< "$CB_USERNAME_PASSWORD"
+echo "Couchbase Server bootstrap ip: $COUCHBASE_CLUSTER"
+
+
+# rebalance cluster
+sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli rebalance -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD
+
+# parse user/pass into variables
+IFS=':' read -a array <<< "$userpass"
 CB_USERNAME=${array[0]}
 CB_PASSWORD=${array[1]}
 
@@ -27,14 +42,26 @@ sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-
 
 # kick off 3 cbfs nodes (TODO: num nodes should be a parameter)
 git clone https://github.com/tleyden/elastic-thought.git
-cp elastic-thought/docker/fleet/cbfs_node.service.template .
-for i in `seq 1 3`; do cp cbfs_node.service.template cbfs_node.$i.service; done
-fleetctl start cbfs_node.*.service
+cd elastic-thought/docker/fleet && fleetctl submit cbfs_node@.service && fleetctl submit cbfs_announce@.service && cd ~
+for i in `seq 1 $numnodes`; do fleetctl start cbfs_node@$i.service; fleetctl start cbfs_announce@$i.service; done
 
-# wait for cbfs nodes to come up
-# TODO: come up with better way than this
-echo "Sleeping to wait for CBFS"
-sleep 180 
+# wait for all 3 cbfs nodes to come up 
+while [ -z "$CBFS_UP" ]; do
+    COUNTER=0
+    for i in `seq 1 $numnodes`; do 
+	NODE_UP=$(etcdctl get /services/cbfs/cbfs_node@$i)
+	if [ -n $NODE_UP ]; then
+	    COUNTER=$[$COUNTER +1]
+	done 
+    done
+    if (( $COUNTER == 4 )); then
+	CBFS_UP="true"
+    else
+	echo "Sleeping .. will retry"
+	sleep 5
+    fi 
+done
+
 
 # create elastic-thought bucket
 sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli bucket-create -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD --bucket=elastic-thought --bucket-ramsize=1024
@@ -43,7 +70,7 @@ sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-
 COUCHBASE_IP_PORT=$COUCHBASE_CLUSTER:8091
 sed -e "s/COUCHBASE_IP_PORT/${COUCHBASE_IP_PORT}/" elastic-thought/docker/templates/sync_gateway/sync_gw_config.json > /tmp/sync_gw_config.json
 
-# upload to cbfs
+# upload sync gateway config to cbfs
 ip=$(hostname -i | tr -d ' ')
 sudo docker run --net=host -v /tmp:/tmp tleyden5iwx/cbfs cbfsclient http://$ip:8484/ upload /tmp/sync_gw_config.json /sync_gw_config.json 
 
@@ -52,12 +79,26 @@ mkdir sync-gateway && \
   cd sync-gateway && \
   wget https://raw.githubusercontent.com/tleyden/sync-gateway-coreos/master/scripts/cluster-init.sh && \
   chmod +x cluster-init.sh && \
-  ./cluster-init.sh -n 3 -c "master" -g http://$ip:8484/sync_gw_config.json
+  ./cluster-init.sh -n $numnodes -c "master" -g http://$ip:8484/sync_gw_config.json
 
-# wait for sync gw and nsq to come up 
-# TODO: come up with better way than this
-echo "Sleeping to wait for Sync Gateway"
-sleep 180 
+# wait for all 3 sync gw nodes to come up 
+while [ -z "$SYNC_GW_UP" ]; do
+    COUNTER=0
+    for i in `seq 1 $numnodes`; do 
+	NODE_UP=$(etcdctl get /services/sync_gw/sync_gw_node@$i)
+	if [ -n $NODE_UP ]; then
+	    COUNTER=$[$COUNTER +1]
+	done 
+    done
+    if (( $COUNTER == 4 )); then
+	SYNC_GW_UP="true"
+    else
+	echo "Sleeping .. will retry"
+	sleep 5
+    fi 
+done
+
+
 
 # Todo: use coreos init for this
 # kick off elasticthought httpd-worker (goroutine)
