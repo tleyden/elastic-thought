@@ -83,10 +83,15 @@ For that, check out:
 
 * See http://tleyden.github.io/blog/2014/11/01/running-couchbase-cluster-under-coreos-on-aws/
 
-### Kick off CBFS
+### Kick off ElasticThought
 
-* http://tleyden.github.io/blog/2014/11/14/running-cbfs/
- 
+```
+$ wget https://raw.githubusercontent.com/tleyden/elastic-thought/master/docker/scripts/elasticthought-coreos-init.sh
+$ chmod +x elasticthought-coreos-init.sh
+$ ./elasticthought-coreos-init.sh
+```
+
+After this finishes, you should be able to access the API on the public ip of the same machine you ran the script from.  (if not, find public ip of node where elasticthought httpd is running)
 
 ## Kick things off: Local 
 
