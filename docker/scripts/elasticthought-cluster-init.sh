@@ -37,6 +37,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Wait until bootstrap node is up
+echo "Wait until Couchbase bootstrap node is up"
 while [ -z "$COUCHBASE_CLUSTER" ]; do
     echo Retrying...
     COUCHBASE_CLUSTER=$(etcdctl get /services/couchbase/bootstrap_ip)
@@ -59,7 +60,9 @@ echo "Done waiting: $numnodes Couchbase Servers are running"
 untilsuccessful sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli rebalance -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD
 
 # create cbfs bucket
+echo "Create a cbfs bucket"
 untilsuccessful sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli bucket-create -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD --bucket=cbfs --bucket-ramsize=512
+echo "Done: created a cbfs bucket"
 
 # kick off 3 cbfs nodes (TODO: num nodes should be a parameter)
 git clone https://github.com/tleyden/elastic-thought.git
