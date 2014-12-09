@@ -75,75 +75,38 @@ For that, check out:
 
 ### Launch EC2 instances via CloudFormation script
 
-* [Launch Stack](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#cstack=sn%7ECouchbase-CoreOS%7Cturl%7Ehttp://tleyden-misc.s3.amazonaws.com/elastic-thought/cloudformation/elastic_thought.template)
-* Choose 3 node cluster with m3.medium instance type
+* [Launch CPU Stack](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#cstack=sn%7ECouchbase-CoreOS%7Cturl%7Ehttp://tleyden-misc.s3.amazonaws.com/elastic-thought/cloudformation/elastic_thought_cpu.template) or [Launch GPU Stack](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#cstack=sn%7ECouchbase-CoreOS%7Cturl%7Ehttp://tleyden-misc.s3.amazonaws.com/elastic-thought/cloudformation/elastic_thought_gpu.template) 
+* Choose 3 node cluster with m3.medium or g2.2xlarge (GPU case) instance type
 * All other values should be default
 
-### Kick off Couchbase Server
+### Load GPU kernel module / devices
 
-* Ssh into one of the machines (doesn't matter which): `ssh -A core@ec2-54-160-96-153.compute-1.amazonaws.com`
-* wget https://raw.githubusercontent.com/couchbaselabs/couchbase-server-docker/master/scripts/cluster-init.sh
-* chmod +x cluster-init.sh
-* ./cluster-init.sh -v 3.0.1 -n 3 -u "user:passw0rd"
+*Only needed if you launched a GPU cluster*
+
+Ssh into ALL of the machines (ie, `ssh -A core@ec2-54-160-96-153.compute-1.amazonaws.com`) and do the following steps.
+
+* `sudo insmod nvidia.ko`
+* `sudo insmod nvidia-uvm.ko`
+* `wget https://gist.githubusercontent.com/tleyden/74f593a0beea300de08c/raw/95ed93c5751a989e58153db6f88c35515b7af120/nvidia_devices.sh`
+* `chmod +x nvidia_devices.sh`
+* `sudo ./nvidia_devices.sh`
 
 ### Kick off ElasticThought
 
 ```
+* Ssh into one of the machines (doesn't matter which): `ssh -A core@ec2-54-160-96-153.compute-1.amazonaws.com`
 $ wget https://raw.githubusercontent.com/tleyden/elastic-thought/master/docker/scripts/elasticthought-cluster-init.sh
 $ chmod +x elasticthought-cluster-init.sh
-$ ./elasticthought-cluster-init.sh
+$ ./elasticthought-cluster-init.sh -v 3.0.1 -n 3 -u "user:passw0rd" -p (cpu|gpu)
+```
+
+TODO: the -p flag is not supported yet, but it should pick the right docker image and pass any extra params:
+
+```
+sudo docker run -ti --device /dev/nvidia0:/dev/nvidia0 --device /dev/nvidiactl:/dev/nvidiactl --device /dev/nvidia-uvm:/dev/nvidia-uvm tleyden5iwx/caffe-gpu-develop /bin/bash
 ```
 
 After this finishes, you should be able to access the API on the public ip of the same machine you ran the script from.  (if not, find public ip of node where elasticthought httpd is running)
-
-## Kick things off: Local 
-
-*Note: this will be much easier after everything is packaged as fleetctl scripts, for the meantime these are just notes to myself*
-
-# Install go1.3 or later
-
-```
-
-```
-
-# Start Nsq
-
-```
-$ nsqlookupd & 
-$ nsqd --lookupd-tcp-address=127.0.0.1:4160 &
-$ nsqadmin --lookupd-http-address=127.0.0.1:4161 &
-```
-
-# Start Sync Gatewway
-
-```
-$ ./run.sh config.json
-```
-
-# Start httpd
-
-# Start cbfs
-
-# Start Couchbase Server
-
-# Start worker in docker image
-
-* Run docker image with bin/bash
-* Update configuration.go urls to point to 10.0.2.2
-* emacs -nw ../../../../couchbaselabs/cbfs/client/put.go and apply hack
-
-
-## Todo
-
-- Validate solver.prototxt: 
-  - it should assert "net" arg is empty
-  - it should add a value for "net", which should be absolute path to net prototxt file
-  - the worker should rewrite the solver_mode CPU/GPU based on worker capabilities 
-- Add ability to cancel a training job in progress
-
-## Related Work
-
-
 
 ## License
 
