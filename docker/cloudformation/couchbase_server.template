@@ -19,11 +19,11 @@
           "ap-southeast-1" : {
               "AMI" : "ami-7e78592c"
           },
-
+    
           "us-east-1" : {
               "AMI" : "ami-da78c3b2"
           },
-
+     
           "us-west-2" : {
               "AMI" : "ami-e32965d3"
           },

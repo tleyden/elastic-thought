@@ -12,12 +12,13 @@ type Params struct {
 	CBFS             bool
 	SYNC_GATEWAY     bool
 	ELASTIC_THOUGHT  bool
+	GPU              bool
 }
 
 func main() {
 
-	if len(os.Args) < 2 {
-		log.Fatal("Usage: ./generate_cloudformation elastic_thought")
+	if len(os.Args) < 3 {
+		log.Fatal("Usage: ./generate_cloudformation elastic_thought (cpu|gpu)")
 		return
 	}
 
@@ -46,6 +47,15 @@ func main() {
 		params.ELASTIC_THOUGHT = false
 	default:
 		log.Fatal("invalid arg: %v", os.Args[1])
+	}
+
+	switch os.Args[2] {
+	case "cpu":
+		params.GPU = false
+	case "gpu":
+		params.GPU = true
+	default:
+		log.Fatal("invalid arg: %v", os.Args[2])
 	}
 
 	templateFile := "cloudformation.template"

@@ -19,9 +19,9 @@
           "ap-southeast-1" : {
               "AMI" : "ami-7e78592c"
           },
-    
+     
           "us-east-1" : {
-              "AMI" : "ami-da78c3b2"
+              "AMI" : "ami-909ffbf8"
           },
      
           "us-west-2" : {
@@ -173,6 +173,45 @@
       }
     },
      
+     
+    "Ingress4150": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupName": {"Ref": "CoreOSSecurityGroup"}, "IpProtocol": "tcp", "FromPort": "4150", "ToPort": "4150", "SourceSecurityGroupId": {
+          "Fn::GetAtt" : [ "CoreOSSecurityGroup", "GroupId" ] 
+        }
+      }
+    },
+    "Ingress4151": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupName": {"Ref": "CoreOSSecurityGroup"}, "IpProtocol": "tcp", "FromPort": "4151", "ToPort": "4151", "SourceSecurityGroupId": {
+          "Fn::GetAtt" : [ "CoreOSSecurityGroup", "GroupId" ] 
+        }
+      }
+    },
+    "Ingress4160": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupName": {"Ref": "CoreOSSecurityGroup"}, "IpProtocol": "tcp", "FromPort": "4160", "ToPort": "4160", "SourceSecurityGroupId": {
+          "Fn::GetAtt" : [ "CoreOSSecurityGroup", "GroupId" ] 
+        }
+      }
+    },
+    "Ingress4161": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupName": {"Ref": "CoreOSSecurityGroup"}, "IpProtocol": "tcp", "FromPort": "4161", "ToPort": "4161", "SourceSecurityGroupId": {
+          "Fn::GetAtt" : [ "CoreOSSecurityGroup", "GroupId" ] 
+        }
+      }
+    },
+    "Ingress8080": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupName": {"Ref": "CoreOSSecurityGroup"}, "IpProtocol": "tcp", "FromPort": "8080", "ToPort": "8080", "CidrIp": "0.0.0.0/0"
+      }
+    },    
      
     "CoreOSServerAutoScale": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
