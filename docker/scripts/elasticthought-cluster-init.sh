@@ -1,7 +1,4 @@
 
-# TODO: this script needs to wait for the couchbase bootstrap node to be running
-# before executing
-
 function untilsuccessful() {
 	"$@"
 	while [ $? -ne 0 ]; do
@@ -11,15 +8,31 @@ function untilsuccessful() {
 	done
 }
 
-while getopts ":v:n:u:" opt; do
+usage="./elasticthought-cluster-init.sh -v 3.0.1 -n 3 -u "user:passw0rd" -p gpu"
+
+while getopts ":v:n:u:p:" opt; do
       case $opt in
         v  ) version=$OPTARG ;;
         n  ) numnodes=$OPTARG ;;
         u  ) userpass=$OPTARG ;;
+        p  ) processor=$OPTARG ;;
         \? ) echo $usage
              exit 1 ;; 
       esac
 done
+
+# make sure required args were given
+if [[ -z "$version" || -z "$numnodes" || -z "$userpass" || -z "$processor" ]] ; then
+    echo "Required argument was empty"
+    echo $usage
+    exit 1 
+fi
+
+# validate processor arg: cpu or gpu
+if [ "$processor" != "cpu" ] && [ "$processor" != "gpu" ]; then
+    echo "You passed an invalid value for processor.  Must be cpu or gpu"
+    exit 1 
+fi
 
 # parse user/pass into variables
 IFS=':' read -a array <<< "$userpass"
@@ -27,6 +40,7 @@ CB_USERNAME=${array[0]}
 CB_PASSWORD=${array[1]}
 
 # Kick off couchbase cluster 
+echo "Kick off couchbase cluster"
 wget https://raw.githubusercontent.com/couchbaselabs/couchbase-server-docker/master/scripts/cluster-init.sh
 chmod +x cluster-init.sh
 ./cluster-init.sh -v $version -n $numnodes -u $userpass
@@ -108,7 +122,7 @@ echo "Done: sync gateway nodes up"
 
 # kick off elastic-thought httpd daemons
 echo "Kick off elastic thought httpd daemons"
-cd elastic-thought/docker/fleet && fleetctl submit elastic_thought_gpu@.service && cd ~
-for i in `seq 1 $numnodes`; do fleetctl start elastic_thought_gpu@$i.service; done
+cd elastic-thought/docker/fleet && fleetctl submit elastic_thought_$processor@.service && cd ~
+for i in `seq 1 $numnodes`; do fleetctl start elastic_thought_$processor@$i.service; done
 
 echo "Done!  Your ElasticThought REST API is available to use on <public-ip-any-node>:8080"
