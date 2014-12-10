@@ -21,7 +21,7 @@
           },
     {{ if .GPU }} 
           "us-east-1" : {
-              "AMI" : "ami-909ffbf8"
+              "AMI" : "ami-f669f29e"
           },
     {{ else }}
           "us-east-1" : {
