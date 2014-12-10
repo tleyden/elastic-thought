@@ -1,4 +1,5 @@
-FROM tleyden5iwx/caffe-cpu-develop
+
+FROM tleyden5iwx/caffe-{{ .ProcessorType }}-{{ .CaffeBranch }}
 
 MAINTAINER Traun Leyden tleyden@couchbase.com
 
