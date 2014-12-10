@@ -85,8 +85,7 @@ For that, check out:
 
 Ssh into ALL of the machines (ie, `ssh -A core@ec2-54-160-96-153.compute-1.amazonaws.com`) and do the following steps.
 
-* `sudo insmod nvidia.ko`
-* `sudo insmod nvidia-uvm.ko`
+* `sudo insmod nvidia.ko && sudo insmod nvidia-uvm.ko`
 * `wget https://gist.githubusercontent.com/tleyden/74f593a0beea300de08c/raw/95ed93c5751a989e58153db6f88c35515b7af120/nvidia_devices.sh`
 * `chmod +x nvidia_devices.sh`
 * `sudo ./nvidia_devices.sh`
@@ -97,14 +96,16 @@ Ssh into ALL of the machines (ie, `ssh -A core@ec2-54-160-96-153.compute-1.amazo
 * Ssh into one of the machines (doesn't matter which): `ssh -A core@ec2-54-160-96-153.compute-1.amazonaws.com`
 $ wget https://raw.githubusercontent.com/tleyden/elastic-thought/master/docker/scripts/elasticthought-cluster-init.sh
 $ chmod +x elasticthought-cluster-init.sh
-$ ./elasticthought-cluster-init.sh -v 3.0.1 -n 3 -u "user:passw0rd" -p (cpu|gpu)
+$ ./elasticthought-cluster-init.sh -v 3.0.1 -n 3 -u "user:passw0rd" -p gpu 
+```
+
+Will have new param:
+
+```
+-p (cpu|gpu)
 ```
 
 TODO: the -p flag is not supported yet, but it should pick the right docker image and pass any extra params:
-
-```
-sudo docker run -ti --device /dev/nvidia0:/dev/nvidia0 --device /dev/nvidiactl:/dev/nvidiactl --device /dev/nvidia-uvm:/dev/nvidia-uvm tleyden5iwx/caffe-gpu-develop /bin/bash
-```
 
 After this finishes, you should be able to access the API on the public ip of the same machine you ran the script from.  (if not, find public ip of node where elasticthought httpd is running)
 
