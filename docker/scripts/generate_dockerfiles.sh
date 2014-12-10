@@ -5,4 +5,8 @@ go run generate_dockerfiles/generate_dockerfiles.go cpu master > ../cpu/master/D
 go run generate_dockerfiles/generate_dockerfiles.go gpu develop > ../gpu/develop/Dockerfile
 go run generate_dockerfiles/generate_dockerfiles.go gpu master > ../gpu/master/Dockerfile
 
-
+# README
+cp ../../README.md ../cpu/develop
+cp ../../README.md ../cpu/master 
+cp ../../README.md ../gpu/develop
+cp ../../README.md ../gpu/master 
