@@ -1,0 +1,13 @@
+[Unit]
+Description=elastic_thought_gpu
+
+[Service]
+TimeoutStartSec=1000
+ExecStartPre=-/usr/bin/docker kill elastic_thought_gpu
+ExecStartPre=-/usr/bin/docker rm elastic_thought_gpu
+ExecStartPre=/usr/bin/docker pull tleyden5iwx/elastic-thought-gpu-develop
+ExecStart=/bin/bash -c 'ip=$(hostname -i | tr -d " ") && /usr/bin/docker run --name elastic_thought_gpu --device /dev/nvidia0:/dev/nvidia0 --device /dev/nvidiactl:/dev/nvidiactl --device /dev/nvidia-uvm:/dev/nvidia-uvm --net=host tleyden5iwx/elastic-thought-gpu-develop httpd'
+ExecStop=/usr/bin/docker stop elastic_thought_gpu
+
+[X-Fleet]
+Conflicts=elastic_thought_gpu.*.service
