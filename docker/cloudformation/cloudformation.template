@@ -222,6 +222,10 @@
       "Properties": {
         "AvailabilityZones": {"Fn::GetAZs": ""},
         "LaunchConfigurationName": {"Ref": "CoreOSServerLaunchConfig"},
+        "BlockDeviceMappings": [{
+            "DeviceName": "/dev/sda1",
+            "Ebs" : {"VolumeSize": "20"}
+        }],
         "MinSize": "3",
         "MaxSize": "12",
         "DesiredCapacity": {"Ref": "ClusterSize"},
