@@ -98,11 +98,13 @@ untilsuccessful sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbas
 # run sed on sync gateway config template
 COUCHBASE_IP_PORT=$COUCHBASE_CLUSTER:8091
 sed -e "s/COUCHBASE_IP_PORT/${COUCHBASE_IP_PORT}/" elastic-thought/docker/templates/sync_gateway/sync_gw_config.json > /tmp/sync_gw_config.json
+echo "Generated sync gateway config"
+cat /tmp/sync_gw_config.json
 
 # upload sync gateway config to cbfs
-echo "Upload sync gateway config to cbfs"
 ip=$(hostname -i | tr -d ' ')
-sudo docker run --net=host -v /tmp:/tmp tleyden5iwx/cbfs cbfsclient http://$ip:8484/ upload /tmp/sync_gw_config.json /sync_gw_config.json 
+echo "Upload sync gateway config to cbfs: http://$ip:8484/"
+untilsuccessful sudo docker run --net=host -v /tmp:/tmp tleyden5iwx/cbfs cbfsclient http://$ip:8484/ upload /tmp/sync_gw_config.json /sync_gw_config.json 
 
 # kick off sync gateway 
 echo "Kick off sync gateway"
