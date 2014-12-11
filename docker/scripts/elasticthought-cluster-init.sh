@@ -127,4 +127,4 @@ echo "Kick off elastic thought httpd daemons"
 cd elastic-thought/docker/fleet && fleetctl submit elastic_thought_$processor@.service && cd ~
 for i in `seq 1 $numnodes`; do fleetctl start elastic_thought_$processor@$i.service; done
 
-echo "Done!  Your ElasticThought REST API is available to use on <public-ip-any-node>:8080"
+echo "Done!  In a few minutes, your ElasticThought REST API will be available to use on <public-ip-any-node>:8080 -- check status with fleetctl list-units"
