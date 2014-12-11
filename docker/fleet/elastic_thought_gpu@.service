@@ -2,7 +2,7 @@
 Description=elastic_thought_gpu
 
 [Service]
-TimeoutStartSec=1000
+TimeoutStartSec=0
 ExecStartPre=-/usr/bin/docker kill elastic_thought_gpu
 ExecStartPre=-/usr/bin/docker rm elastic_thought_gpu
 ExecStartPre=/usr/bin/docker pull tleyden5iwx/elastic-thought-gpu-develop

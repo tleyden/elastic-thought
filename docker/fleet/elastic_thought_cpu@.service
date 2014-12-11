@@ -2,7 +2,7 @@
 Description=elastic_thought_cpu
 
 [Service]
-TimeoutStartSec=1000
+TimeoutStartSec=0
 ExecStartPre=-/usr/bin/docker kill elastic_thought_cpu
 ExecStartPre=-/usr/bin/docker rm elastic_thought_cpu
 ExecStartPre=/usr/bin/docker pull tleyden5iwx/elastic-thought-cpu-develop
