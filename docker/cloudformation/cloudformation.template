@@ -222,10 +222,6 @@
       "Properties": {
         "AvailabilityZones": {"Fn::GetAZs": ""},
         "LaunchConfigurationName": {"Ref": "CoreOSServerLaunchConfig"},
-        "BlockDeviceMappings": [{
-            "DeviceName": "/dev/sda1",
-            "Ebs" : {"VolumeSize": "20"}
-        }],
         "MinSize": "3",
         "MaxSize": "12",
         "DesiredCapacity": {"Ref": "ClusterSize"},
@@ -241,6 +237,10 @@
         "InstanceType": {"Ref": "InstanceType"},
         "KeyName": {"Ref": "KeyPair"},
         "SecurityGroups": [{"Ref": "CoreOSSecurityGroup"}],
+        "BlockDeviceMappings": [{
+            "DeviceName": "/dev/xvda",
+            "Ebs" : {"VolumeSize": "20"}
+        }],
         "UserData" : { "Fn::Base64":
           { "Fn::Join": [ "", [
             "#cloud-config\n\n",
