@@ -20,6 +20,9 @@ RUN mkdir -p $GOPATH
 RUN curl -O https://storage.googleapis.com/golang/go1.3.1.linux-amd64.tar.gz && \
     tar -C /usr/local -xzf go1.3.1.linux-amd64.tar.gz
 
+# Add refresh script
+ADD scripts/refresh-elastic-thought /usr/local/bin/
+
 # Go get ElasticThought
 RUN go get -u -v -t github.com/tleyden/elastic-thought && \
     go get -u -v -t github.com/tleyden/elastic-thought/cli/httpd && \

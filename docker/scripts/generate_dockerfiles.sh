@@ -10,3 +10,9 @@ cp ../../README.md ../cpu/develop
 cp ../../README.md ../cpu/master 
 cp ../../README.md ../gpu/develop
 cp ../../README.md ../gpu/master 
+
+# Scripts
+cp refresh-elastic-thought ../cpu/develop/scripts
+cp refresh-elastic-thought ../cpu/master/scripts 
+cp refresh-elastic-thought ../gpu/develop/scripts 
+cp refresh-elastic-thought ../gpu/master/scripts  
