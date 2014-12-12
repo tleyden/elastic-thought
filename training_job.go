@@ -82,8 +82,8 @@ func (j TrainingJob) runCaffe() error {
 	// debugging
 	logg.LogTo("TRAINING_JOB", "Running %v with args %v", caffePath, cmdArgs)
 	logg.LogTo("TRAINING_JOB", "Path %v", os.Getenv("PATH"))
-	out, _ := exec.Command("ls -alh /usr/local/bin").Output()
-	logg.LogTo("TRAINING_JOB", "ls -alh /usr/local/bin: %v", out)
+	out, _ := exec.Command("ls", "-alh", "/usr/local/bin").Output()
+	logg.LogTo("TRAINING_JOB", "ls -alh /usr/local/bin: %v", string(out))
 
 	// explicitly check if caffe binary found on the PATH
 	path, err := exec.LookPath("caffe")
