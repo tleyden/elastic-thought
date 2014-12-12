@@ -85,8 +85,9 @@ For that, check out:
 
 Ssh into ALL of the machines (ie, `ssh -A core@ec2-54-160-96-153.compute-1.amazonaws.com`) and do the following steps.
 
-* `sudo insmod nvidia.ko`
-* `sudo insmod nvidia-uvm.ko`
+* `wget http://tleyden-misc.s3.amazonaws.com/elastic-thought/nvidia-kernel-modules/coreos_stable_494.4.0_hvm/kernelmods.tar.gz`
+* `tar xvfz kernelmods.tar.gz`
+* `sudo insmod nvidia.ko && sudo insmod nvidia-uvm.ko`
 * `wget https://gist.githubusercontent.com/tleyden/74f593a0beea300de08c/raw/95ed93c5751a989e58153db6f88c35515b7af120/nvidia_devices.sh`
 * `chmod +x nvidia_devices.sh`
 * `sudo ./nvidia_devices.sh`
@@ -97,16 +98,39 @@ Ssh into ALL of the machines (ie, `ssh -A core@ec2-54-160-96-153.compute-1.amazo
 * Ssh into one of the machines (doesn't matter which): `ssh -A core@ec2-54-160-96-153.compute-1.amazonaws.com`
 $ wget https://raw.githubusercontent.com/tleyden/elastic-thought/master/docker/scripts/elasticthought-cluster-init.sh
 $ chmod +x elasticthought-cluster-init.sh
-$ ./elasticthought-cluster-init.sh -v 3.0.1 -n 3 -u "user:passw0rd" -p (cpu|gpu)
+$ ./elasticthought-cluster-init.sh -v 3.0.1 -n 3 -u "user:passw0rd" -p gpu 
 ```
 
-TODO: the -p flag is not supported yet, but it should pick the right docker image and pass any extra params:
+Once it launches, verify your cluster by running `fleetctl list-units`.  
+
+It should look like this:
 
 ```
-sudo docker run -ti --device /dev/nvidia0:/dev/nvidia0 --device /dev/nvidiactl:/dev/nvidiactl --device /dev/nvidia-uvm:/dev/nvidia-uvm tleyden5iwx/caffe-gpu-develop /bin/bash
+UNIT						MACHINE				ACTIVE	SUB
+cbfs_announce@1.service				2340c553.../10.225.17.229	active	running
+cbfs_announce@2.service				fbd4562e.../10.182.197.145	active	running
+cbfs_announce@3.service				0f5e2e11.../10.168.212.210	active	running
+cbfs_node@1.service				2340c553.../10.225.17.229	active	running
+cbfs_node@2.service				fbd4562e.../10.182.197.145	active	running
+cbfs_node@3.service				0f5e2e11.../10.168.212.210	active	running
+couchbase_bootstrap_node.service		0f5e2e11.../10.168.212.210	active	running
+couchbase_bootstrap_node_announce.service	0f5e2e11.../10.168.212.210	active	running
+couchbase_node.1.service			2340c553.../10.225.17.229	active	running
+couchbase_node.2.service			fbd4562e.../10.182.197.145	active	running
+elastic_thought_gpu@1.service			2340c553.../10.225.17.229	active	running
+elastic_thought_gpu@2.service			fbd4562e.../10.182.197.145	active	running
+elastic_thought_gpu@3.service			0f5e2e11.../10.168.212.210	active	running
+sync_gw_announce@1.service			2340c553.../10.225.17.229	active	running
+sync_gw_announce@2.service			fbd4562e.../10.182.197.145	active	running
+sync_gw_announce@3.service			0f5e2e11.../10.168.212.210	active	running
+sync_gw_node@1.service				2340c553.../10.225.17.229	active	running
+sync_gw_node@2.service				fbd4562e.../10.182.197.145	active	running
+sync_gw_node@3.service				0f5e2e11.../10.168.212.210	active	running
 ```
 
-After this finishes, you should be able to access the API on the public ip of the same machine you ran the script from.  (if not, find public ip of node where elasticthought httpd is running)
+## Access API
+
+You should be able to access the API on the public ip of the same machine you ran the script from.  (if not, find public ip of node where elasticthought httpd is running)
 
 ## License
 
