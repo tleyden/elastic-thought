@@ -2,7 +2,7 @@
 Description=cbfs_node
 
 [Service]
-TimeoutStartSec=1000
+TimeoutStartSec=0
 ExecStartPre=-/usr/bin/docker kill cbfs
 ExecStartPre=-/usr/bin/docker rm cbfs
 ExecStartPre=/usr/bin/docker pull tleyden5iwx/cbfs
