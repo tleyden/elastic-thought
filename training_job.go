@@ -79,7 +79,20 @@ func (j TrainingJob) runCaffe() error {
 	cmdArgs := []string{"train", fmt.Sprintf("--solver=%v", solverFilename)}
 	caffePath := "caffe"
 
+	// debugging
 	logg.LogTo("TRAINING_JOB", "Running %v with args %v", caffePath, cmdArgs)
+	logg.LogTo("TRAINING_JOB", "Path %v", os.Getenv("PATH"))
+	out, _ := exec.Command("ls -alh /usr/local/bin").Output()
+	logg.LogTo("TRAINING_JOB", "ls -alh /usr/local/bin: %v", out)
+
+	// explicitly check if caffe binary found on the PATH
+	path, err := exec.LookPath("caffe")
+	if err != nil {
+		logg.LogError(fmt.Errorf("caffe not found on path: %v", err))
+	}
+	logg.LogTo("TRAINING_JOB", "caffe found on path: %v", path)
+
+	// Create Caffe command, but don't actually run it yet
 	cmd := exec.Command(caffePath, cmdArgs...)
 
 	// set the directory where the command will be run in (important
