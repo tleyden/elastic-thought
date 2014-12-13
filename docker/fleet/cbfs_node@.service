@@ -10,4 +10,4 @@ ExecStart=/bin/bash -c 'ip=$(hostname -i | tr -d " ") && /usr/bin/docker run --n
 ExecStop=/usr/bin/docker stop cbfs
 
 [X-Fleet]
-Conflicts=cbfs_node.*.service
+Conflicts=cbfs_node*.service
