@@ -76,7 +76,7 @@ func CbfsSanityCheck(config Configuration) error {
 		if err == nil {
 			return nil
 		}
-		logg.LogTo("ELASTIC_THOUGHT", "Cbfs sanity failed attempt # %s", i)
+		logg.LogTo("ELASTIC_THOUGHT", "Cbfs sanity failed attempt # %v", i)
 		if i >= (numAttempts - 1) {
 			logg.LogTo("ELASTIC_THOUGHT", "Cbfs sanity check giving up")
 			return err
