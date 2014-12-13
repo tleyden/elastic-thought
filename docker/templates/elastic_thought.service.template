@@ -6,7 +6,7 @@ TimeoutStartSec=0
 ExecStartPre=-/usr/bin/docker kill elastic_thought_{{ .ProcessorType }}
 ExecStartPre=-/usr/bin/docker rm elastic_thought_{{ .ProcessorType }}
 ExecStartPre=/usr/bin/docker pull tleyden5iwx/elastic-thought-{{ .ProcessorType }}-develop
-ExecStart=/bin/bash -c 'ip=$(hostname -i | tr -d " ") && /usr/bin/docker run --name elastic_thought_{{ .ProcessorType }} {{ .Devices }} --net=host tleyden5iwx/elastic-thought-{{ .ProcessorType }}-develop httpd'
+ExecStart=/bin/bash -c '/usr/bin/docker run --name elastic_thought_{{ .ProcessorType }} {{ .Devices }} --net=host tleyden5iwx/elastic-thought-{{ .ProcessorType }}-develop refresh-elastic-thought && httpd'
 ExecStop=/usr/bin/docker stop elastic_thought_{{ .ProcessorType }}
 
 [X-Fleet]
