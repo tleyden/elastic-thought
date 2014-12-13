@@ -75,6 +75,8 @@ For that, check out:
 
 ### Launch EC2 instances via CloudFormation script
 
+*Note: the instance will launch in **us-east-1***.  If you want to launch in another region, please [file an issue](https://github.com/tleyden/elastic-thought/issues).
+
 * [Launch CPU Stack](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#cstack=sn%7ECouchbase-CoreOS%7Cturl%7Ehttp://tleyden-misc.s3.amazonaws.com/elastic-thought/cloudformation/elastic_thought_cpu.template) or [Launch GPU Stack](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#cstack=sn%7ECouchbase-CoreOS%7Cturl%7Ehttp://tleyden-misc.s3.amazonaws.com/elastic-thought/cloudformation/elastic_thought_gpu.template) 
 * Choose 3 node cluster with m3.medium or g2.2xlarge (GPU case) instance type
 * All other values should be default

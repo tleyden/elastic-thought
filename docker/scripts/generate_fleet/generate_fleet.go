@@ -9,6 +9,7 @@ import (
 
 type Params struct {
 	ProcessorType string // cpu or gpu
+	GPU           bool
 	Devices       string
 }
 
@@ -24,8 +25,10 @@ func main() {
 	switch os.Args[1] {
 	case "cpu":
 		params.ProcessorType = os.Args[1]
+		params.GPU = false
 	case "gpu":
 		params.ProcessorType = os.Args[1]
+		params.GPU = true
 	default:
 		log.Fatalf("Invalid argument for cpu|gpu: %v", os.Args[1])
 	}

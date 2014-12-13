@@ -6,6 +6,9 @@ TimeoutStartSec=0
 ExecStartPre=-/usr/bin/docker kill elastic_thought_{{ .ProcessorType }}
 ExecStartPre=-/usr/bin/docker rm elastic_thought_{{ .ProcessorType }}
 ExecStartPre=/usr/bin/docker pull tleyden5iwx/elastic-thought-{{ .ProcessorType }}-develop
+{{ if .GPU }} 
+ExecStartPre=wget http://tleyden-misc.s3.amazonaws.com/elastic-thought/nvidia-kernel-modules/coreos_stable_494.4.0_hvm/kernelmods.tar.gz && tar xvfz kernelmods.tar.gz && sudo insmod nvidia.ko && sudo insmod nvidia-uvm.ko && wget https://gist.githubusercontent.com/tleyden/74f593a0beea300de08c/raw/95ed93c5751a989e58153db6f88c35515b7af120/nvidia_devices.sh && chmod +x nvidia_devices.sh && sudo ./nvidia_devices.sh
+{{ end }}
 ExecStart=/usr/bin/docker run --name elastic_thought_{{ .ProcessorType }} {{ .Devices }} --net=host tleyden5iwx/elastic-thought-{{ .ProcessorType }}-develop bash -c 'refresh-elastic-thought && httpd'
 ExecStop=/usr/bin/docker stop elastic_thought_{{ .ProcessorType }}
 
