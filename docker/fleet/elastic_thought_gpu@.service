@@ -7,7 +7,7 @@ ExecStartPre=-/usr/bin/docker kill elastic_thought_gpu
 ExecStartPre=-/usr/bin/docker rm elastic_thought_gpu
 ExecStartPre=/usr/bin/docker pull tleyden5iwx/elastic-thought-gpu-develop
 
-ExecStartPre=/usr/bin/bash -c '/usr/bin/wget http://tleyden-misc.s3.amazonaws.com/elastic-thought/nvidia-kernel-modules/coreos_stable_494.4.0_hvm/kernelmods.tar.gz && /usr/bin/tar xvfz kernelmods.tar.gz && sudo /usr/sbin/insmod nvidia.ko && sudo /usr/sbin/insmod nvidia-uvm.ko && /usr/bin/wget https://gist.githubusercontent.com/tleyden/74f593a0beea300de08c/raw/95ed93c5751a989e58153db6f88c35515b7af120/nvidia_devices.sh && /usr/bin/chmod +x nvidia_devices.sh && sudo ./nvidia_devices.sh'
+ExecStartPre=/usr/bin/bash -c '/usr/bin/wget https://raw.githubusercontent.com/tleyden/elastic-thought/master/docker/scripts/init_nvidia.sh && /usr/bin/chmod +x init_nvidia.sh && ./init_nvidia.sh'
 
 ExecStart=/usr/bin/docker run --name elastic_thought_gpu --device /dev/nvidia0:/dev/nvidia0 --device /dev/nvidiactl:/dev/nvidiactl --device /dev/nvidia-uvm:/dev/nvidia-uvm --net=host tleyden5iwx/elastic-thought-gpu-develop bash -c 'refresh-elastic-thought && httpd'
 ExecStop=/usr/bin/docker stop elastic_thought_gpu
