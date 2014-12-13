@@ -35,9 +35,9 @@ if [ "$processor" != "cpu" ] && [ "$processor" != "gpu" ]; then
 fi
 
 if [ "$processor" == "gpu" ]; then
-    NUM_NVIDIA=$(ls /dev | grep -i nvidia | wc -l)
-    if (( NUM_NVIDIA <= 0 )); then
-	echo "No nvidia graphics drivers found.  Did you use correct AMI?"
+    NUM_NVIDIA=$(lspci | grep -i nvidia | wc -l)
+    if (( $NUM_NVIDIA <= 0 )); then
+	echo "No nvidia graphics cards found.  Did you use correct AMI?"
 	exit 1 
     fi
 fi 
@@ -78,6 +78,8 @@ while [ "$NUM_COUCHBASE_SERVERS" -ne $numnodes ]; do
 done
 echo "Done waiting: $numnodes Couchbase Servers are running"
 
+fleetctl list-units
+
 # rebalance cluster
 untilsuccessful sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli rebalance -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD
 
@@ -98,6 +100,8 @@ for i in `seq 1 $numnodes`; do
     untilsuccessful etcdctl get /services/cbfs/cbfs_node@$i
 done
 echo "Done: cbfs nodes up"
+
+fleetctl list-units
 
 # create elastic-thought bucket
 echo "Create elastic-thought bucket"
@@ -130,9 +134,13 @@ for i in `seq 1 $numnodes`; do
 done
 echo "Done: sync gateway nodes up"
 
+fleetctl list-units
+
 # kick off elastic-thought httpd daemons
 echo "Kick off elastic thought httpd daemons"
 cd elastic-thought/docker/fleet && fleetctl submit elastic_thought_$processor@.service && cd ~
 for i in `seq 1 $numnodes`; do fleetctl start elastic_thought_$processor@$i.service; done
+
+fleetctl list-units
 
 echo "Done!  In a few minutes, your ElasticThought REST API will be available to use on <public-ip-any-node>:8080 -- check status with fleetctl list-units"
