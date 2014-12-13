@@ -2,8 +2,12 @@ package elasticthought
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
+
+	"github.com/couchbaselabs/logg"
+	"github.com/nu7hatch/gouuid"
 )
 
 func Mkdir(directory string) error {
@@ -56,4 +60,12 @@ func CopyFileContents(src, dst string) (err error) {
 	}
 	err = out.Sync()
 	return
+}
+
+func NewUuid() string {
+	u4, err := uuid.NewV4()
+	if err != nil {
+		logg.LogPanic("Error generating uuid", err)
+	}
+	return fmt.Sprintf("%s", u4)
 }
