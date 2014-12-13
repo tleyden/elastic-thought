@@ -68,15 +68,16 @@ func CbfsReadWriteFile(config Configuration, destPath, content string) error {
 func CbfsSanityCheck(config Configuration) error {
 
 	uuid := NewUuid() // use uuid so other nodes on cluster don't conflict
-	numAttempts := 10
+	numAttempts := 20
 	for i := 0; i < numAttempts; i++ {
 		filename := fmt.Sprintf("env_check_%v_%v", uuid, i)
 		content := fmt.Sprintf("Hello %v_%v", uuid, i)
 		err := CbfsReadWriteFile(config, filename, content)
 		if err == nil {
+			logg.LogTo("ELASTIC_THOUGHT", "Cbfs sanity ok: %v", filename)
 			return nil
 		}
-		logg.LogTo("ELASTIC_THOUGHT", "Cbfs sanity failed attempt # %v", i)
+		logg.LogTo("ELASTIC_THOUGHT", "Cbfs sanity failed # %v: %v", i, filename)
 		if i >= (numAttempts - 1) {
 			logg.LogTo("ELASTIC_THOUGHT", "Cbfs sanity check giving up")
 			return err
