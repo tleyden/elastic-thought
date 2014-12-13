@@ -11,7 +11,7 @@ fi
 NUM_NVIDIA_MODS=$(lsmod | grep -i nvidia | wc -l)
 if (( $NUM_NVIDIA_MODS <= 0 )); then
     # download and install nvidia kernel mods
-    wget http://tleyden-misc.s3.amazonaws.com/elastic-thought/nvidia-kernel-modules/coreos_stable_494.4.0_hvm/kernelmods.tar.gz && tar xvfz kernelmods.tar.gz && sudo /usr/sbin/insmod nvidia.ko && sudo /usr/sbin/insmod nvidia-uvm.ko 
+    wget http://tleyden-misc.s3.amazonaws.com/elastic-thought/nvidia-kernel-modules/coreos_stable_494.4.0_hvm/kernelmods.tar.gz && tar xvfz kernelmods.tar.gz && /usr/sbin/insmod nvidia.ko && /usr/sbin/insmod nvidia-uvm.ko 
 fi
 
 # mount nvidia devices
