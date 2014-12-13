@@ -26,7 +26,9 @@ ADD scripts/refresh-elastic-thought /usr/local/bin/
 # Go get ElasticThought
 RUN go get -u -v -t github.com/tleyden/elastic-thought && \
     go get -u -v -t github.com/tleyden/elastic-thought/cli/httpd && \
-    go get -u -v -t github.com/tleyden/elastic-thought/cli/worker
+    go get -u -v -t github.com/tleyden/elastic-thought/cli/worker && \
+    cd $GOPATH/src/github.com/tleyden/elastic-thought && \
+    git log -3
 
 # Copy binaries 
 RUN cp /opt/go/bin/worker /usr/local/bin && \
