@@ -7,14 +7,23 @@ if (( $NUM_NVIDIA_DEVICES > 0 )); then
     exit 0
 fi
 
+echo "No nvidia devices found, continuing .."
+lsmod | grep -i nvidia 
+
 # are the nvidia kernel mods already installed?
 NUM_NVIDIA_MODS=$(lsmod | grep -i nvidia | wc -l)
 if (( $NUM_NVIDIA_MODS <= 0 )); then
     # download and install nvidia kernel mods
+    echo "No nvidia kernel modules detected, installing"
     wget http://tleyden-misc.s3.amazonaws.com/elastic-thought/nvidia-kernel-modules/coreos_stable_494.4.0_hvm/kernelmods.tar.gz && tar xvfz kernelmods.tar.gz && /usr/sbin/insmod nvidia.ko && /usr/sbin/insmod nvidia-uvm.ko 
 fi
 
+echo "Nvidia kernel modules: "
+lsmod | grep -i nvidia 
+
 # mount nvidia devices
+
+echo "Mounting nvidia devices"
 
 # Count the number of NVIDIA controllers found.
 NVDEVS=`lspci | grep -i NVIDIA`
@@ -30,5 +39,6 @@ mknod -m 666 /dev/nvidiactl c 195 255
 D=`grep nvidia-uvm /proc/devices | awk '{print $1}'`
 mknod -m 666 /dev/nvidia-uvm c $D 0
 
+echo "Done mounting nvidia devices"
 
-
+ls /dev | grep -i nvidia 
