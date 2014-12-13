@@ -34,6 +34,14 @@ if [ "$processor" != "cpu" ] && [ "$processor" != "gpu" ]; then
     exit 1 
 fi
 
+if [ "$processor" == "gpu" ]; then
+    NUM_NVIDIA=$(ls /dev | grep -i nvidia | wc -l)
+    if (( NUM_NVIDIA <= 0 )); then
+	echo "No nvidia graphics drivers found.  Did you use correct AMI?"
+	exit 1 
+    fi
+fi 
+
 # parse user/pass into variables
 IFS=':' read -a array <<< "$userpass"
 CB_USERNAME=${array[0]}
