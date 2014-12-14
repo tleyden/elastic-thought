@@ -11,6 +11,7 @@ import (
 
 	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
+	"github.com/dustin/httputil"
 	"github.com/tleyden/go-couch"
 )
 
@@ -43,6 +44,17 @@ func (j TrainingJob) Run() {
 
 	logg.LogTo("TRAINING_JOB", "Run() called!")
 
+	updatedState, err := j.UpdateProcessingState(Processing)
+	if err != nil {
+		j.recordProcessingError(err)
+		return
+	}
+
+	if !updatedState {
+		logg.LogTo("TRAINING_JOB", "%+v already processed.  Ignoring.", j)
+		return
+	}
+
 	j.StdOutUrl = j.getStdOutCbfsUrl()
 	j.StdErrUrl = j.getStdErrCbfsUrl()
 
@@ -57,6 +69,80 @@ func (j TrainingJob) Run() {
 	}
 
 	j.FinishedSuccessfully(j.Configuration.DbConnection(), "")
+
+}
+
+// Attempt to set this job's state, and return true if it was able to update the
+// state to the new state, or false if it was already in that state.
+func (j TrainingJob) UpdateProcessingState(newState ProcessingState) (bool, error) {
+
+	db := j.Configuration.DbConnection()
+
+	// if j already has the newState, return false
+	if j.ProcessingState == newState {
+		return false, nil
+	}
+
+	for {
+
+		// set state to new state in object
+		j.ProcessingState = newState
+
+		// SAVE: try to save to the database
+		_, err := db.Edit(j)
+
+		if err != nil {
+
+			// if it failed with any other error than 409, return an error
+			if !httputil.IsHTTPStatus(err, 409) {
+				return false, err
+			}
+
+			// it failed with 409 error
+
+			// get the latest version of the document
+			err = db.Retrieve(j.Id, &j)
+			if err != nil {
+				return false, err
+			}
+
+			// does it already have the new the state (eg, someone else set it)?
+			if j.ProcessingState == newState {
+				return false, nil
+			}
+
+			// no, so try updating state and saving again
+			continue
+
+		}
+
+	}
+
+	// while true:
+
+	// set state to new state in object
+
+	// SAVE: try to save to the database
+
+	// if it succeeded, we are done
+
+	// if it failed with any other error than 409, return an error
+
+	// else if it failed with 409:
+
+	//   get the latest version of the document
+
+	//   does it already have the new the state (eg, someone else set it)?
+
+	//   if yes:
+
+	//      return false
+
+	//   if no:
+
+	//      update the state of the latest object to newstate
+
+	//      goto SAVE
 
 }
 
