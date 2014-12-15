@@ -1,5 +1,7 @@
 package elasticthought
 
+import "sync"
+
 type Runnable interface {
-	Run()
+	Run(wg *sync.WaitGroup)
 }

@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"sync"
 
 	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
@@ -40,7 +41,9 @@ func NewTrainingJob() *TrainingJob {
 }
 
 // Run this job
-func (j TrainingJob) Run() {
+func (j TrainingJob) Run(wg *sync.WaitGroup) {
+
+	defer wg.Done()
 
 	logg.LogTo("TRAINING_JOB", "Run() called!")
 

@@ -2,6 +2,7 @@ package elasticthought
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/couchbaselabs/logg"
 )
@@ -13,7 +14,9 @@ type DatafileDownloader struct {
 }
 
 // Run this job
-func (d DatafileDownloader) Run() {
+func (d DatafileDownloader) Run(wg *sync.WaitGroup) {
+
+	defer wg.Done()
 
 	logg.LogTo("DATAFILE_DOWNLOADER", "datafile downloader run()")
 

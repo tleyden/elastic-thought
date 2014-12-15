@@ -54,7 +54,7 @@ func (n NsqWorker) HandleEvents() {
 		logg.LogTo("NSQ_WORKER", "Job: %+v", job)
 
 		// run job
-		go job.Run()
+		go job.Run(nil)
 
 		return nil
 	}))

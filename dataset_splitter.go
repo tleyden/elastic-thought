@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path"
 	"strings"
+	"sync"
 
 	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
@@ -20,7 +21,9 @@ type DatasetSplitter struct {
 }
 
 // Run this job
-func (d DatasetSplitter) Run() {
+func (d DatasetSplitter) Run(wg *sync.WaitGroup) {
+
+	defer wg.Done()
 
 	switch d.Dataset.isSplittable() {
 	case true:

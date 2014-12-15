@@ -119,7 +119,7 @@ sync_gw_node@3.service				0f5e2e11.../10.168.212.210	active	running
 
 ## Access API
 
-You should be able to access the API on the public ip of the same machine you ran the script from.  (if not, find public ip of node where elasticthought httpd is running)
+You should be able to access the API on the public ip any of the three machines.
 
 ## License
 
