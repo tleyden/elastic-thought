@@ -81,19 +81,6 @@ For that, check out:
 * Choose 3 node cluster with m3.medium or g2.2xlarge (GPU case) instance type
 * All other values should be default
 
-### Load GPU kernel module / devices
-
-*Only needed if you launched a GPU cluster*
-
-Ssh into ALL of the machines (ie, `ssh -A core@ec2-54-160-96-153.compute-1.amazonaws.com`) and do the following steps.
-
-* `wget http://tleyden-misc.s3.amazonaws.com/elastic-thought/nvidia-kernel-modules/coreos_stable_494.4.0_hvm/kernelmods.tar.gz`
-* `tar xvfz kernelmods.tar.gz`
-* `sudo insmod nvidia.ko && sudo insmod nvidia-uvm.ko`
-* `wget https://gist.githubusercontent.com/tleyden/74f593a0beea300de08c/raw/95ed93c5751a989e58153db6f88c35515b7af120/nvidia_devices.sh`
-* `chmod +x nvidia_devices.sh`
-* `sudo ./nvidia_devices.sh`
-
 ### Kick off ElasticThought
 
 ```
