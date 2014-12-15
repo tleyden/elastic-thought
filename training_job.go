@@ -76,10 +76,13 @@ func (j TrainingJob) Run() {
 // state to the new state, or false if it was already in that state.
 func (j TrainingJob) UpdateProcessingState(newState ProcessingState) (bool, error) {
 
+	logg.LogTo("TRAINING_JOB", "UpdatProcessingState")
+
 	db := j.Configuration.DbConnection()
 
 	// if j already has the newState, return false
 	if j.ProcessingState == newState {
+		logg.LogTo("TRAINING_JOB", "Already in state: %v", j.ProcessingState)
 		return false, nil
 	}
 
@@ -89,25 +92,38 @@ func (j TrainingJob) UpdateProcessingState(newState ProcessingState) (bool, erro
 		j.ProcessingState = newState
 
 		// SAVE: try to save to the database
+		logg.LogTo("TRAINING_JOB", "Trying to save: %+v", j)
+
 		_, err := db.Edit(j)
 
 		if err != nil {
 
+			logg.LogTo("TRAINING_JOB", "Got error updating: %v", err)
+
 			// if it failed with any other error than 409, return an error
 			if !httputil.IsHTTPStatus(err, 409) {
+				logg.LogTo("TRAINING_JOB", "Not a 409 error: %v", err)
 				return false, err
 			}
 
 			// it failed with 409 error
+			logg.LogTo("TRAINING_JOB", "Its a 409 error: %v", err)
 
 			// get the latest version of the document
-			err = db.Retrieve(j.Id, &j)
+			trainingJob := TrainingJob{}
+			err = db.Retrieve(j.Id, &trainingJob)
 			if err != nil {
+				logg.LogTo("TRAINING_JOB", "Error getting latest: %v", err)
 				return false, err
 			}
 
+			j = trainingJob
+
+			logg.LogTo("TRAINING_JOB", "Retrieved new: %+v", j)
+
 			// does it already have the new the state (eg, someone else set it)?
 			if j.ProcessingState == newState {
+				logg.LogTo("TRAINING_JOB", "Processing state already set")
 				return false, nil
 			}
 
@@ -115,6 +131,10 @@ func (j TrainingJob) UpdateProcessingState(newState ProcessingState) (bool, erro
 			continue
 
 		}
+
+		// successfully saved, we are done
+		logg.LogTo("TRAINING_JOB", "Successfully saved: %+v", j)
+		return true, nil
 
 	}
 
