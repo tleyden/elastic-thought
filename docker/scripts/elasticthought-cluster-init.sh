@@ -71,8 +71,8 @@ echo "Couchbase Server bootstrap ip: $COUCHBASE_CLUSTER"
 # wait until all couchbase nodes come up
 echo "Wait until $numnodes Couchbase Servers running"
 NUM_COUCHBASE_SERVERS="0"
-while [ "$NUM_COUCHBASE_SERVERS" -ne $numnodes ]; do
-    echo Retrying...
+while (( $NUM_COUCHBASE_SERVERS != $numnodes )); do
+    echo "Retrying... $NUM_COUCHBASE_SERVERS != $numnodes"
     NUM_COUCHBASE_SERVERS=$(sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli server-list -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD | wc -l)
     sleep 5
 done
@@ -122,9 +122,9 @@ untilsuccessful sudo docker run --net=host -v /tmp:/tmp tleyden5iwx/cbfs cbfscli
 echo "Kick off sync gateway"
 mkdir sync-gateway && \
   cd sync-gateway && \
-  wget https://raw.githubusercontent.com/tleyden/sync-gateway-coreos/master/scripts/cluster-init.sh && \
-  chmod +x cluster-init.sh && \
-  ./cluster-init.sh -n $numnodes -c "master" -g http://$ip:8484/sync_gw_config.json && \
+  wget https://raw.githubusercontent.com/tleyden/sync-gateway-coreos/master/scripts/sync-gw-cluster-init.sh && \
+  chmod +x sync-gw-cluster-init.sh && \
+  ./sync-gw-cluster-init.sh -n $numnodes -c "master" -g http://$ip:8484/sync_gw_config.json -v 0 && \
   cd ~ 
 
 # wait for all sync gw nodes to come up 
