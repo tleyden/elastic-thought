@@ -83,8 +83,9 @@ For that, check out:
 
 ### Kick off ElasticThought
 
+Ssh into one of the machines (doesn't matter which): `ssh -A core@ec2-54-160-96-153.compute-1.amazonaws.com`
+
 ```
-* Ssh into one of the machines (doesn't matter which): `ssh -A core@ec2-54-160-96-153.compute-1.amazonaws.com`
 $ wget https://raw.githubusercontent.com/tleyden/elastic-thought/master/docker/scripts/elasticthought-cluster-init.sh
 $ chmod +x elasticthought-cluster-init.sh
 $ ./elasticthought-cluster-init.sh -v 3.0.1 -n 3 -u "user:passw0rd" -p gpu 
@@ -117,9 +118,88 @@ sync_gw_node@2.service				fbd4562e.../10.182.197.145	active	running
 sync_gw_node@3.service				0f5e2e11.../10.168.212.210	active	running
 ```
 
-## Access API
+At this point you should be able to access the [REST API](http://docs.elasticthought.apiary.io/) on the public ip any of the three Sync Gateway machines.
 
-You should be able to access the API on the public ip any of the three machines.
+## Kick things off: Vagrant
+
+### Update Vagrant
+
+Make sure you're running a current version of Vagrant, otherwise the plugin install below may [fail](https://github.com/mitchellh/vagrant/issues/3769).
+
+```
+$ vagrant -v
+1.7.1
+```
+
+### Install CoreOS
+
+See https://coreos.com/docs/running-coreos/platforms/vagrant/
+
+### Hack Vagrant hostname to use an IP
+
+This is a dirty hack to get around the following Couchbase Server problem:
+
+* The fleet script uses %H to get the hostname and passes that into the couchbase-start script
+* Couchbase expects a resolvable, fully qualified domain name for the hostname.
+* If you give it a host like "core-01", it will return an error "Requested address "core-01" is not allowed: short names are not allowed. Couchbase Server requires at least one dot in a name"
+* My first attempt was to create entries in /etc/hosts on CoreOS, but this didn't work because the Docker container that is running Couchbase Server won't see these mappings.
+
+As a hack, I ended up setting the hostname to the ip, which so far has not caused any issues.
+
+The alternative was to modify the fleet script to use $COREOS_PUBLIC_IPV4 as described [here](https://groups.google.com/d/msg/coreos-user/Dkl0Rj3Rg6w/urcUFThQKjYJ), or use some bash commands to discover the public ip.  However that had the drawback of changing what already works fine on AWS.
+
+Make the following change in your Vagrant file:
+
+**Before**
+
+```
+config.vm.hostname = ip
+...
+...
+ip = "172.17.8.#{i+100}"
+```
+
+**After**
+
+```
+ip = "172.17.8.#{i+100}"
+config.vm.hostname = ip
+```
+
+### Install vagrant-hostmanager
+
+This is required on Vagrant to map hosts to ip addresses.
+
+From the core-os directory created in the step above, run:
+
+```
+$ vagrant plugin install vagrant-hostmanager
+$ vagrant hostmanager
+```
+
+**Note: this isn't working for me, as [reported here](https://github.com/smdahlen/vagrant-hostmanager/issues/127)**
+
+### Manually update /etc/hosts
+
+If you can get the vagrant-hostmanager working, you can skip this part.  
+
+For **each coreos machine**:
+
+```
+$ vagrant ssh core-01 -- -A 
+$ sudo vi /etc/hosts
+```
+
+when vi is up, paste in:
+
+```
+172.17.8.101 core-01.yourhost.com
+172.17.8.102 core-02.yourhost.com
+172.17.8.103 core-03.yourhost.com
+```
+
+But change the ip's to match your cluster.
+
 
 ## License
 
