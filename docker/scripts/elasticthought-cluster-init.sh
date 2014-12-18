@@ -1,4 +1,7 @@
 
+# this gives us access to $COREOS_PRIVATE_IPV4 etc
+source /etc/environment
+
 function untilsuccessful() {
 	"$@"
 	while [ $? -ne 0 ]; do
@@ -117,9 +120,10 @@ echo "Generated sync gateway config"
 cat /tmp/sync_gw_config.json
 
 # upload sync gateway config to cbfs
-ip=$(hostname -i | tr -d ' ')
-echo "Upload sync gateway config to cbfs: http://$ip:8484/"
-untilsuccessful sudo docker run --net=host -v /tmp:/tmp tleyden5iwx/cbfs cbfsclient http://$ip:8484/ upload /tmp/sync_gw_config.json /sync_gw_config.json 
+
+
+echo "Upload sync gateway config to cbfs: http://$COREOS_PRIVATE_IPV4:8484/"
+untilsuccessful sudo docker run --net=host -v /tmp:/tmp tleyden5iwx/cbfs cbfsclient http://$COREOS_PRIVATE_IPV4:8484/ upload /tmp/sync_gw_config.json /sync_gw_config.json 
 
 # kick off sync gateway 
 echo "Kick off sync gateway"
@@ -127,7 +131,7 @@ mkdir sync-gateway && \
   cd sync-gateway && \
   wget https://raw.githubusercontent.com/tleyden/sync-gateway-coreos/master/scripts/sync-gw-cluster-init.sh && \
   chmod +x sync-gw-cluster-init.sh && \
-  ./sync-gw-cluster-init.sh -n $numnodes -c "master" -g http://$ip:8484/sync_gw_config.json -v 0 && \
+  ./sync-gw-cluster-init.sh -n $numnodes -c "master" -g http://$COREOS_PRIVATE_IPV4:8484/sync_gw_config.json -v 0 && \
   cd ~ 
 
 # wait for all sync gw nodes to come up 
