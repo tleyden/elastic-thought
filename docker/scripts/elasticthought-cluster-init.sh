@@ -85,7 +85,7 @@ untilsuccessful sudo docker run tleyden5iwx/couchbase-server-$version /opt/couch
 
 # create cbfs bucket
 TOTAL_MEM_MB=$(free -m | awk '/^Mem:/{print $2}')
-CBFS_BUCKET_SIZE_MB=$(($TOTAL_MEM_MB * 25 / 100))
+CBFS_BUCKET_SIZE_MB=$(($TOTAL_MEM_MB * 10 / 100))
 echo "Create a cbfs bucket of size: $CBFS_BUCKET_SIZE_MB"
 untilsuccessful sudo docker run tleyden5iwx/couchbase-server-$version /opt/couchbase/bin/couchbase-cli bucket-create -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD --bucket=cbfs --bucket-ramsize=$CBFS_BUCKET_SIZE_MB
 echo "Done: created a cbfs bucket"
@@ -106,7 +106,7 @@ echo "Done: cbfs nodes up"
 fleetctl list-units
 
 # create elastic-thought bucket
-ET_BUCKET_SIZE_MB=$(($TOTAL_MEM_MB * 25 / 100))
+ET_BUCKET_SIZE_MB=$(($TOTAL_MEM_MB * 20 / 100))
 echo "Create elastic-thought bucket with size: $ET_BUCKET_SIZE_MB"
 untilsuccessful sudo docker run tleyden5iwx/couchbase-server-$version /opt/couchbase/bin/couchbase-cli bucket-create -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD --bucket=elastic-thought --bucket-ramsize=$ET_BUCKET_SIZE_MB
 
