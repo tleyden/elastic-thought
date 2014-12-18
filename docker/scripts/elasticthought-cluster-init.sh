@@ -73,7 +73,7 @@ echo "Wait until $numnodes Couchbase Servers running"
 NUM_COUCHBASE_SERVERS="0"
 while (( $NUM_COUCHBASE_SERVERS != $numnodes )); do
     echo "Retrying... $NUM_COUCHBASE_SERVERS != $numnodes"
-    NUM_COUCHBASE_SERVERS=$(sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli server-list -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD | wc -l)
+    NUM_COUCHBASE_SERVERS=$(sudo docker run tleyden5iwx/couchbase-server-$version /opt/couchbase/bin/couchbase-cli server-list -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD | wc -l)
     sleep 5
 done
 echo "Done waiting: $numnodes Couchbase Servers are running"
@@ -81,13 +81,13 @@ echo "Done waiting: $numnodes Couchbase Servers are running"
 fleetctl list-units
 
 # rebalance cluster
-untilsuccessful sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli rebalance -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD
+untilsuccessful sudo docker run tleyden5iwx/couchbase-server-$version /opt/couchbase/bin/couchbase-cli rebalance -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD
 
 # create cbfs bucket
 TOTAL_MEM_MB=$(free -m | awk '/^Mem:/{print $2}')
 CBFS_BUCKET_SIZE_MB=$(($TOTAL_MEM_MB * 25 / 100))
 echo "Create a cbfs bucket of size: $CBFS_BUCKET_SIZE_MB"
-untilsuccessful sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli bucket-create -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD --bucket=cbfs --bucket-ramsize=$CBFS_BUCKET_SIZE_MB
+untilsuccessful sudo docker run tleyden5iwx/couchbase-server-$version /opt/couchbase/bin/couchbase-cli bucket-create -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD --bucket=cbfs --bucket-ramsize=$CBFS_BUCKET_SIZE_MB
 echo "Done: created a cbfs bucket"
 
 # kick off 3 cbfs nodes (TODO: num nodes should be a parameter)
@@ -108,7 +108,7 @@ fleetctl list-units
 # create elastic-thought bucket
 ET_BUCKET_SIZE_MB=$(($TOTAL_MEM_MB * 25 / 100))
 echo "Create elastic-thought bucket with size: $ET_BUCKET_SIZE_MB"
-untilsuccessful sudo docker run tleyden5iwx/couchbase-server-3.0.1 /opt/couchbase/bin/couchbase-cli bucket-create -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD --bucket=elastic-thought --bucket-ramsize=$ET_BUCKET_SIZE_MB
+untilsuccessful sudo docker run tleyden5iwx/couchbase-server-$version /opt/couchbase/bin/couchbase-cli bucket-create -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD --bucket=elastic-thought --bucket-ramsize=$ET_BUCKET_SIZE_MB
 
 # run sed on sync gateway config template
 COUCHBASE_IP_PORT=$COUCHBASE_CLUSTER:8091
