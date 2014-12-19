@@ -363,11 +363,15 @@ func (j TrainingJob) Insert(db couch.Database) (*TrainingJob, error) {
 // Codereview: de-dupe
 func (j TrainingJob) Failed(db couch.Database, processingErr error) error {
 
-	j.ProcessingState = Failed
+	_, err := CasUpdateProcessingState(&j, Failed, db)
+	if err != nil {
+		return err
+	}
+
 	j.ProcessingLog = fmt.Sprintf("%v", processingErr)
 
 	// TODO: retry if 409 error
-	_, err := db.Edit(j)
+	_, err = db.Edit(j)
 
 	if err != nil {
 		return err
@@ -381,11 +385,15 @@ func (j TrainingJob) Failed(db couch.Database, processingErr error) error {
 // Codereview: de-dupe
 func (j TrainingJob) FinishedSuccessfully(db couch.Database, logPath string) error {
 
-	j.ProcessingState = FinishedSuccessfully
+	_, err := CasUpdateProcessingState(&j, FinishedSuccessfully, db)
+	if err != nil {
+		return err
+	}
+
 	j.ProcessingLog = logPath
 
 	// TODO: retry if 409 error
-	_, err := db.Edit(j)
+	_, err = db.Edit(j)
 
 	if err != nil {
 		return err

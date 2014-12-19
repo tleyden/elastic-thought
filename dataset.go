@@ -127,11 +127,7 @@ func (d Dataset) isSplittable() bool {
 // Codereview: de-dupe with datafile FinishedSuccessfully
 func (d Dataset) FinishedSuccessfully(db couch.Database) error {
 
-	d.ProcessingState = FinishedSuccessfully
-
-	// TODO: retry if 409 error
-	_, err := db.Edit(d)
-
+	_, err := CasUpdateProcessingState(&d, FinishedSuccessfully, db)
 	if err != nil {
 		return err
 	}
@@ -144,11 +140,13 @@ func (d Dataset) FinishedSuccessfully(db couch.Database) error {
 // Codereview: datafile.go has same method
 func (d Dataset) Failed(db couch.Database, processingErr error) error {
 
-	d.ProcessingState = Failed
-	d.ProcessingLog = fmt.Sprintf("%v", processingErr)
+	_, err := CasUpdateProcessingState(&d, Failed, db)
+	if err != nil {
+		return err
+	}
 
-	// TODO: retry if 409 error
-	_, err := db.Edit(d)
+	d.ProcessingLog = fmt.Sprintf("%v", processingErr)
+	_, err = db.Edit(d)
 
 	if err != nil {
 		return err
