@@ -77,9 +77,8 @@ func (d Datafile) Save(db couch.Database) (*Datafile, error) {
 // Mark this datafile as having finished processing succesfully
 func (d Datafile) FinishedSuccessfully(db couch.Database) error {
 
-	d.ProcessingState = FinishedSuccessfully
-
-	if _, err := d.Save(db); err != nil {
+	_, err := CasUpdateProcessingState(&d, FinishedSuccessfully, db)
+	if err != nil {
 		return err
 	}
 
@@ -91,10 +90,8 @@ func (d Datafile) FinishedSuccessfully(db couch.Database) error {
 // Codereview: datafile.go has same method
 func (d Datafile) Failed(db couch.Database, processingErr error) error {
 
-	d.ProcessingState = Failed
-	d.ProcessingLog = fmt.Sprintf("%v", processingErr)
-
-	if _, err := d.Save(db); err != nil {
+	_, err := CasUpdateProcessingState(&d, Failed, db)
+	if err != nil {
 		return err
 	}
 
