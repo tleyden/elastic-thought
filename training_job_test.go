@@ -83,7 +83,8 @@ func TestUpdateProcessingState(t *testing.T) {
 	trainingJob.Configuration = *configuration
 	trainingJob.ProcessingState = Pending
 
-	ok, err := trainingJob.UpdateProcessingState(Processing)
+	db := trainingJob.Configuration.DbConnection()
+	ok, err := CasUpdateProcessingState(trainingJob, Processing, db)
 	assert.True(t, err == nil)
 	assert.True(t, ok)
 

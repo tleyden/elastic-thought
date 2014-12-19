@@ -135,71 +135,66 @@ $ vagrant -v
 
 See https://coreos.com/docs/running-coreos/platforms/vagrant/
 
-### Hack Vagrant hostname to use an IP
+### Update cloud-config
 
-This is a dirty hack to get around the following Couchbase Server problem:
-
-* The fleet script uses %H to get the hostname and passes that into the couchbase-start script
-* Couchbase expects a resolvable, fully qualified domain name for the hostname.
-* If you give it a host like "core-01", it will return an error "Requested address "core-01" is not allowed: short names are not allowed. Couchbase Server requires at least one dot in a name"
-* My first attempt was to create entries in /etc/hosts on CoreOS, but this didn't work because the Docker container that is running Couchbase Server won't see these mappings.
-
-As a hack, I ended up setting the hostname to the ip, which so far has not caused any issues.
-
-The alternative was to modify the fleet script to use $COREOS_PUBLIC_IPV4 as described [here](https://groups.google.com/d/msg/coreos-user/Dkl0Rj3Rg6w/urcUFThQKjYJ), or use some bash commands to discover the public ip.  However that had the drawback of changing what already works fine on AWS.
-
-Make the following change in your Vagrant file:
-
-**Before**
+Open the user-data file, and add:
 
 ```
-config.vm.hostname = ip
-...
-...
-ip = "172.17.8.#{i+100}"
+write_files:
+  - path: /etc/systemd/system/docker.service.d/increase-ulimit.conf
+    owner: core:core
+    permissions: 0644
+    content: |
+      [Service]
+      LimitMEMLOCK=infinity
+  - path: /var/lib/couchbase/data/.README
+    owner: core:core
+    permissions: 0644
+    content: |
+      Couchbase Data files are stored here
+  - path: /var/lib/couchbase/index/.README
+    owner: core:core
+    permissions: 0644
+    content: |
+      Couchbase Index files are stored here
+  - path: /var/lib/cbfs/data/.README
+    owner: core:core
+    permissions: 0644
+    content: |
+      CBFS files are stored here
 ```
 
-**After**
+### Increase RAM size of VM's
+
+Couchbase Server wants a lot of RAM.  Bump up the vm memory size to 2GB.
+
+Edit your Vagrantfile:
 
 ```
-ip = "172.17.8.#{i+100}"
-config.vm.hostname = ip
+$vb_memory = 2048
 ```
 
-### Install vagrant-hostmanager
+### Setup port forwarding for Couchbase UI (optional)
 
-This is required on Vagrant to map hosts to ip addresses.
+This is only needed if you want to be able to connect to the Couchbase web UI from a browser on your host OS (ie, OSX)
 
-From the core-os directory created in the step above, run:
-
-```
-$ vagrant plugin install vagrant-hostmanager
-$ vagrant hostmanager
-```
-
-**Note: this isn't working for me, as [reported here](https://github.com/smdahlen/vagrant-hostmanager/issues/127)**
-
-### Manually update /etc/hosts
-
-If you can get the vagrant-hostmanager working, you can skip this part.  
-
-For **each coreos machine**:
+Add the following snippet to your Vagrant file:
 
 ```
-$ vagrant ssh core-01 -- -A 
-$ sudo vi /etc/hosts
+if i == 1
+  # create a port forward mapping to view couchbase web ui 
+  config.vm.network "forwarded_port", guest: 8091, host: 5091
+end
 ```
 
-when vi is up, paste in:
+### Disable Transparent Huge Pages (optional)
+
+Not sure how crucial this is, but I'll mention it just in case.  After the CoreOS machines startup, ssh into each one:
 
 ```
-172.17.8.101 core-01.yourhost.com
-172.17.8.102 core-02.yourhost.com
-172.17.8.103 core-03.yourhost.com
+$ sudo bash
+# echo never > /sys/kernel/mm/transparent_hugepage/enabled && echo never > /sys/kernel/mm/transparent_hugepage/defrag
 ```
-
-But change the ip's to match your cluster.
-
 
 ## License
 

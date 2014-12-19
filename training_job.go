@@ -47,7 +47,8 @@ func (j TrainingJob) Run(wg *sync.WaitGroup) {
 
 	logg.LogTo("TRAINING_JOB", "Run() called!")
 
-	updatedState, err := j.UpdateProcessingState(Processing)
+	db := j.Configuration.DbConnection()
+	updatedState, err := CasUpdateProcessingState(&j, Processing, db)
 	if err != nil {
 		j.recordProcessingError(err)
 		return
@@ -75,29 +76,40 @@ func (j TrainingJob) Run(wg *sync.WaitGroup) {
 
 }
 
-// Attempt to set this job's state, and return true if it was able to update the
-// state to the new state, or false if it was already in that state.
-func (j TrainingJob) UpdateProcessingState(newState ProcessingState) (bool, error) {
+func (j *TrainingJob) GetProcessingState() ProcessingState {
+	return j.ProcessingState
+}
 
-	logg.LogTo("TRAINING_JOB", "UpdatProcessingState")
+func (j *TrainingJob) SetProcessingState(newState ProcessingState) {
+	j.ProcessingState = newState
+}
 
-	db := j.Configuration.DbConnection()
+func (j *TrainingJob) RefreshFromDB(db couch.Database) error {
+	trainingJob := TrainingJob{}
+	err := db.Retrieve(j.Id, &trainingJob)
+	if err != nil {
+		logg.LogTo("TRAINING_JOB", "Error getting latest: %v", err)
+		return err
+	}
+	*j = trainingJob
+	return nil
+}
 
-	// if j already has the newState, return false
-	if j.ProcessingState == newState {
-		logg.LogTo("TRAINING_JOB", "Already in state: %v", j.ProcessingState)
+func CasUpdateProcessingState(p Processable, newState ProcessingState, db couch.Database) (bool, error) {
+
+	// if already has the newState, return false
+	if p.GetProcessingState() == newState {
+		logg.LogTo("TRAINING_JOB", "Already in state: %v", p.GetProcessingState())
 		return false, nil
 	}
 
 	for {
-
-		// set state to new state in object
-		j.ProcessingState = newState
+		p.SetProcessingState(newState)
 
 		// SAVE: try to save to the database
-		logg.LogTo("TRAINING_JOB", "Trying to save: %+v", j)
+		logg.LogTo("TRAINING_JOB", "Trying to save: %+v", p)
 
-		_, err := db.Edit(j)
+		_, err := db.Edit(p)
 
 		if err != nil {
 
@@ -113,19 +125,14 @@ func (j TrainingJob) UpdateProcessingState(newState ProcessingState) (bool, erro
 			logg.LogTo("TRAINING_JOB", "Its a 409 error: %v", err)
 
 			// get the latest version of the document
-			trainingJob := TrainingJob{}
-			err = db.Retrieve(j.Id, &trainingJob)
-			if err != nil {
-				logg.LogTo("TRAINING_JOB", "Error getting latest: %v", err)
+			if err := p.RefreshFromDB(db); err != nil {
 				return false, err
 			}
 
-			j = trainingJob
-
-			logg.LogTo("TRAINING_JOB", "Retrieved new: %+v", j)
+			logg.LogTo("TRAINING_JOB", "Retrieved new: %+v", p)
 
 			// does it already have the new the state (eg, someone else set it)?
-			if j.ProcessingState == newState {
+			if p.GetProcessingState() == newState {
 				logg.LogTo("TRAINING_JOB", "Processing state already set")
 				return false, nil
 			}
@@ -136,36 +143,10 @@ func (j TrainingJob) UpdateProcessingState(newState ProcessingState) (bool, erro
 		}
 
 		// successfully saved, we are done
-		logg.LogTo("TRAINING_JOB", "Successfully saved: %+v", j)
+		logg.LogTo("TRAINING_JOB", "Successfully saved: %+v", p)
 		return true, nil
 
 	}
-
-	// while true:
-
-	// set state to new state in object
-
-	// SAVE: try to save to the database
-
-	// if it succeeded, we are done
-
-	// if it failed with any other error than 409, return an error
-
-	// else if it failed with 409:
-
-	//   get the latest version of the document
-
-	//   does it already have the new the state (eg, someone else set it)?
-
-	//   if yes:
-
-	//      return false
-
-	//   if no:
-
-	//      update the state of the latest object to newstate
-
-	//      goto SAVE
 
 }
 

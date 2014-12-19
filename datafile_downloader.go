@@ -31,7 +31,7 @@ func (d DatafileDownloader) Run(wg *sync.WaitGroup) {
 	}
 
 	// copy url contents to cbfs
-	logg.LogTo("DATAFILE_DOWNLOADER", "copytocbfs: %+v %v %v", d, db, cbfs)
+	logg.LogTo("DATAFILE_DOWNLOADER", "Put to CBFS: %+v %v %v", d, db, cbfs)
 	cbfsDestPath, err := d.Datafile.CopyToCBFS(db, cbfs)
 	if err != nil {
 		d.recordProcessingError(err)
