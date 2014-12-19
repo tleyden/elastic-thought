@@ -59,12 +59,6 @@ func CasUpdateProcessingState(p Processable, newState ProcessingState, db couch.
 
 		}
 
-		// ensure that by the time we return, the processable has the most
-		// version from the db
-		if err := p.RefreshFromDB(db); err != nil {
-			return false, err
-		}
-
 		// successfully saved, we are done
 		logg.LogTo("TRAINING_JOB", "Successfully saved: %+v", p)
 		return true, nil
