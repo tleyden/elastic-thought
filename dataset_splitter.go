@@ -25,6 +25,17 @@ func (d DatasetSplitter) Run(wg *sync.WaitGroup) {
 
 	defer wg.Done()
 
+	db := d.Configuration.DbConnection()
+	updatedState, err := CasUpdateProcessingState(&d.Dataset, Processing, db)
+	if err != nil {
+		d.recordProcessingError(err)
+		return
+	}
+	if !updatedState {
+		logg.LogTo("TRAINING_JOB", "%+v already processed.  Ignoring.", d)
+		return
+	}
+
 	switch d.Dataset.isSplittable() {
 	case true:
 		d.SplitDatafile()

@@ -192,3 +192,22 @@ func (d Dataset) AddArtifactUrls(db couch.Database) (*Dataset, error) {
 	return dataset, nil
 
 }
+
+func (d *Dataset) GetProcessingState() ProcessingState {
+	return d.ProcessingState
+}
+
+func (d *Dataset) SetProcessingState(newState ProcessingState) {
+	d.ProcessingState = newState
+}
+
+func (d *Dataset) RefreshFromDB(db couch.Database) error {
+	dataset := Dataset{}
+	err := db.Retrieve(d.Id, &dataset)
+	if err != nil {
+		logg.LogTo("TRAINING_JOB", "Error getting latest: %v", err)
+		return err
+	}
+	*d = dataset
+	return nil
+}
