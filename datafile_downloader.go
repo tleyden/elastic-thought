@@ -21,6 +21,15 @@ func (d DatafileDownloader) Run(wg *sync.WaitGroup) {
 	logg.LogTo("DATAFILE_DOWNLOADER", "datafile downloader run()")
 
 	db := d.Configuration.DbConnection()
+	updatedState, err := CasUpdateProcessingState(&d.Datafile, Processing, db)
+	if err != nil {
+		d.recordProcessingError(err)
+		return
+	}
+	if !updatedState {
+		logg.LogTo("DATAFILE_DOWNLOADER", "%+v already processed.  Ignoring.", d)
+		return
+	}
 
 	// create a new cbfs client
 	cbfs, err := d.Configuration.NewCbfsClient()

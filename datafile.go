@@ -159,3 +159,22 @@ func (d Datafile) CopyToCBFS(db couch.Database, cbfs *cbfsclient.Client) (string
 	return destPath, nil
 
 }
+
+func (d *Datafile) GetProcessingState() ProcessingState {
+	return d.ProcessingState
+}
+
+func (d *Datafile) SetProcessingState(newState ProcessingState) {
+	d.ProcessingState = newState
+}
+
+func (d *Datafile) RefreshFromDB(db couch.Database) error {
+	datafile := Datafile{}
+	err := db.Retrieve(d.Id, &datafile)
+	if err != nil {
+		logg.LogTo("MODEL", "Error getting latest: %v", err)
+		return err
+	}
+	*d = datafile
+	return nil
+}
