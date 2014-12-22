@@ -10,8 +10,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
+	"github.com/tleyden/cbfs/client"
 )
 
 // Worker job that splits a dataset into training/test set

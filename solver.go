@@ -12,9 +12,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
 	"github.com/golang/protobuf/proto"
+	"github.com/tleyden/cbfs/client"
 	"github.com/tleyden/elastic-thought/caffe"
 	"github.com/tleyden/go-couch"
 )
