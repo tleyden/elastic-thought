@@ -333,6 +333,18 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) er
 		}
 		defer reader.Close()
 
+		// Since I'm seeing errors when calling untarGzWithToc:
+		//     Err: gzip: invalid header
+		// Use a TeeReader to save the raw contents to a file
+		destFile := path.Join(destDirectory, artificactPath)
+		logg.LogTo("TRAINING_JOB", "Using TeeReader to save copy to %v", destFile)
+		f, err := os.Create(destFile)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		teeReader := io.TeeReader(reader, f)
+
 		subdirectory := ""
 		destTocFile := ""
 		if artificactPath == trainingArtifact {
@@ -344,7 +356,7 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) er
 		}
 		destDirectoryToUse := path.Join(destDirectory, subdirectory)
 
-		toc, err := untarGzWithToc(reader, destDirectoryToUse)
+		toc, err := untarGzWithToc(teeReader, destDirectoryToUse)
 		tocWithLabels := addLabelsToToc(toc)
 		tocWithSubdir := addParentDirToToc(tocWithLabels, subdirectory)
 

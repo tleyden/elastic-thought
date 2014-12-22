@@ -299,7 +299,7 @@ func (j TrainingJob) recordProcessingError(err error) {
 	logg.LogError(err)
 	db := j.Configuration.DbConnection()
 	if err := j.Failed(db, err); err != nil {
-		errMsg := fmt.Errorf("Error setting dataset as failed: %v", err)
+		errMsg := fmt.Errorf("Error setting training job as failed: %v", err)
 		logg.LogError(errMsg)
 	}
 }
@@ -367,6 +367,8 @@ func (j TrainingJob) Failed(db couch.Database, processingErr error) error {
 	if err != nil {
 		return err
 	}
+
+	logg.LogTo("TRAINING_JOB", "updating processing log")
 
 	j.ProcessingLog = fmt.Sprintf("%v", processingErr)
 
