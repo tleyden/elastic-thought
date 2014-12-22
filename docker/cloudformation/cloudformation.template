@@ -18,7 +18,7 @@
     },
     "ClusterSize": {
       "Default": "3",
-      "MinValue": "3",
+      "MinValue": "1",
       "MaxValue": "12",
       "Description": "Number of nodes in cluster (3-12).",
       "Type": "Number"
