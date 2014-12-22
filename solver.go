@@ -336,7 +336,8 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) er
 		// Since I'm seeing errors when calling untarGzWithToc:
 		//     Err: gzip: invalid header
 		// Use a TeeReader to save the raw contents to a file
-		destFile := path.Join(destDirectory, artificactPath)
+		_, filename := path.Split(artificactPath)
+		destFile := path.Join(destDirectory, filename)
 		logg.LogTo("TRAINING_JOB", "Using TeeReader to save copy to %v", destFile)
 		f, err := os.Create(destFile)
 		if err != nil {
