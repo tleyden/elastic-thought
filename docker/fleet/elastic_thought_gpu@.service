@@ -5,11 +5,11 @@ Description=elastic_thought_gpu
 TimeoutStartSec=0
 ExecStartPre=-/usr/bin/docker kill elastic_thought_gpu
 ExecStartPre=-/usr/bin/docker rm elastic_thought_gpu
-ExecStartPre=/usr/bin/docker pull tleyden5iwx/elastic-thought-gpu-develop
+ExecStartPre=-/usr/bin/docker pull tleyden5iwx/elastic-thought-gpu-develop
 
 ExecStartPre=/usr/bin/bash -c '/usr/bin/wget https://raw.githubusercontent.com/tleyden/elastic-thought/master/docker/scripts/init_nvidia.sh && /usr/bin/chmod +x init_nvidia.sh && ./init_nvidia.sh'
 
-ExecStart=/usr/bin/docker run --name elastic_thought_gpu --device /dev/nvidia0:/dev/nvidia0 --device /dev/nvidiactl:/dev/nvidiactl --device /dev/nvidia-uvm:/dev/nvidia-uvm --net=host tleyden5iwx/elastic-thought-gpu-develop bash -c 'refresh-elastic-thought && httpd'
+ExecStart=/usr/bin/docker run --name elastic_thought_gpu --device /dev/nvidia0:/dev/nvidia0 --device /dev/nvidiactl:/dev/nvidiactl --device /dev/nvidia-uvm:/dev/nvidia-uvm --net=host tleyden5iwx/elastic-thought-gpu-develop bash -c 'refresh-elastic-thought; httpd'
 ExecStop=/usr/bin/docker stop elastic_thought_gpu
 
 [X-Fleet]
