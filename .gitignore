@@ -2,9 +2,7 @@
 *~
 .#*
 \#*\#
-
 *.class
-
 .idea
 *.iml
 .gradle
@@ -12,11 +10,10 @@ local.properties
 build
 cli/config.json
 cli-main/cli-main
-
 cli/worker/worker
 cli/httpd/httpd
-
 *.dat
 docker/scripts/generate_dockerfiles/generate_dockerfiles
 .DS_Store
 tools/tools
+cli/envcheck/envcheck
