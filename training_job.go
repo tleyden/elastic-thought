@@ -198,9 +198,16 @@ func (j TrainingJob) runCaffe() error {
 
 func (j TrainingJob) uploadCaffeModelToCbfs(caffeModelFilename string) error {
 
-	// open reader to file
+	destPath := path.Join(j.Id, "trained.caffemodel")
 
-	// call cbfs.Put
+	cbfs, err := j.Configuration.NewCbfsClient()
+	if err != nil {
+		return err
+	}
+
+	if err := saveFileToCbfs(caffeModelFilename, destPath, "application/octet-stream", cbfs); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -255,6 +262,8 @@ func (j TrainingJob) saveCmdOutputToCbfs(sourcePath string) error {
 
 	base := path.Base(sourcePath)
 	destPath := fmt.Sprintf("%v/%v", j.Id, base)
+
+	// todo: refactor to use saveFileToCbfs
 
 	cbfs, err := cbfsclient.New(j.Configuration.CbfsUrl)
 	if err != nil {

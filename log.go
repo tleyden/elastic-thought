@@ -19,6 +19,7 @@ func init() {
 		"SOLVER",
 		"TRAINING_JOB",
 		"TEST",
+		"CBFS",
 	}
 }
 
