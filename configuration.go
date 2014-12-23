@@ -18,25 +18,27 @@ const (
 
 // Holds configuration values that are used throughout the application
 type Configuration struct {
-	DbUrl         string
-	CbfsUrl       string
-	NsqLookupdUrl string
-	NsqdUrl       string
-	NsqdTopic     string
-	WorkDirectory string
-	QueueType     QueueType
+	DbUrl               string
+	CbfsUrl             string
+	NsqLookupdUrl       string
+	NsqdUrl             string
+	NsqdTopic           string
+	WorkDirectory       string
+	QueueType           QueueType
+	NumCbfsClusterNodes int // needed to validate cbfs cluster health
 }
 
 func NewDefaultConfiguration() *Configuration {
 
 	config := &Configuration{
-		DbUrl:         "http://localhost:4985/elastic-thought",
-		CbfsUrl:       "http://localhost:8484",
-		NsqLookupdUrl: "127.0.0.1:4161",
-		NsqdUrl:       "127.0.0.1:4150",
-		NsqdTopic:     "elastic-thought",
-		WorkDirectory: "/tmp/elastic-thought",
-		QueueType:     Goroutine,
+		DbUrl:               "http://localhost:4985/elastic-thought",
+		CbfsUrl:             "http://localhost:8484",
+		NsqLookupdUrl:       "127.0.0.1:4161",
+		NsqdUrl:             "127.0.0.1:4150",
+		NsqdTopic:           "elastic-thought",
+		WorkDirectory:       "/tmp/elastic-thought",
+		QueueType:           Goroutine,
+		NumCbfsClusterNodes: 1,
 	}
 	return config
 

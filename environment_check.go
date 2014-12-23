@@ -76,12 +76,12 @@ func CbfsReadWriteFile(config Configuration, destPath, content string) error {
 		}
 
 		nodes := fileHandle.Nodes()
-		if len(nodes) >= 3 {
+		if len(nodes) >= config.NumCbfsClusterNodes {
 			log.Printf("%v present on %v nodes, which is sufficient", destPath, len(nodes))
 			return nil
 		}
 
-		log.Printf("%v only present on %v nodes, which is insufficient", destPath, len(nodes))
+		log.Printf("%v only present on %v nodes, which is < %v", destPath, len(nodes), config.NumCbfsClusterNodes)
 
 		time.Sleep(1 * time.Second)
 
@@ -89,6 +89,7 @@ func CbfsReadWriteFile(config Configuration, destPath, content string) error {
 
 }
 
+// Perform a
 func CbfsSanityCheck(config Configuration) error {
 
 	uuid := NewUuid() // use uuid so other nodes on cluster don't conflict

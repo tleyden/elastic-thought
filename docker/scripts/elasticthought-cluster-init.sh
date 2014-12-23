@@ -120,10 +120,9 @@ echo "Generated sync gateway config"
 cat /tmp/sync_gw_config.json
 
 # upload sync gateway config to cbfs
-
-
 echo "Upload sync gateway config to cbfs: http://$COREOS_PRIVATE_IPV4:8484/"
 untilsuccessful sudo docker run --net=host -v /tmp:/tmp tleyden5iwx/cbfs cbfsclient http://$COREOS_PRIVATE_IPV4:8484/ upload /tmp/sync_gw_config.json /sync_gw_config.json 
+
 
 # kick off sync gateway 
 echo "Kick off sync gateway"
@@ -142,6 +141,10 @@ done
 echo "Done: sync gateway nodes up"
 
 fleetctl list-units
+
+# run elastic-thought environment sanity check
+untilsuccessful sudo docker run --net=host -v tleyden5iwx/elastic-thought-$processor-develop envcheck $numnodes
+
 
 # kick off elastic-thought httpd daemons
 echo "Kick off elastic thought httpd daemons"

@@ -187,7 +187,7 @@ func (e EndpointContext) CreateTrainingJob(c *gin.Context) {
 		return
 	}
 
-	logg.LogTo("REST", "trainingJob: %+v", trainingJob)
+	logg.LogTo("REST", "Create new TrainingJob: %+v", trainingJob)
 
 	// save training job in db
 	trainingJob, err := trainingJob.Insert(db)
