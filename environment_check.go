@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"time"
 
 	"github.com/couchbaselabs/logg"
@@ -41,6 +42,13 @@ func CbfsReadWriteFile(config Configuration, destPath, content string) error {
 		return fmt.Errorf("Error writing %v to cbfs: %v", destPath, err)
 	}
 
+	// delete it after we are done
+	defer func() {
+		if err := cbfs.Rm(destPath); err != nil {
+			logg.LogError(fmt.Errorf("Error deleting %v from cbfs", destPath))
+		}
+	}()
+
 	// read contents from cbfs file
 	reader, err := cbfs.Get(destPath)
 	if err != nil {
@@ -57,11 +65,27 @@ func CbfsReadWriteFile(config Configuration, destPath, content string) error {
 		return fmt.Errorf("Content did not match expected")
 	}
 
-	// delete contents on cbfs
-	if err := cbfs.Rm(destPath); err != nil {
-		return err
+	// now make sure the file shows up on at least 3 cbfs nodes
+	for {
+		// read contents from cbfs file
+		log.Printf("Getting filehandle of %v", destPath)
+		fileHandle, err := cbfs.OpenFile(destPath)
+		if err != nil {
+			logg.LogError(fmt.Errorf("Error calling OpenFile on %v: %v", destPath, err))
+			return err
+		}
+
+		nodes := fileHandle.Nodes()
+		if len(nodes) >= 3 {
+			log.Printf("%v present on %v nodes, which is sufficient", destPath, len(nodes))
+			return nil
+		}
+
+		log.Printf("%v only present on %v nodes, which is insufficient", destPath, len(nodes))
+
+		time.Sleep(1 * time.Second)
+
 	}
-	return nil
 
 }
 
