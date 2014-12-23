@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+downloadUrl=https://raw.githubusercontent.com/tleyden/elastic-thought/master/docker/scripts/refresh-elastic-thought
+
+curl $downloadUrl -o /usr/local/bin/refresh-elastic-thought
+
+chmod +x /usr/local/bin/refresh-elastic-thought;

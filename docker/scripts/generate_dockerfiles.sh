@@ -12,7 +12,7 @@ cp ../../README.md ../gpu/develop
 cp ../../README.md ../gpu/master 
 
 # Scripts
-cp refresh-elastic-thought ../cpu/develop/scripts && chmod +x ../cpu/develop/scripts/*
-cp refresh-elastic-thought ../cpu/master/scripts && chmod +x ../cpu/master/scripts/*
-cp refresh-elastic-thought ../gpu/develop/scripts && chmod +x ../gpu/develop/scripts/*
-cp refresh-elastic-thought ../gpu/master/scripts && chmod +x ../gpu/master/scripts/*
+cp refresh-elastic-thought* ../cpu/develop/scripts && chmod +x ../cpu/develop/scripts/*
+cp refresh-elastic-thought* ../cpu/master/scripts && chmod +x ../cpu/master/scripts/*
+cp refresh-elastic-thought* ../gpu/develop/scripts && chmod +x ../gpu/develop/scripts/*
+cp refresh-elastic-thought* ../gpu/master/scripts && chmod +x ../gpu/master/scripts/*
