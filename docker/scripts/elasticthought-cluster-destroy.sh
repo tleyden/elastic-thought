@@ -1,4 +1,6 @@
 
+fleetctl list-units | awk {'print $1'} | grep -v UNIT | xargs fleetctl stop
+
 fleetctl list-units | awk {'print $1'} | grep -v UNIT | xargs fleetctl destroy
 
 fleetctl list-unit-files | awk {'print $1'} | grep -v UNIT | xargs fleetctl destroy
