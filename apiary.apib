@@ -77,46 +77,46 @@ Otherwise if you've already split your data into two datafiles, specify differen
 
     + Schema 
 
-            {  
-               "$schema":"http://json-schema.org/draft-04/schema#",
-               "title":"Add Dataset Request",
-               "description":"A request to create a new Dataset from a Datafile or set of Datafiles",
-               "type":"object",
-               "properties":{  
-                  "training":{  
-                     "description":"The training portion of the dataset.",
-                     "type":"object",
-             "properties":{
-                 "datafile-id": {
-                 "type": "string",
-                 "description": "The id of the Datafile object"
-             },
-                 "split-percentage": {
-                 "type": "number",
-                 "description": "The percent of datafile that should be used for training.  Or 0.0 if passing two distinct Datafile id's in training/testing"
-             }
-             }  
-                  },
-                  "testing":{  
-                     "description":"The testing portion of the dataset.",
-                     "type":"object",
-             "properties":{
-                 "datafile-id": {
-                 "type": "string",
-                 "description": "The id of the Datafile object"
-             },
-                 "split-percentage": {
-                 "type": "number",
-                 "description": "The percent of datafile that should be used for training.  Or 0.0 if passing two distinct Datafile id's in training/testing"
-             }
-             }  
-                  }
-                }
-                    "required":[  
-                        "training",
-                        "testing"
-                    ],
-               "additionalProperties":false
+            {
+                "$schema":"http://json-schema.org/draft-04/schema#",
+                "title":"Add Dataset Request",
+                "description":"A request to create a new Dataset from a Datafile or set of Datafiles",
+                "type":"object",
+                "properties":{
+                    "training":{
+                    "description":"The training portion of the dataset.",
+                    "type":"object",
+                    "properties":{
+                        "datafile-id":{
+                        "type":"string",
+                        "description":"The id of the Datafile object"
+                        },
+                        "split-percentage":{
+                        "type":"number",
+                        "description":"The percent of datafile that should be used for training.  Or 0.0 if passing two distinct Datafile id's in training/testing"
+                        }
+                    }
+                    },
+                    "testing":{
+                    "description":"The testing portion of the dataset.",
+                    "type":"object",
+                    "properties":{
+                        "datafile-id":{
+                        "type":"string",
+                        "description":"The id of the Datafile object"
+                        },
+                        "split-percentage":{
+                        "type":"number",
+                        "description":"The percent of datafile that should be used for training.  Or 0.0 if passing two distinct Datafile id's in training/testing"
+                        }
+                    }
+                    }
+                },
+                "required":[
+                    "training",
+                    "testing"
+                ],
+                "additionalProperties":false
             }
 
 
