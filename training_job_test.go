@@ -108,7 +108,7 @@ func TestUpdateModelUrl(t *testing.T) {
 	testServer.Response(409, jsonHeaders(), "")
 
 	// response to GET to refresh
-	testServer.Response(200, jsonHeaders(), `{"_id": "training_job", "_rev": "bar", "trained-model-url": "cbfs/training_job/trained.caffemodel"}`)
+	testServer.Response(200, jsonHeaders(), `{"_id": "training_job", "_rev": "bar"}`)
 
 	// second update succeeds
 	testServer.Response(200, jsonHeaders(), `{"id": "training_job", "rev": "bar"}`)
