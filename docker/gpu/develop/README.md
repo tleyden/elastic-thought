@@ -75,27 +75,17 @@ For that, check out:
 
 ### Launch EC2 instances via CloudFormation script
 
+*Note: the instance will launch in **us-east-1***.  If you want to launch in another region, please [file an issue](https://github.com/tleyden/elastic-thought/issues).
+
 * [Launch CPU Stack](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#cstack=sn%7ECouchbase-CoreOS%7Cturl%7Ehttp://tleyden-misc.s3.amazonaws.com/elastic-thought/cloudformation/elastic_thought_cpu.template) or [Launch GPU Stack](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#cstack=sn%7ECouchbase-CoreOS%7Cturl%7Ehttp://tleyden-misc.s3.amazonaws.com/elastic-thought/cloudformation/elastic_thought_gpu.template) 
 * Choose 3 node cluster with m3.medium or g2.2xlarge (GPU case) instance type
 * All other values should be default
 
-### Load GPU kernel module / devices
-
-*Only needed if you launched a GPU cluster*
-
-Ssh into ALL of the machines (ie, `ssh -A core@ec2-54-160-96-153.compute-1.amazonaws.com`) and do the following steps.
-
-* `wget http://tleyden-misc.s3.amazonaws.com/elastic-thought/nvidia-kernel-modules/coreos_stable_494.4.0_hvm/kernelmods.tar.gz`
-* `tar xvfz kernelmods.tar.gz`
-* `sudo insmod nvidia.ko && sudo insmod nvidia-uvm.ko`
-* `wget https://gist.githubusercontent.com/tleyden/74f593a0beea300de08c/raw/95ed93c5751a989e58153db6f88c35515b7af120/nvidia_devices.sh`
-* `chmod +x nvidia_devices.sh`
-* `sudo ./nvidia_devices.sh`
-
 ### Kick off ElasticThought
 
+Ssh into one of the machines (doesn't matter which): `ssh -A core@ec2-54-160-96-153.compute-1.amazonaws.com`
+
 ```
-* Ssh into one of the machines (doesn't matter which): `ssh -A core@ec2-54-160-96-153.compute-1.amazonaws.com`
 $ wget https://raw.githubusercontent.com/tleyden/elastic-thought/master/docker/scripts/elasticthought-cluster-init.sh
 $ chmod +x elasticthought-cluster-init.sh
 $ ./elasticthought-cluster-init.sh -v 3.0.1 -n 3 -u "user:passw0rd" -p gpu 
@@ -128,9 +118,83 @@ sync_gw_node@2.service				fbd4562e.../10.182.197.145	active	running
 sync_gw_node@3.service				0f5e2e11.../10.168.212.210	active	running
 ```
 
-## Access API
+At this point you should be able to access the [REST API](http://docs.elasticthought.apiary.io/) on the public ip any of the three Sync Gateway machines.
 
-You should be able to access the API on the public ip of the same machine you ran the script from.  (if not, find public ip of node where elasticthought httpd is running)
+## Kick things off: Vagrant
+
+### Update Vagrant
+
+Make sure you're running a current version of Vagrant, otherwise the plugin install below may [fail](https://github.com/mitchellh/vagrant/issues/3769).
+
+```
+$ vagrant -v
+1.7.1
+```
+
+### Install CoreOS
+
+See https://coreos.com/docs/running-coreos/platforms/vagrant/
+
+### Update cloud-config
+
+Open the user-data file, and add:
+
+```
+write_files:
+  - path: /etc/systemd/system/docker.service.d/increase-ulimit.conf
+    owner: core:core
+    permissions: 0644
+    content: |
+      [Service]
+      LimitMEMLOCK=infinity
+  - path: /var/lib/couchbase/data/.README
+    owner: core:core
+    permissions: 0644
+    content: |
+      Couchbase Data files are stored here
+  - path: /var/lib/couchbase/index/.README
+    owner: core:core
+    permissions: 0644
+    content: |
+      Couchbase Index files are stored here
+  - path: /var/lib/cbfs/data/.README
+    owner: core:core
+    permissions: 0644
+    content: |
+      CBFS files are stored here
+```
+
+### Increase RAM size of VM's
+
+Couchbase Server wants a lot of RAM.  Bump up the vm memory size to 2GB.
+
+Edit your Vagrantfile:
+
+```
+$vb_memory = 2048
+```
+
+### Setup port forwarding for Couchbase UI (optional)
+
+This is only needed if you want to be able to connect to the Couchbase web UI from a browser on your host OS (ie, OSX)
+
+Add the following snippet to your Vagrant file:
+
+```
+if i == 1
+  # create a port forward mapping to view couchbase web ui 
+  config.vm.network "forwarded_port", guest: 8091, host: 5091
+end
+```
+
+### Disable Transparent Huge Pages (optional)
+
+Not sure how crucial this is, but I'll mention it just in case.  After the CoreOS machines startup, ssh into each one:
+
+```
+$ sudo bash
+# echo never > /sys/kernel/mm/transparent_hugepage/enabled && echo never > /sys/kernel/mm/transparent_hugepage/defrag
+```
 
 ## License
 
