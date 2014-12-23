@@ -22,6 +22,7 @@ RUN curl -O https://storage.googleapis.com/golang/go1.3.1.linux-amd64.tar.gz && 
 
 # Add refresh script
 ADD scripts/refresh-elastic-thought /usr/local/bin/
+ADD scripts/refresh-elastic-thought-refresher /usr/local/bin/
 
 # Go get ElasticThought
 RUN go get -u -v -t github.com/tleyden/elastic-thought && \
