@@ -229,5 +229,51 @@ it will support websocket streaming.
 # Group Prediction
 Related resources of the **Prediction API**
 
+## Classifiers Collection [/classifiers]
+
+### Create a Classifier [POST]
+
++ Request (application/json)
+
+    + Header
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
+
+    + Body
+
+	    { 
+		"specification-url": "http://s3.com/mnist_classifier.prototxt",
+		"model-url": "http://s3.com/mnist.caffemodel",
+	    }
+
++ Response 201 (application/json)
+
+        { "id": "classifier-uuid" }
+
+## Classify an input [/classifiers/{id}/classify]
+
+Classify an input image
+
++ Parameters
+    + id (required, string, `classifier-uuid`) ... The id of the classifier
+
+### Classify [GET]
+
++ Request (application/json)
+
+    + Header
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
+
+    + Body
+
+	    { 
+		"input-url": "http://s3.com/image.png"
+	    }
+
++ Response 201 (application/json)
+
+        { "label": "3" }
+
 
 
