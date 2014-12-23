@@ -66,11 +66,11 @@ Otherwise if you've already split your data into two datafiles, specify differen
 
             { 
                 "training": {
-                    "datafile-id": "datafile-uuid",	
+                    "datafile-id": "datafile-uuid", 
                     "split-percentage": 0.7
                 },
                 "testing": {
-		    "datafile-id": "datafile-uuid",	
+            "datafile-id": "datafile-uuid", 
                     "split-percentage": 0.3
                 }
             }
@@ -86,36 +86,36 @@ Otherwise if you've already split your data into two datafiles, specify differen
                   "training":{  
                      "description":"The training portion of the dataset.",
                      "type":"object",
-		     "properties":{
-		         "datafile-id": {
-			     "type": "string",
-			     "description": "The id of the Datafile object"
-			 },
-		         "split-percentage": {
-			     "type": "number",
-			     "description": "The percent of datafile that should be used for training.  Or 0.0 if passing two distinct Datafile id's in training/testing"
-			 }
-		     }  
+             "properties":{
+                 "datafile-id": {
+                 "type": "string",
+                 "description": "The id of the Datafile object"
+             },
+                 "split-percentage": {
+                 "type": "number",
+                 "description": "The percent of datafile that should be used for training.  Or 0.0 if passing two distinct Datafile id's in training/testing"
+             }
+             }  
                   },
                   "testing":{  
                      "description":"The testing portion of the dataset.",
                      "type":"object",
-		     "properties":{
-		         "datafile-id": {
-			     "type": "string",
-			     "description": "The id of the Datafile object"
-			 },
-		         "split-percentage": {
-			     "type": "number",
-			     "description": "The percent of datafile that should be used for training.  Or 0.0 if passing two distinct Datafile id's in training/testing"
-			 }
-		     }  
+             "properties":{
+                 "datafile-id": {
+                 "type": "string",
+                 "description": "The id of the Datafile object"
+             },
+                 "split-percentage": {
+                 "type": "number",
+                 "description": "The percent of datafile that should be used for training.  Or 0.0 if passing two distinct Datafile id's in training/testing"
+             }
+             }  
                   }
-	       }
-               "required":[  
-                  "training",
-                  "testing"
-               ],
+                }
+                    "required":[  
+                        "training",
+                        "testing"
+                    ],
                "additionalProperties":false
             }
 
@@ -151,7 +151,7 @@ Related resources of the **Training API**
 
             { 
                 "dataset-id": "<dataset-id>",
-		"specification-url": "http://s3.com/mnist_solver.prototxt",
+                "specification-url": "http://s3.com/mnist_solver.prototxt",
                 "specification-net-url": "http://s3.com/mnist_train_test.prototxt"
             }
 
@@ -241,10 +241,10 @@ Related resources of the **Prediction API**
 
     + Body
 
-	    { 
-		"specification-url": "http://s3.com/mnist_classifier.prototxt",
-		"model-url": "http://s3.com/mnist.caffemodel",
-	    }
+            { 
+                "specification-url": "http://s3.com/mnist_classifier.prototxt",
+                "model-url": "http://s3.com/mnist.caffemodel",
+            }
 
 + Response 201 (application/json)
 
@@ -267,9 +267,9 @@ Classify an input image
 
     + Body
 
-	    { 
-		"input-url": "http://s3.com/image.png"
-	    }
+            { 
+                "input-url": "http://s3.com/image.png"
+            }
 
 + Response 201 (application/json)
 
