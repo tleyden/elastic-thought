@@ -90,6 +90,46 @@ func TestUpdateProcessingState(t *testing.T) {
 
 }
 
+func TestUpdateModelUrl(t *testing.T) {
+
+	docId := "training_job"
+	expectedTrainedModelUrl := fmt.Sprintf("cbfs/%v/trained.caffemodel", docId)
+
+	testServer := fakehttp.NewHTTPServer()
+	testServer.Start()
+
+	// response when go-couch tries to see that the server is up
+	testServer.Response(200, jsonHeaders(), `{"version": "fake"}`)
+
+	// response when go-couch check is db exists
+	testServer.Response(200, jsonHeaders(), `{"db_name": "db"}`)
+
+	// first update returns 409
+	testServer.Response(409, jsonHeaders(), "")
+
+	// response to GET to refresh
+	testServer.Response(200, jsonHeaders(), `{"_id": "training_job", "_rev": "bar", "trained-model-url": "cbfs/training_job/trained.caffemodel"}`)
+
+	// second update succeeds
+	testServer.Response(200, jsonHeaders(), `{"id": "training_job", "rev": "bar"}`)
+
+	configuration := NewDefaultConfiguration()
+	configuration.DbUrl = fmt.Sprintf("%v/db", testServer.URL)
+
+	trainingJob := NewTrainingJob()
+	trainingJob.ElasticThoughtDoc.Id = docId
+	trainingJob.ElasticThoughtDoc.Revision = "rev"
+
+	trainingJob.Configuration = *configuration
+	trainingJob.ProcessingState = Pending
+
+	err := trainingJob.updateCaffeModelUrl()
+
+	assert.True(t, err == nil)
+	assert.Equals(t, expectedTrainedModelUrl, trainingJob.TrainedModelUrl)
+
+}
+
 func jsonHeaders() map[string]string {
 	return map[string]string{"Content-Type": "application/json"}
 }

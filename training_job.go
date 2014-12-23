@@ -122,11 +122,11 @@ func (j TrainingJob) runCaffe() error {
 	logg.LogTo("TRAINING_JOB", "ls -alh /usr/local/bin: %v", string(out))
 
 	// explicitly check if caffe binary found on the PATH
-	path, err := exec.LookPath("caffe")
+	lookPathResult, err := exec.LookPath("caffe")
 	if err != nil {
 		logg.LogError(fmt.Errorf("caffe not found on path: %v", err))
 	}
-	logg.LogTo("TRAINING_JOB", "caffe found on path: %v", path)
+	logg.LogTo("TRAINING_JOB", "caffe found on path: %v", lookPathResult)
 
 	// Create Caffe command, but don't actually run it yet
 	cmd := exec.Command(caffePath, cmdArgs...)
@@ -217,10 +217,10 @@ func (j TrainingJob) uploadCaffeModelToCbfs(caffeModelFilename string) error {
 	return nil
 }
 
-func (j TrainingJob) updateCaffeModelUrl() error {
+func (j *TrainingJob) updateCaffeModelUrl() error {
 
-	// update to cbfs/<training job id>/caffe.model
-	newTrainedModelUrl := path.Join("cbfs", j.Id, "caffe.model")
+	// update to cbfs/<training job id>/trained.caffemodel
+	newTrainedModelUrl := path.Join("cbfs", j.Id, "trained.caffemodel")
 
 	updater := func(job *TrainingJob) {
 		job.TrainedModelUrl = newTrainedModelUrl
@@ -237,18 +237,18 @@ func (j TrainingJob) updateCaffeModelUrl() error {
 	return nil
 }
 
-func (j TrainingJob) casUpdate(updater func(*TrainingJob), doneMetric func(TrainingJob) bool) error {
+func (j *TrainingJob) casUpdate(updater func(*TrainingJob), doneMetric func(TrainingJob) bool) error {
 
 	db := j.Configuration.DbConnection()
 
 	// if already has the newState, return false
-	if doneMetric(j) == true {
+	if doneMetric(*j) == true {
 		logg.LogTo("TRAINING_JOB", "doneMetric returned true, nothing to do")
 		return nil
 	}
 
 	for {
-		updater(&j)
+		updater(j)
 
 		// SAVE: try to save to the database
 		logg.LogTo("TRAINING_JOB", "Trying to save: %+v", j)
@@ -270,14 +270,14 @@ func (j TrainingJob) casUpdate(updater func(*TrainingJob), doneMetric func(Train
 
 			// get the latest version of the document
 
-			if err := (&j).RefreshFromDB(db); err != nil {
+			if err := j.RefreshFromDB(db); err != nil {
 				return err
 			}
 
 			logg.LogTo("TRAINING_JOB", "Retrieved new: %+v", j)
 
 			// does it already have the new the state (eg, someone else set it)?
-			if doneMetric(j) == true {
+			if doneMetric(*j) == true {
 				logg.LogTo("TRAINING_JOB", "doneMetric returned true, nothing to do")
 				return nil
 			}
