@@ -7,7 +7,7 @@ ExecStartPre=-/usr/bin/docker kill elastic_thought_cpu
 ExecStartPre=-/usr/bin/docker rm elastic_thought_cpu
 ExecStartPre=-/usr/bin/docker pull tleyden5iwx/elastic-thought-cpu-develop
 
-ExecStart=/usr/bin/docker run --name elastic_thought_cpu  --net=host tleyden5iwx/elastic-thought-cpu-develop bash -c 'curl https://raw.githubusercontent.com/tleyden/elastic-thought/master/docker/scripts/refresh-elastic-thought -o /usr/local/bin/refresh-elastic-thought; chmod +x /usr/local/bin/refresh-elastic-thought; refresh-elastic-thought; httpd'
+ExecStart=/usr/bin/docker run --name elastic_thought_cpu  --net=host tleyden5iwx/elastic-thought-cpu-develop bash -c 'refresh-elastic-thought-refresher; refresh-elastic-thought; httpd'
 ExecStop=/usr/bin/docker stop elastic_thought_cpu
 
 [X-Fleet]
