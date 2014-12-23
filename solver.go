@@ -25,6 +25,11 @@ type Solver struct {
 	DatasetId           string `json:"dataset-id"`
 	SpecificationUrl    string `json:"specification-url" binding:"required"`
 	SpecificationNetUrl string `json:"specification-net-url" binding:"required"`
+
+	// had to make exported, due to https://github.com/gin-gonic/gin/pull/123
+	// waiting for this to get merged into master branch, since go get
+	// pulls from master branch.
+	Configuration Configuration
 }
 
 // Create a new solver.  If you don't use this, you must set the
@@ -54,6 +59,54 @@ func (s Solver) Insert(db couch.Database) (*Solver, error) {
 	}
 
 	return solver, nil
+
+}
+
+// read solver prototxt from cbfs
+func (s Solver) getSolverPrototxtContent() ([]byte, error) {
+
+	// get the relative url path in cbfs (chop off leading cbfs://)
+	sourcePath, err := s.SpecificationUrlPath()
+	if err != nil {
+		return nil, fmt.Errorf("Error getting cbfs path of solver prototxt. Err: %v", err)
+	}
+
+	// create a new cbfs client
+	cbfs, err := s.Configuration.NewCbfsClient()
+	if err != nil {
+		return nil, fmt.Errorf("Error creating cbfs client: %v", err)
+	}
+
+	// read contents from cbfs
+	reader, err := cbfs.Get(sourcePath)
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+	bytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
+
+}
+
+func (s Solver) getSolverParameter() (*caffe.SolverParameter, error) {
+
+	specContents, err := s.getSolverPrototxtContent()
+	if err != nil {
+		return nil, fmt.Errorf("Error getting solver prototxt content.  Err: %v", err)
+	}
+
+	// read into object with protobuf (must have already generated go protobuf code)
+	solverParam := &caffe.SolverParameter{}
+
+	if err := proto.UnmarshalText(string(specContents), solverParam); err != nil {
+		return nil, err
+	}
+
+	return solverParam, nil
 
 }
 
@@ -165,6 +218,8 @@ func (s Solver) DownloadSpecToCbfs(db couch.Database, cbfs *cbfsclient.Client) (
 
 	// update solver with cbfs url
 	s.SpecificationUrl = fmt.Sprintf("%v%v", CBFS_URI_PREFIX, destPath)
+
+	// TODO: s.MaxIterations =
 
 	// rewrite the solver net specification
 	solverSpecNetBytes, err := s.getModifiedSolverNetSpec()

@@ -24,6 +24,7 @@ type TrainingJob struct {
 	SolverId        string          `json:"solver-id" binding:"required"`
 	StdOutUrl       string          `json:"std-out-url"`
 	StdErrUrl       string          `json:"std-err-url"`
+	TrainedModelUrl string          `json:"trained-model-url"`
 
 	// had to make exported, due to https://github.com/gin-gonic/gin/pull/123
 	// waiting for this to get merged into master branch, since go get
@@ -166,7 +167,71 @@ func (j TrainingJob) runCaffe() error {
 		return fmt.Errorf("Error running caffe: could not save output to cbfs. Err: %v", err)
 	}
 
+	// find out the name of the final model, eg snapshot_iter_200.caffemodel
+	caffeModelFilename, err := j.getCaffeModelFilename()
+	if err != nil {
+		return fmt.Errorf("Error finding the caffe model file. Err: %v", err)
+	}
+
+	// upload caffemodel to cbfs as <training-job-id>/trained.caffemodel
+	if err := j.uploadCaffeModelToCbfs(caffeModelFilename); err != nil {
+		return fmt.Errorf("Error uploading caffe model to cbfs. Err: %v", err)
+	}
+
+	// update the training job to have the caffe model URL
+	// set the url to the model, could be:
+	//   relative (do this for now, convert to absolute later)
+	//     - maybe cbfs/243224lkjlkj/caffe.model which a user can paste at end of API url
+	//   absolute
+	//     - http://host:8080/cbfs/243224lkjlkj/caffe.model
+	//     - will need to be given public ip in config
+	if err := j.updateCaffeModelUrl(); err != nil {
+		return fmt.Errorf("Error updating caffe model url. Err: %v", err)
+	}
+
+	// TODO: add cbfs proxy so that we can get to this file
+	// via http://host:8080/cbfs/243224lkjlkj/caffe.model
+
 	return runCommandErr
+
+}
+
+func (j TrainingJob) uploadCaffeModelToCbfs(caffeModelFilename string) error {
+
+	// open reader to file
+
+	// call cbfs.Put
+
+	return nil
+}
+
+func (j TrainingJob) updateCaffeModelUrl() error {
+	return nil
+}
+
+func (j TrainingJob) getCaffeModelFilename() (string, error) {
+
+	// get the solver associated with this training job
+	solver, err := j.getSolver()
+	if err != nil {
+		return "", fmt.Errorf("Error getting solver: %+v.  Err: %v", j, err)
+	}
+
+	// read into object with protobuf (must have already generated go protobuf code)
+	solverParam, err := solver.getSolverParameter()
+	if err != nil {
+		return "", fmt.Errorf("Error getting solverParam. Err: %v", err)
+	}
+
+	maxIter := *solverParam.MaxIter
+	snapshotPrefix := *solverParam.SnapshotPrefix
+
+	// eg, snapshot_iter_200.caffemodel
+	caffeModelFilename := fmt.Sprintf("%v_iter_%v.caffemodel", snapshotPrefix, maxIter)
+
+	logg.LogTo("TRAINING_JOB", "caffeModelFilename: %v", caffeModelFilename)
+
+	return caffeModelFilename, nil
 
 }
 
@@ -323,6 +388,7 @@ func (j TrainingJob) getSolver() (*Solver, error) {
 		logg.LogError(errMsg)
 		return nil, errMsg
 	}
+	solver.Configuration = j.Configuration
 	return solver, nil
 }
 

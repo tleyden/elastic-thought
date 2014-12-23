@@ -130,6 +130,7 @@ func (e EndpointContext) CreateSolverEndpoint(c *gin.Context) {
 	logg.LogTo("REST", "user: %v db: %v", user, db)
 
 	solver := NewSolver()
+	solver.Configuration = e.Configuration
 
 	// bind the input struct to the JSON request
 	if ok := c.Bind(solver); !ok {
