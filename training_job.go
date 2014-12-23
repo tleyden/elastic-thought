@@ -179,9 +179,11 @@ func (j TrainingJob) runCaffe() error {
 	logg.LogTo("TRAINING_JOB", "caffeModelFilepath: %v", caffeModelFilepath)
 
 	// upload caffemodel to cbfs as <training-job-id>/trained.caffemodel
+	logg.LogTo("TRAINING_JOB", "upload caffe model to cbfs")
 	if err := j.uploadCaffeModelToCbfs(caffeModelFilepath); err != nil {
 		return fmt.Errorf("Error uploading caffe model to cbfs. Err: %v", err)
 	}
+	logg.LogTo("TRAINING_JOB", "uploaded caffe model to cbfs")
 
 	// update the training job to have the caffe model URL
 	// set the url to the model, could be:
@@ -190,9 +192,11 @@ func (j TrainingJob) runCaffe() error {
 	//   absolute
 	//     - http://host:8080/cbfs/243224lkjlkj/caffe.model
 	//     - will need to be given public ip in config
+	logg.LogTo("TRAINING_JOB", "updating caffe model url")
 	if err := j.updateCaffeModelUrl(); err != nil {
 		return fmt.Errorf("Error updating caffe model url. Err: %v", err)
 	}
+	logg.LogTo("TRAINING_JOB", "updated caffe model url")
 
 	// TODO: add cbfs proxy so that we can get to this file
 	// via http://host:8080/cbfs/243224lkjlkj/caffe.model
