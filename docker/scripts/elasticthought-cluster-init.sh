@@ -143,8 +143,8 @@ echo "Done: sync gateway nodes up"
 fleetctl list-units
 
 # run elastic-thought environment sanity check
-untilsuccessful sudo docker run --net=host -v tleyden5iwx/elastic-thought-$processor-develop envcheck $numnodes
-
+echo "Kick off elastic thought environment check"
+untilsuccessful sudo docker run --net=host -v tleyden5iwx/elastic-thought-$processor-develop bash -c "curl https://raw.githubusercontent.com/tleyden/elastic-thought/master/docker/scripts/refresh-elastic-thought -o /usr/local/bin/refresh-elastic-thought; chmod +x /usr/local/bin/refresh-elastic-thought; refresh-elastic-thought; envcheck ${numnodes}"
 
 # kick off elastic-thought httpd daemons
 echo "Kick off elastic thought httpd daemons"
