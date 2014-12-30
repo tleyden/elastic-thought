@@ -1,6 +1,12 @@
 package elasticthought
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/couchbaselabs/logg"
+	"github.com/dustin/httputil"
+	"github.com/tleyden/go-couch"
+)
 
 // A classifier uses a trained model to classify new incoming data points
 type Classifier struct {
@@ -39,4 +45,91 @@ func (c *Classifier) Insert() error {
 
 	return nil
 
+}
+
+func (c *Classifier) SetSpecificationUrl(specUrlCbfs string) error {
+
+	updater := func(classifier *Classifier) {
+		classifier.SpecificationUrl = specUrlCbfs
+	}
+
+	doneMetric := func(classifier Classifier) bool {
+		return classifier.SpecificationUrl == specUrlCbfs
+	}
+
+	if err := c.casUpdate(updater, doneMetric); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (c *Classifier) casUpdate(updater func(*Classifier), doneMetric func(Classifier) bool) error {
+
+	db := c.Configuration.DbConnection()
+
+	// if already has the newState, return false
+	if doneMetric(*c) == true {
+		logg.LogTo("CLASSIFIER", "Already has new state, nothing to do: %+v", c)
+		return nil
+	}
+
+	for {
+		updater(c)
+
+		// SAVE: try to save to the database
+		logg.LogTo("CLASSIFIER", "Trying to save: %+v", c)
+
+		_, err := db.Edit(c)
+
+		if err != nil {
+
+			logg.LogTo("CLASSIFIER", "Got error updating: %v", err)
+
+			// if it failed with any other error than 409, return an error
+			if !httputil.IsHTTPStatus(err, 409) {
+				logg.LogTo("CLASSIFIER", "Not a 409 error: %v", err)
+				return err
+			}
+
+			// it failed with 409 error
+			logg.LogTo("CLASSIFIER", "Its a 409 error: %v", err)
+
+			// get the latest version of the document
+
+			if err := c.RefreshFromDB(db); err != nil {
+				return err
+			}
+
+			logg.LogTo("CLASSIFIER", "Retrieved new: %+v", c)
+
+			// does it already have the new the state (eg, someone else set it)?
+			if doneMetric(*c) == true {
+				logg.LogTo("CLASSIFIER", "doneMetric returned true, nothing to do")
+				return nil
+			}
+
+			// no, so try updating state and saving again
+			continue
+
+		}
+
+		// successfully saved, we are done
+		logg.LogTo("CLASSIFIER", "Successfully saved: %+v", c)
+		return nil
+
+	}
+
+}
+
+func (c *Classifier) RefreshFromDB(db couch.Database) error {
+	classifier := Classifier{}
+	err := db.Retrieve(c.Id, &classifier)
+	if err != nil {
+		logg.LogTo("CLASSIFIER", "Error getting latest: %v", err)
+		return err
+	}
+	*c = classifier
+	return nil
 }

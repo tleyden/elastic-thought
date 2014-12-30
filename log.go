@@ -11,6 +11,7 @@ func init() {
 		"REST",
 		"ELASTIC_THOUGHT",
 		"MODEL",
+		"CLASSIFIER",
 		"CHANGES",
 		"JOB_SCHEDULER",
 		"NSQ_WORKER",

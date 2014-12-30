@@ -3,6 +3,7 @@ package elasticthought
 import (
 	"bufio"
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/couchbaselabs/logg"
@@ -27,6 +28,34 @@ func saveFileToCbfs(sourcePath, destPath, contentType string, cbfs *cbfsclient.C
 	}
 
 	logg.LogTo("CBFS", "Wrote %v to cbfs: %v", sourcePath, destPath)
+
+	return nil
+
+}
+
+// Save the contents of sourceUrl to cbfs at destPath
+func saveUrlToCbfs(sourceUrl, destPath string, cbfs *cbfsclient.Client) error {
+
+	// open stream to source url
+	resp, err := http.Get(sourceUrl)
+	if err != nil {
+		return fmt.Errorf("Error doing GET on: %v.  %v", sourceUrl, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("%v response to GET on: %v", resp.StatusCode, sourceUrl)
+	}
+
+	options := cbfsclient.PutOptions{
+		ContentType: resp.Header.Get("Content-Type"),
+	}
+
+	if err := cbfs.Put("", destPath, resp.Body, options); err != nil {
+		return fmt.Errorf("Error writing %v to cbfs: %v", destPath, err)
+	}
+
+	logg.LogTo("CBFS", "Wrote %v to cbfs: %v", sourceUrl, destPath)
 
 	return nil
 

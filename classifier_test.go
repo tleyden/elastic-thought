@@ -1,11 +1,14 @@
 package elasticthought
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 
 	"github.com/couchbaselabs/go.assert"
+	"github.com/couchbaselabs/logg"
 	"github.com/tleyden/fakehttp"
 )
 
@@ -54,5 +57,51 @@ func TestInsertClassifier(t *testing.T) {
 	assert.True(t, err == nil)
 	assert.Equals(t, "classifier", classifier.Id)
 	assert.Equals(t, "bar", classifier.Revision)
+
+}
+
+func TestSetSpecificationUrl(t *testing.T) {
+
+	testServer := fakehttp.NewHTTPServerWithPort(NextPort())
+	testServer.Start()
+
+	// response when go-couch tries to see that the server is up
+	testServer.Response(200, jsonHeaders(), `{"version": "fake"}`)
+
+	// response when go-couch check is db exists
+	testServer.Response(200, jsonHeaders(), `{"db_name": "db"}`)
+
+	// update succeeds
+	testServer.Response(200, jsonHeaders(), `{"id": "classifier", "rev": "bar"}`)
+
+	configuration := NewDefaultConfiguration()
+	configuration.DbUrl = fmt.Sprintf("%v/db", testServer.URL)
+
+	classifier := NewClassifier()
+	classifier.Id = "classifier"
+	classifier.Revision = "foo"
+	classifier.Configuration = *configuration
+
+	err := classifier.SetSpecificationUrl("whatever")
+	assert.True(t, err == nil)
+
+	// make assertions about outgoing request
+	for _, savedReq := range testServer.SavedRequests {
+
+		path := savedReq.Request.URL.Path
+		logg.Log("%v request to %v", savedReq.Request.Method, path)
+
+		if strings.HasSuffix(path, "db/classifier") {
+			var requestDictionary map[string]interface{}
+			err := json.Unmarshal(savedReq.Data, &requestDictionary)
+			assert.True(t, err == nil)
+			logg.Log("request body: %v", requestDictionary)
+			assert.Equals(t, requestDictionary["_id"], "classifier")
+			assert.Equals(t, requestDictionary["_rev"], "foo")
+			assert.Equals(t, requestDictionary["specification-url"], "whatever")
+
+		}
+
+	}
 
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path"
 
 	"github.com/couchbaselabs/logg"
 	"github.com/gin-gonic/gin"
@@ -230,25 +231,30 @@ func (e EndpointContext) CreateClassifierEndpoint(c *gin.Context) {
 		return
 	}
 
-	/*
-		// Create a cbfs client
-		cbfs, err := cbfsclient.New(e.Configuration.CbfsUrl)
-		if err != nil {
-			errMsg := fmt.Errorf("Error creating cbfs client: %v", err)
-			c.Fail(500, errMsg)
-			return
-		}
-		logg.LogTo("REST", "cbfs: %+v", cbfs)
+	// Create a cbfs client
+	cbfs, err := cbfsclient.New(e.Configuration.CbfsUrl)
+	if err != nil {
+		errMsg := fmt.Errorf("Error creating cbfs client: %v", err)
+		c.Fail(500, errMsg)
+		return
+	}
 
-		// download contents of specification-url into cbfs://<classifier-id>/spec.prototxt
-		// and update classifier object's specification-url with cbfs url.
-		// ditto for specification-net-url
-		classifier, err = classifier.DownloadSpecToCbfs(db, cbfs)
-		if err != nil {
-			c.Fail(500, err)
-			return
-		}
-	*/
+	// download contents of specification-url into cbfs://<classifier-id>/spec.prototxt
+	// and update classifier object's specification-url with cbfs url.
+	// ditto for specification-net-url
+	destPath := path.Join(classifier.Id, "classifier.prototxt")
+	if err := saveUrlToCbfs(classifier.SpecificationUrl, destPath, cbfs); err != nil {
+		c.Fail(500, err)
+		return
+
+	}
+
+	// update the spec url to point to the classifier.prototxt in cbfs
+	specUrlCbfs := path.Join(CBFS_URI_PREFIX, destPath)
+	if err := classifier.SetSpecificationUrl(specUrlCbfs); err != nil {
+		c.Fail(500, err)
+		return
+	}
 
 	// return classifier object
 	c.JSON(201, *classifier)
