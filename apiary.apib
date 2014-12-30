@@ -268,12 +268,19 @@ Classify an input image
     + Body
 
             { 
-                "input-url": "http://s3.com/image2classify.png"
+                "input-urls": [
+                    "http://s3.com/image2classify.png",
+                    "http://s3.com/image2classify2.png"
+                ]
             }
 
 + Response 201 (application/json)
-
-        { "label": "3" }
+        
+        
+        { 
+            "http://s3.com/image2classify.png": "3",
+            "http://s3.com/image2classify2.png": "7"
+        }
 
 
 
