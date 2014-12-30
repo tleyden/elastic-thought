@@ -55,7 +55,7 @@ func TestSaveCmdOutputToFiles(t *testing.T) {
 
 func TestUpdateProcessingState(t *testing.T) {
 
-	testServer := fakehttp.NewHTTPServer()
+	testServer := fakehttp.NewHTTPServerWithPort(NextPort())
 	testServer.Start()
 
 	// response when go-couch tries to see that the server is up
@@ -95,7 +95,7 @@ func TestUpdateModelUrl(t *testing.T) {
 	docId := "training_job"
 	expectedTrainedModelUrl := fmt.Sprintf("cbfs/%v/trained.caffemodel", docId)
 
-	testServer := fakehttp.NewHTTPServer()
+	testServer := fakehttp.NewHTTPServerWithPort(NextPort())
 	testServer.Start()
 
 	// response when go-couch tries to see that the server is up

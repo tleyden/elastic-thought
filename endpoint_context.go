@@ -203,3 +203,54 @@ func (e EndpointContext) CreateTrainingJob(c *gin.Context) {
 	c.JSON(201, *trainingJob)
 
 }
+
+// Creates a classifier
+func (e EndpointContext) CreateClassifierEndpoint(c *gin.Context) {
+
+	user := c.MustGet(MIDDLEWARE_KEY_USER).(User)
+	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
+	logg.LogTo("REST", "user: %v db: %v", user, db)
+
+	classifier := NewClassifier()
+	classifier.Configuration = e.Configuration
+
+	// bind the input struct to the JSON request
+	if ok := c.Bind(classifier); !ok {
+		errMsg := fmt.Sprintf("Invalid input")
+		c.Fail(400, errors.New(errMsg))
+		return
+	}
+
+	logg.LogTo("REST", "classifier: %+v", classifier)
+
+	// save classifier in db
+	err := classifier.Insert()
+	if err != nil {
+		c.Fail(500, err)
+		return
+	}
+
+	/*
+		// Create a cbfs client
+		cbfs, err := cbfsclient.New(e.Configuration.CbfsUrl)
+		if err != nil {
+			errMsg := fmt.Errorf("Error creating cbfs client: %v", err)
+			c.Fail(500, errMsg)
+			return
+		}
+		logg.LogTo("REST", "cbfs: %+v", cbfs)
+
+		// download contents of specification-url into cbfs://<classifier-id>/spec.prototxt
+		// and update classifier object's specification-url with cbfs url.
+		// ditto for specification-net-url
+		classifier, err = classifier.DownloadSpecToCbfs(db, cbfs)
+		if err != nil {
+			c.Fail(500, err)
+			return
+		}
+	*/
+
+	// return classifier object
+	c.JSON(201, *classifier)
+
+}
