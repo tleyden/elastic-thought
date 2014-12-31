@@ -179,7 +179,7 @@ func (e EndpointContext) CreateTrainingJob(c *gin.Context) {
 	user := c.MustGet(MIDDLEWARE_KEY_USER).(User)
 	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
 
-	trainingJob := NewTrainingJob()
+	trainingJob := NewTrainingJob(e.Configuration)
 	trainingJob.UserID = user.Id
 
 	// bind the input struct to the JSON request
@@ -212,8 +212,7 @@ func (e EndpointContext) CreateClassifierEndpoint(c *gin.Context) {
 	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
 	logg.LogTo("REST", "user: %v db: %v", user, db)
 
-	classifier := NewClassifier()
-	classifier.Configuration = e.Configuration
+	classifier := NewClassifier(e.Configuration)
 
 	// bind the input struct to the JSON request
 	if ok := c.Bind(classifier); !ok {
@@ -223,6 +222,12 @@ func (e EndpointContext) CreateClassifierEndpoint(c *gin.Context) {
 	}
 
 	logg.LogTo("REST", "classifier: %+v", classifier)
+
+	// make sure the classifier points to a valid training job
+	if err := classifier.Validate(); err != nil {
+		c.Fail(400, err)
+		return
+	}
 
 	// save classifier in db
 	err := classifier.Insert()

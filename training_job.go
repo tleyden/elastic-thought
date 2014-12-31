@@ -35,9 +35,10 @@ type TrainingJob struct {
 
 // Create a new training job.  If you don't use this, you must set the
 // embedded ElasticThoughtDoc Type field.
-func NewTrainingJob() *TrainingJob {
+func NewTrainingJob(c Configuration) *TrainingJob {
 	return &TrainingJob{
 		ElasticThoughtDoc: ElasticThoughtDoc{Type: DOC_TYPE_TRAINING_JOB},
+		Configuration:     c,
 	}
 }
 
@@ -561,4 +562,15 @@ func (j TrainingJob) FinishedSuccessfully(db couch.Database, logPath string) err
 
 	return nil
 
+}
+
+// Find a training job in the db with the given id,
+// or return an error if not found
+func (j *TrainingJob) Find(id string) error {
+	db := j.Configuration.DbConnection()
+	j.Id = id
+	if err := j.RefreshFromDB(db); err != nil {
+		return err
+	}
+	return nil
 }

@@ -47,10 +47,9 @@ func TestInsertClassifier(t *testing.T) {
 	configuration := NewDefaultConfiguration()
 	configuration.DbUrl = fmt.Sprintf("%v/db", testServer.URL)
 
-	classifier := NewClassifier()
+	classifier := NewClassifier(*configuration)
 	classifier.SpecificationUrl = "http://s3.com/proto.txt"
 	classifier.TrainingJobID = "123"
-	classifier.Configuration = *configuration
 
 	err := classifier.Insert()
 
@@ -77,10 +76,9 @@ func TestSetSpecificationUrl(t *testing.T) {
 	configuration := NewDefaultConfiguration()
 	configuration.DbUrl = fmt.Sprintf("%v/db", testServer.URL)
 
-	classifier := NewClassifier()
+	classifier := NewClassifier(*configuration)
 	classifier.Id = "classifier"
 	classifier.Revision = "foo"
-	classifier.Configuration = *configuration
 
 	err := classifier.SetSpecificationUrl("whatever")
 	assert.True(t, err == nil)

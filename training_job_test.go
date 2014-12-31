@@ -13,8 +13,7 @@ import (
 
 func TestSaveCmdOutputToFiles(t *testing.T) {
 
-	j := NewTrainingJob()
-	j.Configuration = *NewDefaultConfiguration()
+	j := NewTrainingJob(*NewDefaultConfiguration())
 	j.Id = "training-job"
 	j.createWorkDirectory()
 
@@ -76,11 +75,10 @@ func TestUpdateProcessingState(t *testing.T) {
 	configuration := NewDefaultConfiguration()
 	configuration.DbUrl = fmt.Sprintf("%v/db", testServer.URL)
 
-	trainingJob := NewTrainingJob()
+	trainingJob := NewTrainingJob(*configuration)
 	trainingJob.ElasticThoughtDoc.Id = "training_job"
 	trainingJob.ElasticThoughtDoc.Revision = "rev"
 
-	trainingJob.Configuration = *configuration
 	trainingJob.ProcessingState = Pending
 
 	db := trainingJob.Configuration.DbConnection()
@@ -116,11 +114,10 @@ func TestUpdateModelUrl(t *testing.T) {
 	configuration := NewDefaultConfiguration()
 	configuration.DbUrl = fmt.Sprintf("%v/db", testServer.URL)
 
-	trainingJob := NewTrainingJob()
+	trainingJob := NewTrainingJob(*configuration)
 	trainingJob.ElasticThoughtDoc.Id = docId
 	trainingJob.ElasticThoughtDoc.Revision = "rev"
 
-	trainingJob.Configuration = *configuration
 	trainingJob.ProcessingState = Pending
 
 	err := trainingJob.updateCaffeModelUrl()

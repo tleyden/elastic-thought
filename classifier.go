@@ -22,9 +22,10 @@ type Classifier struct {
 
 // Create a new classifier.  If you don't use this, you must set the
 // embedded ElasticThoughtDoc Type field.
-func NewClassifier() *Classifier {
+func NewClassifier(c Configuration) *Classifier {
 	return &Classifier{
 		ElasticThoughtDoc: ElasticThoughtDoc{Type: DOC_TYPE_CLASSIFIER},
+		Configuration:     c,
 	}
 }
 
@@ -65,6 +66,7 @@ func (c *Classifier) SetSpecificationUrl(specUrlCbfs string) error {
 
 }
 
+// CodeReview: major duplication with trainingJob.casUpdate
 func (c *Classifier) casUpdate(updater func(*Classifier), doneMetric func(Classifier) bool) error {
 
 	db := c.Configuration.DbConnection()
@@ -123,6 +125,7 @@ func (c *Classifier) casUpdate(updater func(*Classifier), doneMetric func(Classi
 
 }
 
+// CodeReview: duplication with trainingJob.casUpdate
 func (c *Classifier) RefreshFromDB(db couch.Database) error {
 	classifier := Classifier{}
 	err := db.Retrieve(c.Id, &classifier)
@@ -132,4 +135,16 @@ func (c *Classifier) RefreshFromDB(db couch.Database) error {
 	}
 	*c = classifier
 	return nil
+}
+
+func (c Classifier) Validate() error {
+
+	trainingJob := NewTrainingJob(c.Configuration)
+
+	err := trainingJob.Find(c.TrainingJobID)
+	if err != nil {
+		return err
+	}
+	return nil
+
 }
