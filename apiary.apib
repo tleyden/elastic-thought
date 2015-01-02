@@ -259,7 +259,8 @@ Classify an input image
 
 ### Classify [POST]
 
-+ Request (application/json)
+
++ Request (multipart/form-data; boundary=---BOUNDARY)
 
     + Header
 
@@ -267,19 +268,36 @@ Classify an input image
 
     + Body
 
-            { 
-                "input-urls": [
-                    "http://s3.com/image2classify.png",
-                    "http://s3.com/image2classify2.png"
-                ]
-            }
+            -----BOUNDARY
+            Content-Disposition: form-data; name="urls"
+            http://s3.com/imageurl1.png
+            -----BOUNDARY
+        
+            -----BOUNDARY
+            Content-Disposition: form-data; name="urls"
+            http://s3.com/imageurl2.png
+            -----BOUNDARY
+        
+            -----BOUNDARY
+            Content-Disposition: form-data; name="files"; filename="imagefile1.png"
+            Content-Type: application/octet-stream
+            <raw file data>
+            -----BOUNDARY
+        
+            -----BOUNDARY
+            Content-Disposition: form-data; name="files"; filename="imagefile2.png"
+            Content-Type: application/octet-stream
+            <raw file data>
+            -----BOUNDARY
 
-+ Response 201 (application/json)
++ Response 200 (application/json)
         
         
         { 
             "http://s3.com/image2classify.png": "3",
-            "http://s3.com/image2classify2.png": "7"
+            "http://s3.com/image2classify2.png": "7",
+            "imagefile1.png": "C",
+            "imagefile2.png": "X",
         }
 
 
