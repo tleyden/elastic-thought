@@ -71,6 +71,17 @@ func CreateJob(config Configuration, jobDescriptor JobDescriptor) (Runnable, err
 		trainingJob.Configuration = config
 		return trainingJob, nil
 
+	case DOC_TYPE_CLASSIFY_JOB:
+
+		classifyJob := NewClassifyJob(config)
+		err = classifyJob.Find(doc.Id)
+		if err != nil {
+			errMsg := fmt.Errorf("Didn't retrieve: %v - %v", doc.Id, err)
+			logg.LogError(errMsg)
+			return nil, errMsg
+		}
+		return classifyJob, nil
+
 	}
 
 	return nil, fmt.Errorf("Unable to create job for: %+v", jobDescriptor)

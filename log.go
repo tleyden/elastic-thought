@@ -19,6 +19,7 @@ func init() {
 		"DATAFILE_DOWNLOADER",
 		"SOLVER",
 		"TRAINING_JOB",
+		"CLASSIFY_JOB",
 		"TEST",
 		"CBFS",
 	}

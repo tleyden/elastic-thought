@@ -1,6 +1,11 @@
 package elasticthought
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+
+	"github.com/couchbaselabs/logg"
+)
 
 // A classify job tries to classify images given by user against
 // the given trained model
@@ -21,6 +26,15 @@ func NewClassifyJob(c Configuration) *ClassifyJob {
 		ElasticThoughtDoc: ElasticThoughtDoc{Type: DOC_TYPE_CLASSIFY_JOB},
 		Configuration:     c,
 	}
+}
+
+// Run this job
+func (c ClassifyJob) Run(wg *sync.WaitGroup) {
+
+	defer wg.Done()
+
+	logg.LogTo("CLASSIFY_JOB", "Run() called!")
+
 }
 
 // Insert into database (only call this if you know it doesn't arleady exist,
