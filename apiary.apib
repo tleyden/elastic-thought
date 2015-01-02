@@ -290,15 +290,12 @@ Classify an input image
             <raw file data>
             -----BOUNDARY
 
-+ Response 200 (application/json)
-        
-        
-        { 
-            "http://s3.com/image2classify.png": "3",
-            "http://s3.com/image2classify2.png": "7",
-            "imagefile1.png": "C",
-            "imagefile2.png": "X",
-        }
++ Response 201 (application/json)
 
+        { 
+            "id": "classification-job-uuid",
+            "processing-state": "pending"
+        }
+        
 
 
