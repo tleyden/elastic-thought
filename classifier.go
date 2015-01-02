@@ -2,9 +2,13 @@ package elasticthought
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
 
 	"github.com/couchbaselabs/logg"
 	"github.com/dustin/httputil"
+	"github.com/golang/protobuf/proto"
+	"github.com/tleyden/elastic-thought/caffe"
 	"github.com/tleyden/go-couch"
 )
 
@@ -139,12 +143,73 @@ func (c *Classifier) RefreshFromDB(db couch.Database) error {
 
 func (c Classifier) Validate() error {
 
+	if err := c.validateTrainingJob(); err != nil {
+		return err
+	}
+
+	if err := c.validateClassifierNet(); err != nil {
+		return err
+	}
+
+}
+
+func (c Classifier) validateTrainingJob() error {
+
 	trainingJob := NewTrainingJob(c.Configuration)
 
 	err := trainingJob.Find(c.TrainingJobID)
 	if err != nil {
 		return err
 	}
+
 	return nil
+
+}
+
+// make sure the specification url points to a valid prototxt file
+func (c Classifier) validateClassifierNet() error {
+
+	_, err := c.classifierNet()
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+// read the classifier prototxt and create protobuf struct and return
+func (c Classifier) classifierNet() (*caffe.NetParameter, error) {
+
+	specContents, err := c.getClassifierPrototxt()
+	if err != nil {
+		return nil, fmt.Errorf("Error getting classifier prototxt content.  Err: %v", err)
+	}
+
+	// read into object with protobuf (must have already generated go protobuf code)
+	netParam := &caffe.NetParameter{}
+
+	if err := proto.UnmarshalText(string(specContents), netParam); err != nil {
+		return nil, err
+	}
+
+	return netParam
+
+}
+
+// read raw classifier prototxt from url and return bytes
+func (c Classifier) getClassifierPrototxt() ([]byte, error) {
+
+	resp, err := http.Get(c.SpecificationUrl)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
 
 }

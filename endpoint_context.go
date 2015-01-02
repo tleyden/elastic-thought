@@ -244,9 +244,7 @@ func (e EndpointContext) CreateClassifierEndpoint(c *gin.Context) {
 		return
 	}
 
-	// download contents of specification-url into cbfs://<classifier-id>/spec.prototxt
-	// and update classifier object's specification-url with cbfs url.
-	// ditto for specification-net-url
+	// download contents of spec-url into cbfs://<classifier-id>/classifier.prototxt
 	destPath := path.Join(classifier.Id, "classifier.prototxt")
 	if err := saveUrlToCbfs(classifier.SpecificationUrl, destPath, cbfs); err != nil {
 		c.Fail(500, err)
