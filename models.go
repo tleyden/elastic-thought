@@ -7,6 +7,7 @@ const (
 	DOC_TYPE_SOLVER       = "solver"
 	DOC_TYPE_TRAINING_JOB = "training-job"
 	DOC_TYPE_CLASSIFIER   = "classifier"
+	DOC_TYPE_CLASSIFY_JOB = "classify-job"
 )
 
 // All document structs should embed this struct go get access to

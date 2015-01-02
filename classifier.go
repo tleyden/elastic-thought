@@ -141,6 +141,17 @@ func (c *Classifier) RefreshFromDB(db couch.Database) error {
 	return nil
 }
 
+// Find a classifier in the db with the given id,
+// or return an error if not found
+func (c *Classifier) Find(id string) error {
+	db := c.Configuration.DbConnection()
+	c.Id = id
+	if err := c.RefreshFromDB(db); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c Classifier) Validate() error {
 
 	if err := c.validateTrainingJob(); err != nil {

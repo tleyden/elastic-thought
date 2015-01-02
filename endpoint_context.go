@@ -270,8 +270,25 @@ func (e EndpointContext) CreateClassificationJobEndpoint(c *gin.Context) {
 	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
 	logg.LogTo("REST", "user: %v db: %v", user, db)
 
-	name := c.Params.ByName("classifier-id")
-	message := "Hello " + name
-	c.String(200, message)
+	classifierId := c.Params.ByName("classifier-id")
+
+	classifier := NewClassifier(e.Configuration)
+	if err := classifier.Find(classifierId); err != nil {
+		err = fmt.Errorf("Unable to find classifier with id: %v.  Err: %v", classifierId, err)
+		c.Fail(500, err)
+		return
+	}
+
+	// create a new classifier job
+	classifyJob := NewClassifyJob(e.Configuration)
+	if err := classifyJob.Insert(); err != nil {
+		c.Fail(500, err)
+		return
+	}
+
+	// changes listener will see job and kick off processing
+
+	// return classifier object
+	c.JSON(201, *classifyJob)
 
 }

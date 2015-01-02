@@ -497,6 +497,7 @@ func (j TrainingJob) writeSpecToFile(s Solver) error {
 
 // Insert into database (only call this if you know it doesn't arleady exist,
 // or else you'll end up w/ unwanted dupes)
+// TODO: use same approach as Classifier#Insert()
 // Codereview: de-dupe
 func (j TrainingJob) Insert(db couch.Database) (*TrainingJob, error) {
 
