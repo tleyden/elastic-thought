@@ -263,3 +263,15 @@ func (e EndpointContext) CreateClassifierEndpoint(c *gin.Context) {
 	c.JSON(201, *classifier)
 
 }
+
+func (e EndpointContext) CreateClassificationJobEndpoint(c *gin.Context) {
+
+	user := c.MustGet(MIDDLEWARE_KEY_USER).(User)
+	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
+	logg.LogTo("REST", "user: %v db: %v", user, db)
+
+	name := c.Params.ByName("classifier-id")
+	message := "Hello " + name
+	c.String(200, message)
+
+}

@@ -151,6 +151,7 @@ func (c Classifier) Validate() error {
 		return err
 	}
 
+	return nil
 }
 
 func (c Classifier) validateTrainingJob() error {
@@ -192,7 +193,7 @@ func (c Classifier) classifierNet() (*caffe.NetParameter, error) {
 		return nil, err
 	}
 
-	return netParam
+	return netParam, nil
 
 }
 
