@@ -77,18 +77,7 @@ func (s Solver) getSolverPrototxtContent() ([]byte, error) {
 		return nil, fmt.Errorf("Error creating cbfs client: %v", err)
 	}
 
-	// read contents from cbfs
-	reader, err := cbfs.Get(sourcePath)
-	if err != nil {
-		return nil, err
-	}
-	defer reader.Close()
-	bytes, err := ioutil.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
-
-	return bytes, nil
+	return getContentFromCbfs(cbfs, sourcePath)
 
 }
 

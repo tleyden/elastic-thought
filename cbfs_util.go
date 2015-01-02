@@ -3,6 +3,7 @@ package elasticthought
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 
@@ -58,5 +59,23 @@ func saveUrlToCbfs(sourceUrl, destPath string, cbfs *cbfsclient.Client) error {
 	logg.LogTo("CBFS", "Wrote %v to cbfs: %v", sourceUrl, destPath)
 
 	return nil
+
+}
+
+// Get the content from cbfs from given sourcepath
+func getContentFromCbfs(cbfs *cbfsclient.Client, sourcePath string) ([]byte, error) {
+
+	// read contents from cbfs
+	reader, err := cbfs.Get(sourcePath)
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+	bytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
 
 }
