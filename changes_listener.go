@@ -93,6 +93,9 @@ func (c ChangesListener) processChanges(changes couch.Changes) {
 			c.handleDatasetChange(change, doc)
 		case DOC_TYPE_TRAINING_JOB:
 			c.handleTrainingJobChange(change, doc)
+		case DOC_TYPE_CLASSIFY_JOB:
+			c.handleClassifyJobChange(change, doc)
+
 		}
 
 	}
@@ -114,6 +117,29 @@ func (c ChangesListener) handleTrainingJobChange(change couch.Change, doc Elasti
 	// check the state, only schedule if state == pending
 	if trainingJob.ProcessingState != Pending {
 		logg.LogTo("CHANGES", "State != pending: %+v", trainingJob)
+		return
+	}
+
+	job := NewJobDescriptor(doc.Id)
+	c.JobScheduler.ScheduleJob(*job)
+
+}
+
+func (c ChangesListener) handleClassifyJobChange(change couch.Change, doc ElasticThoughtDoc) {
+
+	logg.LogTo("CHANGES", "got a classify job doc: %+v", doc)
+
+	// create a Training Job doc from the ElasticThoughtDoc
+	classifyJob := NewClassifyJob(c.Configuration)
+	if err := classifyJob.Find(change.Id); err != nil {
+		errMsg := fmt.Errorf("Could not find: %v - %v", change.Id, err)
+		logg.LogError(errMsg)
+		return
+	}
+
+	// check the state, only schedule if state == pending
+	if classifyJob.ProcessingState != Pending {
+		logg.LogTo("CHANGES", "State != pending: %+v", classifyJob)
 		return
 	}
 

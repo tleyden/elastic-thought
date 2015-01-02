@@ -41,3 +41,25 @@ func (c *ClassifyJob) Insert() error {
 	return nil
 
 }
+
+// CodeReview: duplication with RefreshFromDB in many places
+func (c *ClassifyJob) RefreshFromDB() error {
+	db := c.Configuration.DbConnection()
+	classifyJob := ClassifyJob{}
+	err := db.Retrieve(c.Id, &classifyJob)
+	if err != nil {
+		return err
+	}
+	*c = classifyJob
+	return nil
+}
+
+// Find a classify Job in the db with the given id, or error if not found
+// CodeReview: duplication with Find in many places
+func (c *ClassifyJob) Find(id string) error {
+	c.Id = id
+	if err := c.RefreshFromDB(); err != nil {
+		return err
+	}
+	return nil
+}
