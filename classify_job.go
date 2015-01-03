@@ -6,6 +6,7 @@ import (
 
 	"github.com/couchbaselabs/logg"
 	"github.com/dustin/httputil"
+	"github.com/tleyden/go-couch"
 )
 
 // A classify job tries to classify images given by user against
@@ -62,6 +63,70 @@ func (c *ClassifyJob) UpdateProcessingState(newState ProcessingState) (bool, err
 	}
 
 	return c.casUpdate(updater, doneMetric)
+
+}
+
+func genCasUpdate(db couch.Database, thing2update interface{}, updater func(interface{}), doneMetric func(interface{}) bool, refresh func(interface{}) error) (bool, error) {
+
+	// if already has the newState, return false
+	if doneMetric(thing2update) == true {
+		return false, nil
+	}
+
+	for {
+		updater(thing2update)
+
+		_, err := db.Edit(thing2update)
+
+		if err != nil {
+
+			// if it failed with any other error than 409, return an error
+			if !httputil.IsHTTPStatus(err, 409) {
+				return false, err
+			}
+
+			// get the latest version of the document
+			if err := refresh(thing2update); err != nil {
+				return false, err
+			}
+
+			// does it already have the new the state (eg, someone else set it)?
+			if doneMetric(thing2update) == true {
+				return false, nil
+			}
+
+			// no, so try updating state and saving again
+			continue
+
+		}
+
+		// successfully saved, we are done
+		return true, nil
+
+	}
+
+}
+
+func (c *ClassifyJob) casUpdate2(updater func(*ClassifyJob), doneMetric func(ClassifyJob) bool) (bool, error) {
+
+	db := c.Configuration.DbConnection()
+
+	genUpdater := func(classifyJobPtr interface{}) {
+		cjp := classifyJobPtr.(*ClassifyJob)
+		updater(cjp)
+	}
+
+	genDoneMetric := func(classifyJob interface{}) bool {
+		cj := classifyJob.(ClassifyJob)
+		return doneMetric(cj)
+	}
+
+	refresh := func(classifyJobPtr interface{}) error {
+		cjp := classifyJobPtr.(*ClassifyJob)
+		return cjp.RefreshFromDB()
+	}
+
+	return genCasUpdate(db, c, genUpdater, genDoneMetric, refresh)
 
 }
 
