@@ -14,6 +14,7 @@ import (
 type ClassifyJob struct {
 	ElasticThoughtDoc
 	ProcessingState ProcessingState `json:"processing-state"`
+	ClassifierID    string          `json:"classifier-id"`
 
 	// had to make exported, due to https://github.com/gin-gonic/gin/pull/123
 	// waiting for this to get merged into master branch, since go get
@@ -68,22 +69,26 @@ func (c *ClassifyJob) UpdateProcessingState(newState ProcessingState) (bool, err
 
 func genCasUpdate(db couch.Database, thing2update interface{}, updater func(interface{}), doneMetric func(interface{}) bool, refresh func(interface{}) error) (bool, error) {
 
-	// if already has the newState, return false
 	if doneMetric(thing2update) == true {
+		logg.LogTo("ELASTIC_THOUGHT", "No update needed: %+v, ignoring", thing2update)
 		return false, nil
 	}
 
 	for {
 		updater(thing2update)
 
+		logg.LogTo("ELASTIC_THOUGHT", "Attempting to save update: %+v", thing2update)
 		_, err := db.Edit(thing2update)
 
 		if err != nil {
 
 			// if it failed with any other error than 409, return an error
 			if !httputil.IsHTTPStatus(err, 409) {
+				logg.LogTo("ELASTIC_THOUGHT", "Update failed with non-409 error: %v", err)
 				return false, err
 			}
+
+			logg.LogTo("ELASTIC_THOUGHT", "Could not update, going to refresh")
 
 			// get the latest version of the document
 			if err := refresh(thing2update); err != nil {
@@ -92,6 +97,7 @@ func genCasUpdate(db couch.Database, thing2update interface{}, updater func(inte
 
 			// does it already have the new the state (eg, someone else set it)?
 			if doneMetric(thing2update) == true {
+				logg.LogTo("ELASTIC_THOUGHT", "No update needed: %+v, done", thing2update)
 				return false, nil
 			}
 
@@ -101,6 +107,7 @@ func genCasUpdate(db couch.Database, thing2update interface{}, updater func(inte
 		}
 
 		// successfully saved, we are done
+		logg.LogTo("ELASTIC_THOUGHT", "Successfully updated %+v, done", thing2update)
 		return true, nil
 
 	}
@@ -122,82 +129,17 @@ func (c *ClassifyJob) casUpdate(updater func(*ClassifyJob), doneMetric func(Clas
 		updater(cjp)
 	}
 
-	genDoneMetric := func(classifyJob interface{}) bool {
-		cj := classifyJob.(ClassifyJob)
-		return doneMetric(cj)
+	genDoneMetric := func(classifyJobPtr interface{}) bool {
+		cjp := classifyJobPtr.(*ClassifyJob)
+		return doneMetric(*cjp)
 	}
 
 	refresh := func(classifyJobPtr interface{}) error {
 		cjp := classifyJobPtr.(*ClassifyJob)
-		return cjp.RefreshFromDB()
+		return cjp.RefreshFromDB(db)
 	}
 
 	return genCasUpdate(db, c, genUpdater, genDoneMetric, refresh)
-
-}
-
-// The first return value will be true when it was updated due to calling this method,
-// or false if it was already in that state or put in that state by something else
-// during the update attempt.
-//
-// If any errors occur while trying to update, they will be returned in the second
-// return value.
-//
-// CodeReview: major duplication with trainingJob.casUpdate
-func (c *ClassifyJob) casUpdateOLD(updater func(*ClassifyJob), doneMetric func(ClassifyJob) bool) (bool, error) {
-
-	db := c.Configuration.DbConnection()
-
-	// if already has the newState, return false
-	if doneMetric(*c) == true {
-		logg.LogTo("CLASSIFY_JOB", "Already has new state, nothing to do: %+v", c)
-		return false, nil
-	}
-
-	for {
-		updater(c)
-
-		// SAVE: try to save to the database
-		logg.LogTo("CLASSIFY_JOB", "Trying to save: %+v", c)
-
-		_, err := db.Edit(c)
-
-		if err != nil {
-
-			logg.LogTo("CLASSIFY_JOB", "Got error updating: %v", err)
-
-			// if it failed with any other error than 409, return an error
-			if !httputil.IsHTTPStatus(err, 409) {
-				logg.LogTo("CLASSIFY_JOB", "Not a 409 error: %v", err)
-				return false, err
-			}
-
-			// it failed with 409 error
-			logg.LogTo("CLASSIFY_JOB", "Its a 409 error: %v", err)
-
-			// get the latest version of the document
-			if err := c.RefreshFromDB(); err != nil {
-				return false, err
-			}
-
-			logg.LogTo("CLASSIFY_JOB", "Retrieved new: %+v", c)
-
-			// does it already have the new the state (eg, someone else set it)?
-			if doneMetric(*c) == true {
-				logg.LogTo("CLASSIFY_JOB", "doneMetric returned true, nothing to do")
-				return false, nil
-			}
-
-			// no, so try updating state and saving again
-			continue
-
-		}
-
-		// successfully saved, we are done
-		logg.LogTo("CLASSIFY_JOB", "Successfully saved: %+v", c)
-		return true, nil
-
-	}
 
 }
 
@@ -221,8 +163,7 @@ func (c *ClassifyJob) Insert() error {
 }
 
 // CodeReview: duplication with RefreshFromDB in many places
-func (c *ClassifyJob) RefreshFromDB() error {
-	db := c.Configuration.DbConnection()
+func (c *ClassifyJob) RefreshFromDB(db couch.Database) error {
 	classifyJob := ClassifyJob{}
 	err := db.Retrieve(c.Id, &classifyJob)
 	if err != nil {
@@ -235,8 +176,9 @@ func (c *ClassifyJob) RefreshFromDB() error {
 // Find a classify Job in the db with the given id, or error if not found
 // CodeReview: duplication with Find in many places
 func (c *ClassifyJob) Find(id string) error {
+	db := c.Configuration.DbConnection()
 	c.Id = id
-	if err := c.RefreshFromDB(); err != nil {
+	if err := c.RefreshFromDB(db); err != nil {
 		return err
 	}
 	return nil
