@@ -21,7 +21,8 @@ func (d DatafileDownloader) Run(wg *sync.WaitGroup) {
 	logg.LogTo("DATAFILE_DOWNLOADER", "datafile downloader run()")
 
 	db := d.Configuration.DbConnection()
-	updatedState, err := CasUpdateProcessingState(&d.Datafile, Processing, db)
+	datafile := &d.Datafile
+	updatedState, err := datafile.UpdateProcessingState(Processing)
 	if err != nil {
 		d.recordProcessingError(err)
 		return
