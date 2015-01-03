@@ -42,14 +42,13 @@ func NewTrainingJob(c Configuration) *TrainingJob {
 }
 
 // Run this job
-func (j TrainingJob) Run(wg *sync.WaitGroup) {
+func (j *TrainingJob) Run(wg *sync.WaitGroup) {
 
 	defer wg.Done()
 
 	logg.LogTo("TRAINING_JOB", "Run() called!")
 
-	db := j.Configuration.DbConnection()
-	updatedState, err := CasUpdateProcessingState(&j, Processing, db)
+	updatedState, err := j.UpdateProcessingState(Processing)
 	if err != nil {
 		j.recordProcessingError(err)
 		return
@@ -74,6 +73,21 @@ func (j TrainingJob) Run(wg *sync.WaitGroup) {
 	}
 
 	j.FinishedSuccessfully(j.Configuration.DbConnection(), "")
+
+}
+
+// Update the processing state to new state.
+func (j *TrainingJob) UpdateProcessingState(newState ProcessingState) (bool, error) {
+
+	updater := func(trainingJob *TrainingJob) {
+		trainingJob.ProcessingState = newState
+	}
+
+	doneMetric := func(trainingJob TrainingJob) bool {
+		return trainingJob.ProcessingState == newState
+	}
+
+	return j.casUpdate(updater, doneMetric)
 
 }
 

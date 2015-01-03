@@ -40,5 +40,6 @@ func TestUpdateClassifyJobProcessingState(t *testing.T) {
 	updated, err := classifyJob.UpdateProcessingState(Processing)
 	assert.True(t, updated)
 	assert.True(t, err == nil)
+	assert.Equals(t, classifyJob.ProcessingState, Processing)
 
 }
