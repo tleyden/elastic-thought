@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/couchbaselabs/logg"
+	"github.com/dustin/httputil"
 )
 
 // A classify job tries to classify images given by user against
@@ -29,11 +30,103 @@ func NewClassifyJob(c Configuration) *ClassifyJob {
 }
 
 // Run this job
-func (c ClassifyJob) Run(wg *sync.WaitGroup) {
+func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 
 	defer wg.Done()
 
 	logg.LogTo("CLASSIFY_JOB", "Run() called!")
+
+	updatedState, err := c.UpdateProcessingState(Processing)
+	if err != nil {
+
+		// TODO: c.recordProcessingError(err)
+		return
+	}
+
+	if !updatedState {
+		logg.LogTo("CLASSIFY_JOB", "%+v already processed.  Ignoring.", c)
+		return
+	}
+
+}
+
+// Update the processing state to new state.
+func (c *ClassifyJob) UpdateProcessingState(newState ProcessingState) (bool, error) {
+
+	updater := func(classifyJob *ClassifyJob) {
+		classifyJob.ProcessingState = newState
+	}
+
+	doneMetric := func(classifyJob ClassifyJob) bool {
+		return classifyJob.ProcessingState == newState
+	}
+
+	return c.casUpdate(updater, doneMetric)
+
+}
+
+// The first return value will be true when it was updated due to calling this method,
+// or false if it was already in that state or put in that state by something else
+// during the update attempt.
+//
+// If any errors occur while trying to update, they will be returned in the second
+// return value.
+//
+// CodeReview: major duplication with trainingJob.casUpdate
+func (c *ClassifyJob) casUpdate(updater func(*ClassifyJob), doneMetric func(ClassifyJob) bool) (bool, error) {
+
+	db := c.Configuration.DbConnection()
+
+	// if already has the newState, return false
+	if doneMetric(*c) == true {
+		logg.LogTo("CLASSIFY_JOB", "Already has new state, nothing to do: %+v", c)
+		return false, nil
+	}
+
+	for {
+		updater(c)
+
+		// SAVE: try to save to the database
+		logg.LogTo("CLASSIFY_JOB", "Trying to save: %+v", c)
+
+		_, err := db.Edit(c)
+
+		if err != nil {
+
+			logg.LogTo("CLASSIFY_JOB", "Got error updating: %v", err)
+
+			// if it failed with any other error than 409, return an error
+			if !httputil.IsHTTPStatus(err, 409) {
+				logg.LogTo("CLASSIFY_JOB", "Not a 409 error: %v", err)
+				return false, err
+			}
+
+			// it failed with 409 error
+			logg.LogTo("CLASSIFY_JOB", "Its a 409 error: %v", err)
+
+			// get the latest version of the document
+			if err := c.RefreshFromDB(); err != nil {
+				return false, err
+			}
+
+			logg.LogTo("CLASSIFY_JOB", "Retrieved new: %+v", c)
+
+			// does it already have the new the state (eg, someone else set it)?
+			if doneMetric(*c) == true {
+				logg.LogTo("CLASSIFY_JOB", "doneMetric returned true, nothing to do")
+				return false, nil
+			}
+
+			// no, so try updating state and saving again
+			continue
+
+		}
+
+		// successfully saved, we are done
+		logg.LogTo("CLASSIFY_JOB", "Successfully saved: %+v", c)
+		return true, nil
+
+	}
 
 }
 
