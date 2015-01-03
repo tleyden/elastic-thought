@@ -21,12 +21,18 @@ type Datafile struct {
 	ProcessingLog   string          `json:"processing-log"`
 	UserID          string          `json:"user-id"`
 	Url             string          `json:"url" binding:"required"`
+
+	// had to make exported, due to https://github.com/gin-gonic/gin/pull/123
+	// waiting for this to get merged into master branch, since go get
+	// pulls from master branch.
+	Configuration Configuration
 }
 
 // Create a new datafile
-func NewDatafile() *Datafile {
+func NewDatafile(c Configuration) *Datafile {
 	return &Datafile{
 		ElasticThoughtDoc: ElasticThoughtDoc{Type: DOC_TYPE_DATAFILE},
+		Configuration:     c,
 	}
 }
 
@@ -77,7 +83,7 @@ func (d Datafile) Save(db couch.Database) (*Datafile, error) {
 // Mark this datafile as having finished processing succesfully
 func (d Datafile) FinishedSuccessfully(db couch.Database) error {
 
-	_, err := CasUpdateProcessingState(&d, FinishedSuccessfully, db)
+	_, err := d.UpdateProcessingState(FinishedSuccessfully)
 	if err != nil {
 		return err
 	}
@@ -90,12 +96,27 @@ func (d Datafile) FinishedSuccessfully(db couch.Database) error {
 // Codereview: datafile.go has same method
 func (d Datafile) Failed(db couch.Database, processingErr error) error {
 
-	_, err := CasUpdateProcessingState(&d, Failed, db)
+	_, err := d.UpdateProcessingState(Failed)
 	if err != nil {
 		return err
 	}
 
 	return nil
+
+}
+
+// Update the processing state to new state.
+func (d *Datafile) UpdateProcessingState(newState ProcessingState) (bool, error) {
+
+	updater := func(datafile *Datafile) {
+		datafile.ProcessingState = newState
+	}
+
+	doneMetric := func(datafile Datafile) bool {
+		return datafile.ProcessingState == newState
+	}
+
+	return d.casUpdate(updater, doneMetric)
 
 }
 
@@ -154,6 +175,29 @@ func (d Datafile) CopyToCBFS(db couch.Database, cbfs *cbfsclient.Client) (string
 	logg.LogTo("MODEL", "copied datafile url %v to cbfs: %v", d.Url, destPath)
 
 	return destPath, nil
+
+}
+
+func (d *Datafile) casUpdate(updater func(*Datafile), doneMetric func(Datafile) bool) (bool, error) {
+
+	db := d.Configuration.DbConnection()
+
+	genUpdater := func(datafilePtr interface{}) {
+		cjp := datafilePtr.(*Datafile)
+		updater(cjp)
+	}
+
+	genDoneMetric := func(datafilePtr interface{}) bool {
+		cjp := datafilePtr.(*Datafile)
+		return doneMetric(*cjp)
+	}
+
+	refresh := func(datafilePtr interface{}) error {
+		cjp := datafilePtr.(*Datafile)
+		return cjp.RefreshFromDB(db)
+	}
+
+	return casUpdate(db, d, genUpdater, genDoneMetric, refresh)
 
 }
 

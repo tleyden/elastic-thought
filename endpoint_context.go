@@ -61,7 +61,7 @@ func (e EndpointContext) CreateDataFileEndpoint(c *gin.Context) {
 	user := c.MustGet(MIDDLEWARE_KEY_USER).(User)
 	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
 
-	datafile := NewDatafile()
+	datafile := NewDatafile(e.Configuration)
 	datafile.UserID = user.DocId()
 
 	// bind the Datafile to the JSON request, which will bind the

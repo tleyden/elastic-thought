@@ -178,7 +178,7 @@ func (c ChangesListener) handleDatafileChange(change couch.Change, doc ElasticTh
 	logg.LogTo("CHANGES", "got a datafile doc: %+v", doc)
 
 	// create a Datafile doc from the ElasticThoughtDoc
-	datafile := &Datafile{}
+	datafile := NewDatafile(c.Configuration)
 	if err := c.Database.Retrieve(change.Id, &datafile); err != nil {
 		errMsg := fmt.Errorf("Didn't retrieve: %v - %v", change.Id, err)
 		logg.LogError(errMsg)

@@ -24,7 +24,7 @@ func CreateJob(config Configuration, jobDescriptor JobDescriptor) (Runnable, err
 	case DOC_TYPE_DATAFILE:
 
 		// create a Datafile doc
-		datafile := &Datafile{}
+		datafile := NewDatafile(config)
 		err = db.Retrieve(doc.Id, &datafile)
 		if err != nil {
 			errMsg := fmt.Errorf("Didn't retrieve: %v - %v", doc.Id, err)
