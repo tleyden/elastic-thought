@@ -91,6 +91,20 @@ func (j *TrainingJob) UpdateProcessingState(newState ProcessingState) (bool, err
 
 }
 
+func (j *TrainingJob) UpdateProcessingLog(val string) (bool, error) {
+
+	updater := func(trainingJob *TrainingJob) {
+		trainingJob.ProcessingLog = val
+	}
+
+	doneMetric := func(trainingJob TrainingJob) bool {
+		return trainingJob.ProcessingLog == val
+	}
+
+	return j.casUpdate(updater, doneMetric)
+
+}
+
 func (j *TrainingJob) GetProcessingState() ProcessingState {
 	return j.ProcessingState
 }
@@ -501,18 +515,15 @@ func (j TrainingJob) Insert(db couch.Database) (*TrainingJob, error) {
 // Codereview: de-dupe
 func (j TrainingJob) Failed(db couch.Database, processingErr error) error {
 
-	_, err := CasUpdateProcessingState(&j, Failed, db)
+	_, err := j.UpdateProcessingState(Failed)
 	if err != nil {
 		return err
 	}
 
 	logg.LogTo("TRAINING_JOB", "updating processing log")
 
-	j.ProcessingLog = fmt.Sprintf("%v", processingErr)
-
-	// TODO: retry if 409 error
-	_, err = db.Edit(j)
-
+	logValue := fmt.Sprintf("%v", processingErr)
+	_, err = j.UpdateProcessingLog(logValue)
 	if err != nil {
 		return err
 	}
@@ -525,16 +536,12 @@ func (j TrainingJob) Failed(db couch.Database, processingErr error) error {
 // Codereview: de-dupe
 func (j TrainingJob) FinishedSuccessfully(db couch.Database, logPath string) error {
 
-	_, err := CasUpdateProcessingState(&j, FinishedSuccessfully, db)
+	_, err := j.UpdateProcessingState(FinishedSuccessfully)
 	if err != nil {
 		return err
 	}
 
-	j.ProcessingLog = logPath
-
-	// TODO: retry if 409 error
-	_, err = db.Edit(j)
-
+	_, err = j.UpdateProcessingLog(logPath)
 	if err != nil {
 		return err
 	}
