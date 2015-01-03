@@ -78,12 +78,6 @@ func (c *ClassifyJob) UpdateProcessingState(newState ProcessingState) (bool, err
 
 }
 
-// The first return value will be true when it was updated due to calling this method,
-// or false if it was already in that state or put in that state by something else
-// during the update attempt.
-//
-// If any errors occur while trying to update, they will be returned in the second
-// return value.
 func (c *ClassifyJob) casUpdate(updater func(*ClassifyJob), doneMetric func(ClassifyJob) bool) (bool, error) {
 
 	db := c.Configuration.DbConnection()

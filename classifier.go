@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/couchbaselabs/logg"
-	"github.com/dustin/httputil"
 	"github.com/golang/protobuf/proto"
 	"github.com/tleyden/elastic-thought/caffe"
 	"github.com/tleyden/go-couch"
@@ -62,7 +61,7 @@ func (c *Classifier) SetSpecificationUrl(specUrlCbfs string) error {
 		return classifier.SpecificationUrl == specUrlCbfs
 	}
 
-	if err := c.casUpdate(updater, doneMetric); err != nil {
+	if _, err := c.casUpdate(updater, doneMetric); err != nil {
 		return err
 	}
 
@@ -70,66 +69,29 @@ func (c *Classifier) SetSpecificationUrl(specUrlCbfs string) error {
 
 }
 
-// CodeReview: major duplication with trainingJob.casUpdate
-func (c *Classifier) casUpdate(updater func(*Classifier), doneMetric func(Classifier) bool) error {
+func (c *Classifier) casUpdate(updater func(*Classifier), doneMetric func(Classifier) bool) (bool, error) {
 
 	db := c.Configuration.DbConnection()
 
-	// if already has the newState, return false
-	if doneMetric(*c) == true {
-		logg.LogTo("CLASSIFIER", "Already has new state, nothing to do: %+v", c)
-		return nil
+	genUpdater := func(classifierPtr interface{}) {
+		cjp := classifierPtr.(*Classifier)
+		updater(cjp)
 	}
 
-	for {
-		updater(c)
-
-		// SAVE: try to save to the database
-		logg.LogTo("CLASSIFIER", "Trying to save: %+v", c)
-
-		_, err := db.Edit(c)
-
-		if err != nil {
-
-			logg.LogTo("CLASSIFIER", "Got error updating: %v", err)
-
-			// if it failed with any other error than 409, return an error
-			if !httputil.IsHTTPStatus(err, 409) {
-				logg.LogTo("CLASSIFIER", "Not a 409 error: %v", err)
-				return err
-			}
-
-			// it failed with 409 error
-			logg.LogTo("CLASSIFIER", "Its a 409 error: %v", err)
-
-			// get the latest version of the document
-
-			if err := c.RefreshFromDB(db); err != nil {
-				return err
-			}
-
-			logg.LogTo("CLASSIFIER", "Retrieved new: %+v", c)
-
-			// does it already have the new the state (eg, someone else set it)?
-			if doneMetric(*c) == true {
-				logg.LogTo("CLASSIFIER", "doneMetric returned true, nothing to do")
-				return nil
-			}
-
-			// no, so try updating state and saving again
-			continue
-
-		}
-
-		// successfully saved, we are done
-		logg.LogTo("CLASSIFIER", "Successfully saved: %+v", c)
-		return nil
-
+	genDoneMetric := func(classifierPtr interface{}) bool {
+		cjp := classifierPtr.(*Classifier)
+		return doneMetric(*cjp)
 	}
+
+	refresh := func(classifierPtr interface{}) error {
+		cjp := classifierPtr.(*Classifier)
+		return cjp.RefreshFromDB(db)
+	}
+
+	return casUpdate(db, c, genUpdater, genDoneMetric, refresh)
 
 }
 
-// CodeReview: duplication with trainingJob.casUpdate
 func (c *Classifier) RefreshFromDB(db couch.Database) error {
 	classifier := Classifier{}
 	err := db.Retrieve(c.Id, &classifier)

@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	"github.com/couchbaselabs/logg"
-	"github.com/dustin/httputil"
 	"github.com/tleyden/cbfs/client"
 	"github.com/tleyden/go-couch"
 )
@@ -235,68 +234,33 @@ func (j *TrainingJob) updateCaffeModelUrl() error {
 		return job.TrainedModelUrl == newTrainedModelUrl
 	}
 
-	if err := j.casUpdate(updater, doneMetric); err != nil {
+	if _, err := j.casUpdate(updater, doneMetric); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (j *TrainingJob) casUpdate(updater func(*TrainingJob), doneMetric func(TrainingJob) bool) error {
+func (j *TrainingJob) casUpdate(updater func(*TrainingJob), doneMetric func(TrainingJob) bool) (bool, error) {
 
 	db := j.Configuration.DbConnection()
 
-	// if already has the newState, return false
-	if doneMetric(*j) == true {
-		logg.LogTo("TRAINING_JOB", "doneMetric returned true, nothing to do")
-		return nil
+	genUpdater := func(trainingJobPtr interface{}) {
+		cjp := trainingJobPtr.(*TrainingJob)
+		updater(cjp)
 	}
 
-	for {
-		updater(j)
-
-		// SAVE: try to save to the database
-		logg.LogTo("TRAINING_JOB", "Trying to save: %+v", j)
-
-		_, err := db.Edit(j)
-
-		if err != nil {
-
-			logg.LogTo("TRAINING_JOB", "Got error updating: %v", err)
-
-			// if it failed with any other error than 409, return an error
-			if !httputil.IsHTTPStatus(err, 409) {
-				logg.LogTo("TRAINING_JOB", "Not a 409 error: %v", err)
-				return err
-			}
-
-			// it failed with 409 error
-			logg.LogTo("TRAINING_JOB", "Its a 409 error: %v", err)
-
-			// get the latest version of the document
-
-			if err := j.RefreshFromDB(db); err != nil {
-				return err
-			}
-
-			logg.LogTo("TRAINING_JOB", "Retrieved new: %+v", j)
-
-			// does it already have the new the state (eg, someone else set it)?
-			if doneMetric(*j) == true {
-				logg.LogTo("TRAINING_JOB", "doneMetric returned true, nothing to do")
-				return nil
-			}
-
-			// no, so try updating state and saving again
-			continue
-
-		}
-
-		// successfully saved, we are done
-		logg.LogTo("TRAINING_JOB", "Successfully saved: %+v", j)
-		return nil
-
+	genDoneMetric := func(trainingJobPtr interface{}) bool {
+		cjp := trainingJobPtr.(*TrainingJob)
+		return doneMetric(*cjp)
 	}
+
+	refresh := func(trainingJobPtr interface{}) error {
+		cjp := trainingJobPtr.(*TrainingJob)
+		return cjp.RefreshFromDB(db)
+	}
+
+	return casUpdate(db, j, genUpdater, genDoneMetric, refresh)
 
 }
 

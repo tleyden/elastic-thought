@@ -26,6 +26,13 @@ type ElasticThoughtDoc struct {
 }
 
 // Generic cas update
+//
+// The first return value will be true when it was updated due to calling this method,
+// or false if it was already in that state or put in that state by something else
+// during the update attempt.
+//
+// If any errors occur while trying to update, they will be returned in the second
+// return value.
 func casUpdate(db couch.Database, thing2update interface{}, updater func(interface{}), doneMetric func(interface{}) bool, refresh func(interface{}) error) (bool, error) {
 
 	if doneMetric(thing2update) == true {
