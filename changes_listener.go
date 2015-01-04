@@ -153,7 +153,7 @@ func (c ChangesListener) handleDatasetChange(change couch.Change, doc ElasticTho
 	logg.LogTo("CHANGES", "got a dataset doc: %+v", doc)
 
 	// create a Dataset doc from the ElasticThoughtDoc
-	dataset := &Dataset{}
+	dataset := NewDataset(c.Configuration)
 	if err := c.Database.Retrieve(change.Id, &dataset); err != nil {
 		errMsg := fmt.Errorf("Didn't retrieve: %v - %v", change.Id, err)
 		logg.LogError(errMsg)

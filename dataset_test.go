@@ -38,8 +38,10 @@ func TestJsonDecode(t *testing.T) {
 
 func TestJsonEncode(t *testing.T) {
 
+	configuration := NewDefaultConfiguration()
+
 	// create a dataset struct
-	dataset := NewDataset()
+	dataset := NewDataset(*configuration)
 	dataset.ProcessingState = FinishedSuccessfully
 	dataset.TrainingDataset.SplitPercentage = 0.7
 	dataset.TrainingDataset.DatafileID = "dfid"

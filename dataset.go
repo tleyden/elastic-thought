@@ -20,6 +20,11 @@ type Dataset struct {
 	ProcessingLog   string          `json:"processing-log"`
 	TrainingDataset TrainingDataset `json:"training" binding:"required"`
 	TestDataset     TestDataset     `json:"test" binding:"required"`
+
+	// had to make exported, due to https://github.com/gin-gonic/gin/pull/123
+	// waiting for this to get merged into master branch, since go get
+	// pulls from master branch.
+	Configuration Configuration
 }
 
 type TrainingDataset struct {
@@ -36,9 +41,10 @@ type TestDataset struct {
 
 // Create a new dataset.  If you don't use this, you must set the
 // embedded ElasticThoughtDoc Type field.
-func NewDataset() *Dataset {
+func NewDataset(c Configuration) *Dataset {
 	return &Dataset{
 		ElasticThoughtDoc: ElasticThoughtDoc{Type: DOC_TYPE_DATASET},
+		Configuration:     c,
 	}
 }
 
@@ -123,11 +129,49 @@ func (d Dataset) isSplittable() bool {
 
 }
 
+// Update the processing state to new state.
+func (d *Dataset) UpdateProcessingState(newState ProcessingState) (bool, error) {
+
+	updater := func(dataset *Dataset) {
+		dataset.ProcessingState = newState
+	}
+
+	doneMetric := func(dataset Dataset) bool {
+		return dataset.ProcessingState == newState
+	}
+
+	return d.casUpdate(updater, doneMetric)
+
+}
+
+func (d *Dataset) casUpdate(updater func(*Dataset), doneMetric func(Dataset) bool) (bool, error) {
+
+	db := d.Configuration.DbConnection()
+
+	genUpdater := func(datasetPtr interface{}) {
+		cjp := datasetPtr.(*Dataset)
+		updater(cjp)
+	}
+
+	genDoneMetric := func(datasetPtr interface{}) bool {
+		cjp := datasetPtr.(*Dataset)
+		return doneMetric(*cjp)
+	}
+
+	refresh := func(datasetPtr interface{}) error {
+		cjp := datasetPtr.(*Dataset)
+		return cjp.RefreshFromDB(db)
+	}
+
+	return casUpdate(db, d, genUpdater, genDoneMetric, refresh)
+
+}
+
 // Update the dataset state to record that it finished successfully
 // Codereview: de-dupe with datafile FinishedSuccessfully
 func (d Dataset) FinishedSuccessfully(db couch.Database) error {
 
-	_, err := CasUpdateProcessingState(&d, FinishedSuccessfully, db)
+	_, err := d.UpdateProcessingState(FinishedSuccessfully)
 	if err != nil {
 		return err
 	}
@@ -140,19 +184,32 @@ func (d Dataset) FinishedSuccessfully(db couch.Database) error {
 // Codereview: datafile.go has same method
 func (d Dataset) Failed(db couch.Database, processingErr error) error {
 
-	_, err := CasUpdateProcessingState(&d, Failed, db)
+	_, err := d.UpdateProcessingState(Failed)
 	if err != nil {
 		return err
 	}
 
-	d.ProcessingLog = fmt.Sprintf("%v", processingErr)
-	_, err = db.Edit(d)
-
+	processingLog := fmt.Sprintf("%v", processingErr)
+	_, err = d.UpdateProcessingLog(processingLog)
 	if err != nil {
 		return err
 	}
 
 	return nil
+
+}
+
+func (d *Dataset) UpdateProcessingLog(val string) (bool, error) {
+
+	updater := func(dataset *Dataset) {
+		dataset.ProcessingLog = val
+	}
+
+	doneMetric := func(dataset Dataset) bool {
+		return dataset.ProcessingLog == val
+	}
+
+	return d.casUpdate(updater, doneMetric)
 
 }
 

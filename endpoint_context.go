@@ -93,7 +93,7 @@ func (e EndpointContext) CreateDataSetsEndpoint(c *gin.Context) {
 	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
 	logg.LogTo("REST", "user: %v db: %v", user, db)
 
-	dataset := NewDataset()
+	dataset := NewDataset(e.Configuration)
 
 	// bind the input struct to the JSON request
 	if ok := c.Bind(dataset); !ok {

@@ -25,8 +25,9 @@ func (d DatasetSplitter) Run(wg *sync.WaitGroup) {
 
 	defer wg.Done()
 
-	db := d.Configuration.DbConnection()
-	updatedState, err := CasUpdateProcessingState(&d.Dataset, Processing, db)
+	dataset := &d.Dataset
+
+	updatedState, err := dataset.UpdateProcessingState(Processing)
 	if err != nil {
 		d.recordProcessingError(err)
 		return

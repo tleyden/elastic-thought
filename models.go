@@ -25,6 +25,10 @@ type ElasticThoughtDoc struct {
 	Type     string `json:"type"`
 }
 
+type casUpdater func(interface{})
+type casDoneMetric func(interface{}) bool
+type casRefresh func(interface{}) error
+
 // Generic cas update
 //
 // The first return value will be true when it was updated due to calling this method,
@@ -33,7 +37,7 @@ type ElasticThoughtDoc struct {
 //
 // If any errors occur while trying to update, they will be returned in the second
 // return value.
-func casUpdate(db couch.Database, thing2update interface{}, updater func(interface{}), doneMetric func(interface{}) bool, refresh func(interface{}) error) (bool, error) {
+func casUpdate(db couch.Database, thing2update interface{}, updater casUpdater, doneMetric casDoneMetric, refresh casRefresh) (bool, error) {
 
 	if doneMetric(thing2update) == true {
 		logg.LogTo("ELASTIC_THOUGHT", "No update needed: %+v, ignoring", thing2update)

@@ -42,7 +42,7 @@ func CreateJob(config Configuration, jobDescriptor JobDescriptor) (Runnable, err
 	case DOC_TYPE_DATASET:
 
 		// create a Dataset doc
-		dataset := &Dataset{}
+		dataset := NewDataset(config)
 		err = db.Retrieve(doc.Id, &dataset)
 		if err != nil {
 			errMsg := fmt.Errorf("Didn't retrieve: %v - %v", doc.Id, err)

@@ -355,7 +355,7 @@ func (s Solver) writeCbfsFile(config Configuration, destDirectory, sourceUrl str
 func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) error {
 
 	// find cbfs paths to artificacts
-	dataset := NewDataset()
+	dataset := NewDataset(config)
 	dataset.Id = s.DatasetId
 	trainingArtifact := dataset.TrainingArtifactPath()
 	testArtifact := dataset.TestingArtifactPath()
