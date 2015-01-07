@@ -13,6 +13,7 @@ import (
 type ClassifyJob struct {
 	ElasticThoughtDoc
 	ProcessingState ProcessingState `json:"processing-state"`
+	ProcessingLog   string          `json:"processing-log"`
 	ClassifierID    string          `json:"classifier-id"`
 
 	// had to make exported, due to https://github.com/gin-gonic/gin/pull/123
@@ -39,8 +40,7 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 
 	updatedState, err := c.UpdateProcessingState(Processing)
 	if err != nil {
-
-		// TODO: c.recordProcessingError(err)
+		c.recordProcessingError(err)
 		return
 	}
 
@@ -49,9 +49,9 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 		return
 	}
 
-	// TODO: refactor to use new generic cas approach
-
 	// TODO: add code to run job
+
+	logg.LogTo("CLASSIFY_JOB", "lazily create dir")
 
 	// lazily create dir and download prototxt if doesn't exist
 
@@ -72,6 +72,20 @@ func (c *ClassifyJob) UpdateProcessingState(newState ProcessingState) (bool, err
 
 	doneMetric := func(classifyJob ClassifyJob) bool {
 		return classifyJob.ProcessingState == newState
+	}
+
+	return c.casUpdate(updater, doneMetric)
+
+}
+
+func (c *ClassifyJob) UpdateProcessingLog(val string) (bool, error) {
+
+	updater := func(classifyJob *ClassifyJob) {
+		classifyJob.ProcessingLog = val
+	}
+
+	doneMetric := func(classifyJob ClassifyJob) bool {
+		return classifyJob.ProcessingLog == val
 	}
 
 	return c.casUpdate(updater, doneMetric)
@@ -140,4 +154,33 @@ func (c *ClassifyJob) Find(id string) error {
 		return err
 	}
 	return nil
+}
+
+// Codereview: de-dupe
+func (c ClassifyJob) recordProcessingError(err error) {
+	logg.LogError(err)
+	db := c.Configuration.DbConnection()
+	if err := c.Failed(db, err); err != nil {
+		errMsg := fmt.Errorf("Error setting training job as failed: %v", err)
+		logg.LogError(errMsg)
+	}
+}
+
+func (c ClassifyJob) Failed(db couch.Database, processingErr error) error {
+
+	_, err := c.UpdateProcessingState(Failed)
+	if err != nil {
+		return err
+	}
+
+	logg.LogTo("CLASSIFY_JOB", "updating processing log")
+
+	logValue := fmt.Sprintf("%v", processingErr)
+	_, err = c.UpdateProcessingLog(logValue)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }
