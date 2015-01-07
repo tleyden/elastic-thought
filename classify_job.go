@@ -16,6 +16,10 @@ type ClassifyJob struct {
 	ProcessingLog   string          `json:"processing-log"`
 	ClassifierID    string          `json:"classifier-id"`
 
+	// Key: image url of image in cbfs
+	// Value: the classification result for that image
+	Results map[string]string `json:"results"`
+
 	// had to make exported, due to https://github.com/gin-gonic/gin/pull/123
 	// waiting for this to get merged into master branch, since go get
 	// pulls from master branch.
@@ -51,7 +55,7 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 
 	// TODO: add code to run job
 
-	logg.LogTo("CLASSIFY_JOB", "lazily create dir")
+	logg.LogTo("CLASSIFY_JOB", "lazily create dir.  images: %+v", c.Results)
 
 	// lazily create dir and download prototxt if doesn't exist
 

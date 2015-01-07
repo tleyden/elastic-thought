@@ -281,6 +281,26 @@ func (e EndpointContext) CreateClassificationJobEndpoint(c *gin.Context) {
 
 	// create a new classifier job
 	classifyJob := NewClassifyJob(e.Configuration)
+
+	request := c.Request
+	err := request.ParseMultipartForm(100000000) // ~100 MB
+	if err != nil {
+		c.Fail(500, err)
+		return
+	}
+
+	multipartForm := request.MultipartForm
+	urls := multipartForm.Value["urls"]
+	for _, url := range urls {
+		classifyJob.Results[url] = "empty"
+	}
+
+	// get the form values with the image urls
+
+	// add each image to cbfs
+
+	// save image urls in struct
+
 	if err := classifyJob.Insert(); err != nil {
 		c.Fail(500, err)
 		return
