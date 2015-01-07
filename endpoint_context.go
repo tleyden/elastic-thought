@@ -281,6 +281,7 @@ func (e EndpointContext) CreateClassificationJobEndpoint(c *gin.Context) {
 
 	// create a new classifier job
 	classifyJob := NewClassifyJob(e.Configuration)
+	classifyJob.ClassifierID = classifier.Id
 
 	request := c.Request
 	err := request.ParseMultipartForm(100000000) // ~100 MB
@@ -291,6 +292,8 @@ func (e EndpointContext) CreateClassificationJobEndpoint(c *gin.Context) {
 
 	multipartForm := request.MultipartForm
 	urls := multipartForm.Value["urls"]
+
+	classifyJob.Results = map[string]string{}
 	for _, url := range urls {
 		classifyJob.Results[url] = "empty"
 	}
