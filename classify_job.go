@@ -2,6 +2,7 @@ package elasticthought
 
 import (
 	"fmt"
+	"reflect"
 	"sync"
 
 	"github.com/couchbaselabs/logg"
@@ -76,6 +77,20 @@ func (c *ClassifyJob) UpdateProcessingState(newState ProcessingState) (bool, err
 
 	doneMetric := func(classifyJob ClassifyJob) bool {
 		return classifyJob.ProcessingState == newState
+	}
+
+	return c.casUpdate(updater, doneMetric)
+
+}
+
+func (c *ClassifyJob) SetResults(results map[string]string) (bool, error) {
+
+	updater := func(classifyJob *ClassifyJob) {
+		classifyJob.Results = results
+	}
+
+	doneMetric := func(classifyJob ClassifyJob) bool {
+		return reflect.DeepEqual(results, classifyJob.Results)
 	}
 
 	return c.casUpdate(updater, doneMetric)

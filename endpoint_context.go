@@ -1,10 +1,12 @@
 package elasticthought
 
 import (
+	"crypto/sha1"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"path"
+	"strings"
 
 	"github.com/couchbaselabs/logg"
 	"github.com/gin-gonic/gin"
@@ -290,19 +292,44 @@ func (e EndpointContext) CreateClassificationJobEndpoint(c *gin.Context) {
 		return
 	}
 
+	// get the form values with the image urls
 	multipartForm := request.MultipartForm
 	urls := multipartForm.Value["urls"]
 
-	classifyJob.Results = map[string]string{}
-	for _, url := range urls {
-		classifyJob.Results[url] = "empty"
-	}
-
-	// get the form values with the image urls
+	// manually create a new uuid here so we can refer to the id
+	// before persisting the object to the db
+	classifyJobId := NewUuid()
+	classifyJob.Id = classifyJobId
 
 	// add each image to cbfs
+	emptyResults := map[string]string{}
+	for _, url := range urls {
 
-	// save image urls in struct
+		hash := sha1.Sum([]byte(url))
+		hashHexString := fmt.Sprintf("% x", hash)
+		hashHexString = strings.Replace(hashHexString, " ", "", -1)
+
+		// save image url to cbfs
+		dest := fmt.Sprintf("%s/%s", classifyJob.Id, hashHexString)
+
+		cbfsclient, err := e.Configuration.NewCbfsClient()
+		if err != nil {
+			c.Fail(500, err)
+			return
+		}
+
+		if err := saveUrlToCbfs(url, dest, cbfsclient); err != nil {
+			c.Fail(500, err)
+			return
+		}
+
+		imageUrlCbfs := fmt.Sprintf("%s/%s", CBFS_URI_PREFIX, dest)
+
+		emptyResults[imageUrlCbfs] = "pending"
+
+	}
+
+	classifyJob.Results = emptyResults
 
 	if err := classifyJob.Insert(); err != nil {
 		c.Fail(500, err)
