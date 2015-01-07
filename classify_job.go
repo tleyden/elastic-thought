@@ -58,13 +58,18 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 
 	logg.LogTo("CLASSIFY_JOB", "lazily create dir.  images: %+v", c.Results)
 
-	// lazily create dir and download prototxt if doesn't exist
+	c.CreateWorkDirectory()
 
 	// invoke caffe
 
 	// extract results
 
 	// update classifyjob with results
+
+}
+
+// lazily create dir and download prototxt if doesn't exist, also download images to files
+func (c ClassifyJob) CreateWorkDirectory() error {
 
 }
 
