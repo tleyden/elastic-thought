@@ -255,7 +255,7 @@ func (e EndpointContext) CreateClassifierEndpoint(c *gin.Context) {
 	}
 
 	// update the spec url to point to the classifier.prototxt in cbfs
-	specUrlCbfs := path.Join(CBFS_URI_PREFIX, destPath)
+	specUrlCbfs := fmt.Sprintf("%v%v", CBFS_URI_PREFIX, destPath)
 	if err := classifier.SetSpecificationUrl(specUrlCbfs); err != nil {
 		c.Fail(500, err)
 		return
@@ -311,7 +311,7 @@ func (e EndpointContext) CreateClassificationJobEndpoint(c *gin.Context) {
 		hashHexString = strings.Replace(hashHexString, " ", "", -1)
 
 		// save image url to cbfs
-		dest := fmt.Sprintf("%s/%s", classifyJob.Id, hashHexString)
+		dest := path.Join(classifyJob.Id, hashHexString)
 
 		cbfsclient, err := e.Configuration.NewCbfsClient()
 		if err != nil {
@@ -324,7 +324,7 @@ func (e EndpointContext) CreateClassificationJobEndpoint(c *gin.Context) {
 			return
 		}
 
-		imageUrlCbfs := fmt.Sprintf("%s/%s", CBFS_URI_PREFIX, dest)
+		imageUrlCbfs := fmt.Sprintf("%v%v", CBFS_URI_PREFIX, dest)
 
 		emptyResults[imageUrlCbfs] = "pending"
 

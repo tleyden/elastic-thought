@@ -89,15 +89,54 @@ func (c ClassifyJob) createWorkDirectory() error {
 	return Mkdir(workDir)
 }
 
+func (c ClassifyJob) getClassifier() (*Classifier, error) {
+
+	classifier := NewClassifier(c.Configuration)
+	err := classifier.Find(c.ClassifierID)
+	return classifier, err
+}
+
+func (c ClassifyJob) getTrainingJob() (*TrainingJob, error) {
+
+	classifier, err := c.getClassifier()
+	if err != nil {
+		return nil, err
+	}
+
+	trainingJob := NewTrainingJob(c.Configuration)
+	err = trainingJob.Find(classifier.TrainingJobID)
+	return trainingJob, err
+
+}
+
+func (c ClassifyJob) downloadWorkAssets() error {
+
+	// caffe model
+	if err := c.downloadCaffeModel(); err != nil {
+		return err
+	}
+
+	// prototxt
+	if err := c.downloadPrototxt(); err != nil {
+		return err
+	}
+
+	// images
+	if err := c.downloadImagesToClassify(); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
 func (c ClassifyJob) downloadCaffeModel() error {
 
 	// get training job id, instantiate object
-
-	classifier := NewClassifier(c.Configuration)
-	classifier.Find(c.ClassifierID)
-
-	trainingJob := NewTrainingJob(c.Configuration)
-	trainingJob.Find(classifier.TrainingJobID)
+	trainingJob, err := c.getTrainingJob()
+	if err != nil {
+		return err
+	}
 
 	// make sure that training job state == Finished
 	if trainingJob.GetProcessingState() != FinishedSuccessfully {
@@ -121,16 +160,42 @@ func (c ClassifyJob) downloadCaffeModel() error {
 
 }
 
-func (c ClassifyJob) downloadWorkAssets() error {
+func (c ClassifyJob) downloadPrototxt() error {
 
-	// caffe model
-	if err := c.downloadCaffeModel(); err != nil {
+	classifier, err := c.getClassifier()
+	if err != nil {
 		return err
 	}
 
-	// prototxt
+	cbfs, err := c.Configuration.NewCbfsClient()
+	if err != nil {
+		return err
+	}
+	destPath := path.Join(c.getWorkDirectory(), "classifier.prototxt")
+	if err := downloadFromCbfs(cbfs, classifier.SpecificationUrl, destPath); err != nil {
+		return err
+	}
 
-	// images
+	return nil
+}
+
+func (c ClassifyJob) downloadImagesToClassify() error {
+
+	// for now, just download a single image
+	// (if multiple images specified, all bust last will be clobbered)
+	// TODO: fix this and download all images
+
+	cbfs, err := c.Configuration.NewCbfsClient()
+	if err != nil {
+		return err
+	}
+
+	for imageUrl, _ := range c.Results {
+		destPath := path.Join(c.getWorkDirectory(), "image.png")
+		if err := downloadFromCbfs(cbfs, imageUrl, destPath); err != nil {
+			return err
+		}
+	}
 
 	return nil
 
