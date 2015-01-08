@@ -90,7 +90,7 @@ func TestUpdateProcessingState(t *testing.T) {
 func TestUpdateModelUrl(t *testing.T) {
 
 	docId := "training_job"
-	expectedTrainedModelUrl := fmt.Sprintf("cbfs/%v/trained.caffemodel", docId)
+	expectedTrainedModelUrl := fmt.Sprintf("%v%v/trained.caffemodel", CBFS_URI_PREFIX, docId)
 
 	testServer := fakehttp.NewHTTPServerWithPort(NextPort())
 	testServer.Start()
@@ -122,7 +122,7 @@ func TestUpdateModelUrl(t *testing.T) {
 	err := trainingJob.updateCaffeModelUrl()
 
 	assert.True(t, err == nil)
-	assert.Equals(t, expectedTrainedModelUrl, trainingJob.TrainedModelUrl)
+	assert.Equals(t, trainingJob.TrainedModelUrl, expectedTrainedModelUrl)
 
 }
 

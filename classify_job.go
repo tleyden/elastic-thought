@@ -2,6 +2,7 @@ package elasticthought
 
 import (
 	"fmt"
+	"path/filepath"
 	"reflect"
 	"sync"
 
@@ -58,7 +59,15 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 
 	logg.LogTo("CLASSIFY_JOB", "lazily create dir.  images: %+v", c.Results)
 
-	c.CreateWorkDirectory()
+	if err := c.createWorkDirectory(); err != nil {
+		c.recordProcessingError(err)
+		return
+	}
+
+	if err := c.downloadWorkAssets(); err != nil {
+		c.recordProcessingError(err)
+		return
+	}
 
 	// invoke caffe
 
@@ -68,8 +77,54 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 
 }
 
-// lazily create dir and download prototxt if doesn't exist, also download images to files
-func (c ClassifyJob) CreateWorkDirectory() error {
+func (c ClassifyJob) getWorkDirectory() string {
+	return filepath.Join(c.Configuration.WorkDirectory, c.Id)
+}
+
+// lazily create work dir
+func (c ClassifyJob) createWorkDirectory() error {
+	workDir := c.getWorkDirectory()
+	logg.LogTo("TRAINING_JOB", "Creating dir: %v", workDir)
+	return Mkdir(workDir)
+}
+
+func (c ClassifyJob) downloadCaffeModel() error {
+
+	// get training job id, instantiate object
+
+	classifier := NewClassifier(c.Configuration)
+	classifier.Find(c.ClassifierID)
+
+	trainingJob := NewTrainingJob(c.Configuration)
+	trainingJob.Find(classifier.TrainingJobID)
+
+	// make sure that training job state == Finished
+	if trainingJob.GetProcessingState() != FinishedSuccessfully {
+		return fmt.Errorf("TrainingJob is not finished yet")
+	}
+
+	// get the trained model url
+	trainedModelUrl := trainingJob.TrainedModelUrl
+	logg.Log("trainedModel: %v", trainedModelUrl)
+
+	// download from cbfs to local file system
+
+	return nil
+
+}
+
+func (c ClassifyJob) downloadWorkAssets() error {
+
+	// caffe model
+	if err := c.downloadCaffeModel(); err != nil {
+		return err
+	}
+
+	// prototxt
+
+	// images
+
+	return nil
 
 }
 

@@ -252,7 +252,7 @@ func (j TrainingJob) uploadCaffeModelToCbfs(caffeModelFilename string) error {
 func (j *TrainingJob) updateCaffeModelUrl() error {
 
 	// update to cbfs/<training job id>/trained.caffemodel
-	newTrainedModelUrl := path.Join("cbfs", j.Id, "trained.caffemodel")
+	newTrainedModelUrl := fmt.Sprintf("%v%v", CBFS_URI_PREFIX, path.Join(j.Id, "trained.caffemodel"))
 
 	updater := func(job *TrainingJob) {
 		job.TrainedModelUrl = newTrainedModelUrl

@@ -268,9 +268,8 @@ func (e EndpointContext) CreateClassifierEndpoint(c *gin.Context) {
 
 func (e EndpointContext) CreateClassificationJobEndpoint(c *gin.Context) {
 
-	user := c.MustGet(MIDDLEWARE_KEY_USER).(User)
-	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
-	logg.LogTo("REST", "user: %v db: %v", user, db)
+	_ = c.MustGet(MIDDLEWARE_KEY_USER).(User)
+	_ = c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
 
 	classifierId := c.Params.ByName("classifier-id")
 
@@ -291,6 +290,8 @@ func (e EndpointContext) CreateClassificationJobEndpoint(c *gin.Context) {
 		c.Fail(500, err)
 		return
 	}
+
+	// TODO: currently ignores file upload files
 
 	// get the form values with the image urls
 	multipartForm := request.MultipartForm
