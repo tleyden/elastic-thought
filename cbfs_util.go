@@ -3,9 +3,11 @@ package elasticthought
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/couchbaselabs/logg"
 	"github.com/tleyden/cbfs/client"
@@ -77,5 +79,41 @@ func getContentFromCbfs(cbfs *cbfsclient.Client, sourcePath string) ([]byte, err
 	}
 
 	return bytes, nil
+
+}
+
+// Download the content at sourcePath (cbfs://foo/bar.txt) to destPath (/path/to/bar.txt)
+func downloadFromCbfs(cbfs *cbfsclient.Client, sourceUri, destPath string) (err error) {
+
+	if !strings.HasPrefix(sourceUri, CBFS_URI_PREFIX) {
+		return fmt.Errorf("Invalid TrainedModelUrl: %v", sourceUri)
+	}
+
+	// open a file at destPath
+	out, err := os.Create(destPath)
+	if err != nil {
+		return
+	}
+	defer func() {
+		cerr := out.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
+
+	// chop off cbfs:// to get a source path on cbfs
+	sourcePath := strings.Replace(sourceUri, CBFS_URI_PREFIX, "", -1)
+
+	// read contents from cbfs
+	reader, err := cbfs.Get(sourcePath)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
+	// copy cbfs -> dest
+	_, err = io.Copy(out, reader)
+
+	return
 
 }

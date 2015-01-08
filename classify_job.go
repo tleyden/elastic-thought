@@ -2,6 +2,7 @@ package elasticthought
 
 import (
 	"fmt"
+	"path"
 	"path/filepath"
 	"reflect"
 	"sync"
@@ -103,11 +104,18 @@ func (c ClassifyJob) downloadCaffeModel() error {
 		return fmt.Errorf("TrainingJob is not finished yet")
 	}
 
-	// get the trained model url
+	// make sure the trained model url starts with cbfs
 	trainedModelUrl := trainingJob.TrainedModelUrl
-	logg.Log("trainedModel: %v", trainedModelUrl)
 
 	// download from cbfs to local file system
+	cbfs, err := c.Configuration.NewCbfsClient()
+	if err != nil {
+		return err
+	}
+	destPath := path.Join(c.getWorkDirectory(), "caffe.model")
+	if err := downloadFromCbfs(cbfs, trainedModelUrl, destPath); err != nil {
+		return err
+	}
 
 	return nil
 
