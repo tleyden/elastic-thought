@@ -54,16 +54,13 @@ while True:
     i += 1
 
 
-print "predicting images: %s" % len(images)
+
 predictions = net.predict(images)
-print "predictions: %s" % predictions
 
 result = {}
-print "i: {0}".format(i)
 
 for image_index in xrange(0,i):
 
-    print "image_index: {0}".format(image_index)
     image_filename = "image{0}".format(image_index)
     prediction = predictions[image_index]
     result[image_filename] = prediction.argmax()
