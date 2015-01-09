@@ -36,14 +36,14 @@ net = caffe.Classifier(MODEL_FILE,
 net.set_phase_test()
 net.set_mode_cpu()
 
+# go into images subdir
+os.chdir("images")
+
 # loop over all files in directory that are named image*
-image_filenames = glob.glob('image*')
+image_filenames = glob.glob('*')
 images = []
 
-i = 0
-while True:
-
-    image_filename = "image{0}".format(i)
+for image_filename in image_filenames:
 
     if not os.path.exists(image_filename):
         break
@@ -51,21 +51,19 @@ while True:
     # load each image and add to images array
     images.append(caffe.io.load_image(image_filename, color=COLOR))
 
-    i += 1
-
-
+if len(images) == 0:
+    raise Exception("no images")
 
 predictions = net.predict(images)
 
 result = {}
 
-for image_index in xrange(0,i):
+for image_index in xrange(len(image_filenames)):
 
-    image_filename = "image{0}".format(image_index)
+    image_filename = image_filenames[image_index]
     prediction = predictions[image_index]
     result[image_filename] = prediction.argmax()
     # print 'prediction shape:', prediction.shape
 
 print json.dumps(result)
-
 

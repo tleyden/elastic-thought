@@ -82,11 +82,25 @@ func (c ClassifyJob) getWorkDirectory() string {
 	return filepath.Join(c.Configuration.WorkDirectory, c.Id)
 }
 
+func (c ClassifyJob) getWorkImagesDirectory() string {
+	return filepath.Join(c.getWorkDirectory(), "images")
+}
+
 // lazily create work dir
 func (c ClassifyJob) createWorkDirectory() error {
 	workDir := c.getWorkDirectory()
 	logg.LogTo("TRAINING_JOB", "Creating dir: %v", workDir)
-	return Mkdir(workDir)
+	if err := Mkdir(workDir); err != nil {
+		return err
+	}
+
+	imagesSubdir := c.getWorkImagesDirectory()
+	if err := Mkdir(imagesSubdir); err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 func (c ClassifyJob) getClassifier() (*Classifier, error) {
@@ -190,11 +204,16 @@ func (c ClassifyJob) downloadImagesToClassify() error {
 		return err
 	}
 
+	i := 0
 	for imageUrl, _ := range c.Results {
-		destPath := path.Join(c.getWorkDirectory(), "image.png")
+
+		// url will be cbfs://<classify_job_id>/<imageurl_sha1_hash>
+		_, imageSha1Hash := path.Split(imageUrl)
+		destPath := path.Join(c.getWorkImagesDirectory(), imageSha1Hash)
 		if err := downloadFromCbfs(cbfs, imageUrl, destPath); err != nil {
 			return err
 		}
+		i += 1
 	}
 
 	return nil
