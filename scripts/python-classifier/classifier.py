@@ -44,26 +44,31 @@ i = 0
 while True:
 
     image_filename = "image{0}".format(i)
-    i += 1
+
     if not os.path.exists(image_filename):
         break
 
     # load each image and add to images array
     images.append(caffe.io.load_image(image_filename, color=COLOR))
-    
-print "predicting x images: %s" % len(images) 
-predictions = net.predict(images)  
+
+    i += 1
+
+
+print "predicting images: %s" % len(images)
+predictions = net.predict(images)
 print "predictions: %s" % predictions
 
 result = {}
+print "i: {0}".format(i)
+
 for image_index in xrange(0,i):
 
+    print "image_index: {0}".format(image_index)
     image_filename = "image{0}".format(image_index)
     prediction = predictions[image_index]
     result[image_filename] = prediction.argmax()
-    # print 'prediction shape:', prediction.shape    
+    # print 'prediction shape:', prediction.shape
 
-print json.dumps(hash)
-
+print json.dumps(result)
 
 
