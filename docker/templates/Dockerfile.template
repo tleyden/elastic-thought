@@ -35,9 +35,5 @@ RUN go get -u -v -t github.com/tleyden/elastic-thought && \
 RUN cp /opt/go/bin/worker /usr/local/bin && \
     cp /opt/go/bin/httpd /usr/local/bin
 
-# Temp workaround for caffe build failures:
-#   https://registry.hub.docker.com/u/tleyden5iwx/caffe-cpu-develop/build_id/29167/code/by5ltzsqzgfpwfkbebfk5qp/
-# For some reason, libboost-dev-all wants to pull gnome deps now (it didn't before), 
-# and the build fails trying to install something.
 # Copy all .bin binaries -> /usr/local/bin and remove .bin extension
 RUN cd /opt/caffe/.build_release/tools && find * -name "*.bin" -exec sh -c 'DEST=$(echo {} | cut -d"." -f1) && echo "{} to /usr/local/bin/$DEST"; cp {} /usr/local/bin/$DEST && chmod +x /usr/local/bin/$DEST' \;
