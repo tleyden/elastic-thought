@@ -2,11 +2,27 @@ package elasticthought
 
 import (
 	"fmt"
+	"os"
+	"path"
 	"testing"
 
 	"github.com/couchbaselabs/go.assert"
 	"github.com/tleyden/fakehttp"
 )
+
+func TestCopyPythonClassifier(t *testing.T) {
+
+	tempDir := os.TempDir()
+	configuration := NewDefaultConfiguration()
+	classifyJob := NewClassifyJob(*configuration)
+	classifyJob.copyPythonClassifier(tempDir)
+
+	resultFile := path.Join(tempDir, "classifier.py")
+
+	err := validatePathExists(resultFile)
+	assert.True(t, err == nil)
+
+}
 
 func TestUpdateClassifyJobProcessingState(t *testing.T) {
 
@@ -42,4 +58,12 @@ func TestUpdateClassifyJobProcessingState(t *testing.T) {
 	assert.True(t, err == nil)
 	assert.Equals(t, classifyJob.ProcessingState, Processing)
 
+}
+
+func validatePathExists(path string) error {
+	_, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("path does not exist: %v", path)
+	}
+	return nil
 }

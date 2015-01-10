@@ -2,6 +2,7 @@ package elasticthought
 
 import (
 	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -71,10 +72,22 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 	}
 
 	// invoke caffe
+	resultsMap, err := c.invokeCaffe()
+	if err != nil {
+		c.recordProcessingError(err)
+		return
+	}
+
+	logg.LogTo("CLASSIFY_JOB", "resultsMap: %+v", resultsMap)
 
 	// extract results
 
 	// update classifyjob with results
+
+}
+
+func (c ClassifyJob) invokeCaffe() (map[string]interface{}, error) {
+	return nil, nil
 
 }
 
@@ -137,6 +150,43 @@ func (c ClassifyJob) downloadWorkAssets() error {
 
 	// images
 	if err := c.downloadImagesToClassify(); err != nil {
+		return err
+	}
+
+	// python classify script
+	workDirectory := c.getWorkDirectory()
+	if err := c.copyPythonClassifier(workDirectory); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (c ClassifyJob) copyPythonClassifier(destDirPath string) error {
+
+	// find out $GOPATH env variable
+	gopath := os.Getenv("GOPATH")
+
+	// find path to python classifier file
+	elasticThoughtRoot := path.Join(
+		gopath,
+		"src",
+		"github.com",
+		"tleyden",
+		"elastic-thought",
+	)
+
+	pythonScript := path.Join(
+		elasticThoughtRoot,
+		"scripts",
+		"python-classifier",
+		"classifier.py",
+	)
+
+	destPath := path.Join(destDirPath, "classifier.py")
+
+	if err := CopyFileContents(pythonScript, destPath); err != nil {
 		return err
 	}
 
