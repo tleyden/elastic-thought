@@ -1,5 +1,5 @@
 
-Scalable REST API wrapper for the [Caffe](caffe.berkeleyvision.org) deep learning framework. 
+Scalable REST API wrapper for the [Caffe](http://caffe.berkeleyvision.org) deep learning framework. 
 
 ## The problem
 
