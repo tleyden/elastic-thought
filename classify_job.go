@@ -112,6 +112,11 @@ func (c ClassifyJob) invokeCaffe() (map[string]interface{}, error) {
 	// Create command, but don't actually run it yet
 	cmd := exec.Command(python, cmdArgs...)
 
+	// set the directory where the command will be run in (important
+	// because we depend on relative file paths to work)
+	cmd.Dir = c.getWorkDirectory()
+
+	// Run command
 	if err := cmd.Run(); err != nil {
 		return nil, err
 	}

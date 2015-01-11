@@ -2,13 +2,54 @@ package elasticthought
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/couchbaselabs/go.assert"
+	"github.com/couchbaselabs/logg"
 	"github.com/tleyden/fakehttp"
 )
+
+func TestInvokeCaffe(t *testing.T) {
+
+	tempDir := os.TempDir()
+
+	// cd to temp dir
+	err := os.Chdir(tempDir)
+	assert.True(t, err == nil)
+
+	// write a fake classifier.py
+	python := `
+import json
+result = {}
+result["image4434"] = "5"
+result["image7434"] = "A"
+f = open('result.json', 'w')
+json.dump(result, f)
+
+`
+
+	err = ioutil.WriteFile(filepath.Join(tempDir, "classifier.py"), []byte(python), 0644)
+	assert.True(t, err == nil)
+
+	// create new classify job with custom work dir as temp dir
+	configuration := NewDefaultConfiguration()
+	configuration.WorkDirectory = tempDir
+	classifyJob := NewClassifyJob(*configuration)
+
+	// call invokeCaffe
+	results, err := classifyJob.invokeCaffe()
+	assert.True(t, err == nil)
+	logg.LogTo("TEST", "classify results: %v", results)
+
+	// assert that json has what was expected
+	assert.Equals(t, results["image4434"], "5")
+	assert.Equals(t, results["image7434"], "A")
+
+}
 
 func TestCopyPythonClassifier(t *testing.T) {
 
