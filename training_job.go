@@ -1,7 +1,6 @@
 package elasticthought
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -10,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/couchbaselabs/logg"
-	"github.com/tleyden/cbfs/client"
 	"github.com/tleyden/go-couch"
 )
 
@@ -321,28 +319,15 @@ func (j TrainingJob) saveCmdOutputToCbfs(sourcePath string) error {
 	base := path.Base(sourcePath)
 	destPath := fmt.Sprintf("%v/%v", j.Id, base)
 
-	// todo: refactor to use saveFileToCbfs
-
-	cbfs, err := cbfsclient.New(j.Configuration.CbfsUrl)
-	if err != nil {
-		return err
-	}
-	options := cbfsclient.PutOptions{
-		ContentType: "text/plain",
-	}
-
-	logg.LogTo("TRAINING_JOB", "save to  destPath: %v", destPath)
-	f, err := os.Open(sourcePath)
+	cbfsclient, err := j.Configuration.NewCbfsClient()
 	if err != nil {
 		return err
 	}
 
-	r := bufio.NewReader(f)
-
-	if err := cbfs.Put("", destPath, r, options); err != nil {
-		return fmt.Errorf("Error writing %v to cbfs: %v", destPath, err)
+	if err := saveFileToCbfs(sourcePath, destPath, "text/plain", cbfsclient); err != nil {
+		return err
 	}
-	logg.LogTo("TRAINING_JOB", "Wrote %v to cbfs", destPath)
+
 	return nil
 
 }
