@@ -20,6 +20,8 @@ type ClassifyJob struct {
 	ElasticThoughtDoc
 	ProcessingState ProcessingState `json:"processing-state"`
 	ProcessingLog   string          `json:"processing-log"`
+	StdOutUrl       string          `json:"std-out-url"`
+	StdErrUrl       string          `json:"std-err-url"`
 	ClassifierID    string          `json:"classifier-id"`
 
 	// Key: image url of image in cbfs
@@ -116,10 +118,23 @@ func (c ClassifyJob) invokeCaffe() (map[string]interface{}, error) {
 	// because we depend on relative file paths to work)
 	cmd.Dir = c.getWorkDirectory()
 
-	// Run command
-	if err := cmd.Run(); err != nil {
+	// run the command and save stdio to files and tee to stdio streams
+	if err := runCmdTeeStdio(cmd, c.getStdOutPath(), c.getStdErrPath()); err != nil {
 		return nil, err
 	}
+
+	/*
+		// read from temp files and write to cbfs.
+		// initially I tried to write the stdout/stderr streams directly
+		// to cbfs, but ran into an error related to the io.Seeker interface.
+		if err := c.saveCmdOutputToCbfs(c.getStdOutPath()); err != nil {
+			return fmt.Errorf("Error running caffe: could not save output to cbfs. Err: %v", err)
+		}
+
+		if err := c.saveCmdOutputToCbfs(c.getStdErrPath()); err != nil {
+			return fmt.Errorf("Error running caffe: could not save output to cbfs. Err: %v", err)
+		}
+	*/
 
 	// read output.json file into map
 	result := map[string]interface{}{}
@@ -134,6 +149,14 @@ func (c ClassifyJob) invokeCaffe() (map[string]interface{}, error) {
 
 	return result, nil
 
+}
+
+func (c ClassifyJob) getStdOutPath() string {
+	return path.Join(c.getWorkDirectory(), "stdout")
+}
+
+func (c ClassifyJob) getStdErrPath() string {
+	return path.Join(c.getWorkDirectory(), "stderr")
 }
 
 func (c ClassifyJob) getWorkDirectory() string {
