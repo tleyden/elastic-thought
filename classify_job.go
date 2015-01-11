@@ -136,7 +136,8 @@ func (c ClassifyJob) invokeCaffe() (map[string]interface{}, error) {
 
 	// read output.json file into map
 	result := map[string]interface{}{}
-	resultFile, err := os.Open("result.json")
+	resultFilePath := filepath.Join(c.getWorkDirectory(), "result.json")
+	resultFile, err := os.Open(resultFilePath)
 	if err != nil {
 		return nil, err
 	}
