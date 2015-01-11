@@ -54,6 +54,9 @@ for image_filename in image_filenames:
 if len(images) == 0:
     raise Exception("no images")
 
+# go up a directory so we don't write result in the images dir
+os.chdir("..")
+
 predictions = net.predict(images)
 
 result = {}
@@ -65,9 +68,11 @@ for image_index in xrange(len(image_filenames)):
     result[image_filename] = prediction.argmax()
     # print 'prediction shape:', prediction.shape
 
-
+# write json result
 f = open('result.json', 'w')
 json.dump(result, f)
 
+print "Current dir:"
+os.system("pwd")
 print "Output saved to result.json"
 
