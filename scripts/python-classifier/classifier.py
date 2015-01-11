@@ -65,14 +65,19 @@ for image_index in xrange(len(image_filenames)):
 
     image_filename = image_filenames[image_index]
     prediction = predictions[image_index]
-    result[image_filename] = prediction.argmax()
+    result[image_filename] = str(prediction.argmax())
     # print 'prediction shape:', prediction.shape
 
 # write json result
 f = open('result.json', 'w')
 json.dump(result, f)
 
+# debug
+json.dumps(result)
+
+# more debug
 print "Current dir:"
 os.system("pwd")
+
 print "Output saved to result.json"
 

@@ -82,15 +82,19 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 		return
 	}
 
-	logg.LogTo("CLASSIFY_JOB", "resultsMap: %+v", resultsMap)
-
-	// extract results
-
 	// update classifyjob with results
+	logg.LogTo("CLASSIFY_JOB", "resultsMap: %+v", resultsMap)
+	_, err = c.SetResults(resultsMap)
+	if err != nil {
+		c.recordProcessingError(err)
+		return
+	}
+
+	logg.LogTo("CLASSIFY_JOB", "Finished")
 
 }
 
-func (c ClassifyJob) invokeCaffe() (map[string]interface{}, error) {
+func (c ClassifyJob) invokeCaffe() (map[string]string, error) {
 
 	// call "python classifier.py"
 	// build command args
@@ -135,7 +139,7 @@ func (c ClassifyJob) invokeCaffe() (map[string]interface{}, error) {
 	}
 
 	// read output.json file into map
-	result := map[string]interface{}{}
+	result := map[string]string{}
 	resultFilePath := filepath.Join(c.getWorkDirectory(), "result.json")
 	resultFile, err := os.Open(resultFilePath)
 	if err != nil {
