@@ -33,7 +33,7 @@ func TestSaveCmdOutputToFiles(t *testing.T) {
 	assert.True(t, err == nil)
 
 	// read from stdout, stderr and write to temp files
-	err = j.saveCmdOutputToFiles(stdout, stderr)
+	err = saveCmdOutputToFiles(stdout, stderr, j.getStdOutPath(), j.getStdErrPath())
 	assert.True(t, err == nil)
 
 	// wait for the command to complete

@@ -69,3 +69,46 @@ func NewUuid() string {
 	}
 	return fmt.Sprintf("%s", u4)
 }
+
+func saveCmdOutputToFiles(cmdStdout, cmdStderr io.ReadCloser, stdOutPath, stdErrPath string) error {
+
+	stdOutDoneChan := make(chan error, 1)
+	stdErrDoneChan := make(chan error, 1)
+
+	// also, Tee everything to this processes' stdout/stderr
+	cmdStderrTee := io.TeeReader(cmdStderr, os.Stderr)
+	cmdStdoutTee := io.TeeReader(cmdStdout, os.Stdout)
+
+	// spawn goroutines to read from stdout/stderr
+	go func() {
+		if err := streamToFile(cmdStdoutTee, stdOutPath); err != nil {
+			stdOutDoneChan <- err
+		} else {
+			stdOutDoneChan <- nil
+		}
+
+	}()
+
+	go func() {
+		if err := streamToFile(cmdStderrTee, stdErrPath); err != nil {
+			stdErrDoneChan <- err
+		} else {
+			stdErrDoneChan <- nil
+		}
+
+	}()
+
+	// wait for goroutines
+	stdOutResult := <-stdOutDoneChan
+	stdErrResult := <-stdErrDoneChan
+
+	// check for errors
+	results := []error{stdOutResult, stdErrResult}
+	for _, result := range results {
+		if result != nil {
+			return fmt.Errorf("Saving cmd output failed: %v", result)
+		}
+	}
+
+	return nil
+}
