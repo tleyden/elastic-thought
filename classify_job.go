@@ -123,18 +123,16 @@ func (c ClassifyJob) invokeCaffe() (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	/*
-		// read from temp files and write to cbfs.
-		// initially I tried to write the stdout/stderr streams directly
-		// to cbfs, but ran into an error related to the io.Seeker interface.
-		if err := c.saveCmdOutputToCbfs(c.getStdOutPath()); err != nil {
-			return fmt.Errorf("Error running caffe: could not save output to cbfs. Err: %v", err)
-		}
+	// read from temp files and write to cbfs.
+	// initially I tried to write the stdout/stderr streams directly
+	// to cbfs, but ran into an error related to the io.Seeker interface.
+	if err := c.saveCmdOutputToCbfs(c.getStdOutPath()); err != nil {
+		return nil, fmt.Errorf("Could not save output to cbfs. Err: %v", err)
+	}
 
-		if err := c.saveCmdOutputToCbfs(c.getStdErrPath()); err != nil {
-			return fmt.Errorf("Error running caffe: could not save output to cbfs. Err: %v", err)
-		}
-	*/
+	if err := c.saveCmdOutputToCbfs(c.getStdErrPath()); err != nil {
+		return nil, fmt.Errorf("Could not save output to cbfs. Err: %v", err)
+	}
 
 	// read output.json file into map
 	result := map[string]interface{}{}
@@ -165,6 +163,24 @@ func (c ClassifyJob) getWorkDirectory() string {
 
 func (c ClassifyJob) getWorkImagesDirectory() string {
 	return filepath.Join(c.getWorkDirectory(), "images")
+}
+
+func (c ClassifyJob) saveCmdOutputToCbfs(sourcePath string) error {
+
+	base := path.Base(sourcePath)
+	destPath := fmt.Sprintf("%v/%v", c.Id, base)
+
+	cbfsclient, err := c.Configuration.NewCbfsClient()
+	if err != nil {
+		return err
+	}
+
+	if err := saveFileToCbfs(sourcePath, destPath, "text/plain", cbfsclient); err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 // lazily create work dir
