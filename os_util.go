@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 
 	"github.com/couchbaselabs/logg"
 	"github.com/nu7hatch/gouuid"
@@ -111,4 +112,32 @@ func saveCmdOutputToFiles(cmdStdout, cmdStderr io.ReadCloser, stdOutPath, stdErr
 	}
 
 	return nil
+}
+
+func runCmdTeeStdio(cmd *exec.Cmd, stdOutPath, stdErrPath string) error {
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("Error running caffe: StdoutPipe(). Err: %v", err)
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("Error running caffe: StderrPipe(). Err: %v", err)
+	}
+
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("Error running caffe: cmd.Start(). Err: %v", err)
+	}
+
+	// read from stdout, stderr and write to temp files
+	if err := saveCmdOutputToFiles(stdout, stderr, stdOutPath, stdErrPath); err != nil {
+		return fmt.Errorf("Error running command: saveCmdOutput. Err: %v", err)
+	}
+
+	// wait for the command to complete
+	runCommandErr := cmd.Wait()
+
+	return runCommandErr
+
 }

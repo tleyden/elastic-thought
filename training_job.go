@@ -162,27 +162,10 @@ func (j TrainingJob) runCaffe() error {
 	// because we depend on relative file paths to work)
 	cmd.Dir = j.getWorkDirectory()
 
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return fmt.Errorf("Error running caffe: StdoutPipe(). Err: %v", err)
+	// run the command and save stdio to files and tee to stdio streams
+	if err := runCmdTeeStdio(cmd, j.getStdOutPath(), j.getStdErrPath()); err != nil {
+		return err
 	}
-
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return fmt.Errorf("Error running caffe: StderrPipe(). Err: %v", err)
-	}
-
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("Error running caffe: cmd.Start(). Err: %v", err)
-	}
-
-	// read from stdout, stderr and write to temp files
-	if err := saveCmdOutputToFiles(stdout, stderr, j.getStdOutPath(), j.getStdErrPath()); err != nil {
-		return fmt.Errorf("Error running caffe: saveCmdOutput. Err: %v", err)
-	}
-
-	// wait for the command to complete
-	runCommandErr := cmd.Wait()
 
 	// read from temp files and write to cbfs.
 	// initially I tried to write the stdout/stderr streams directly
@@ -228,7 +211,7 @@ func (j TrainingJob) runCaffe() error {
 	// TODO: add cbfs proxy so that we can get to this file
 	// via http://host:8080/cbfs/243224lkjlkj/caffe.model
 
-	return runCommandErr
+	return nil
 
 }
 
