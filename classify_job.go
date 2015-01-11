@@ -90,6 +90,13 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 		return
 	}
 
+	// set job state to finished
+	_, err = c.UpdateProcessingState(FinishedSuccessfully)
+	if err != nil {
+		c.recordProcessingError(err)
+		return
+	}
+
 	logg.LogTo("CLASSIFY_JOB", "Finished")
 
 }
