@@ -1,8 +1,10 @@
 package elasticthought
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -87,7 +89,45 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 }
 
 func (c ClassifyJob) invokeCaffe() (map[string]interface{}, error) {
-	return nil, nil
+
+	// call "python classifier.py"
+	// build command args
+	cmdArgs := []string{"classifier.py"}
+	python := "python"
+
+	// debugging
+	logg.LogTo("CLASSIFY_JOB", "Running %v with args %v", python, cmdArgs)
+	logg.LogTo("CLASSIFY_JOB", "Path %v", os.Getenv("PATH"))
+
+	// TEMP DEBUGGING -- remove this
+	exec.Command("ls", "-alh", "/usr/local/bin").Run()
+
+	// explicitly check if caffe binary found on the PATH
+	lookPathResult, err := exec.LookPath("python")
+	if err != nil {
+		logg.LogError(fmt.Errorf("python not found on path: %v", err))
+	}
+	logg.LogTo("CLASSIFY_JOB", "python found on path: %v", lookPathResult)
+
+	// Create command, but don't actually run it yet
+	cmd := exec.Command(python, cmdArgs...)
+
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+
+	// read output.json file into map
+	result := map[string]interface{}{}
+	resultFile, err := os.Open("result.json")
+	if err != nil {
+		return nil, err
+	}
+	jsonParser := json.NewDecoder(resultFile)
+	if err = jsonParser.Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 
 }
 
@@ -102,7 +142,7 @@ func (c ClassifyJob) getWorkImagesDirectory() string {
 // lazily create work dir
 func (c ClassifyJob) createWorkDirectory() error {
 	workDir := c.getWorkDirectory()
-	logg.LogTo("TRAINING_JOB", "Creating dir: %v", workDir)
+	logg.LogTo("CLASSIFY_JOB", "Creating dir: %v", workDir)
 	if err := Mkdir(workDir); err != nil {
 		return err
 	}
