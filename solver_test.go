@@ -22,7 +22,7 @@ func TestAddLabelsToToc(t *testing.T) {
 	assert.True(t, strings.HasSuffix(tocWithLabels[1], "1"))
 	assert.True(t, strings.HasSuffix(tocWithLabels[2], "1"))
 
-	assert.Equals(t, len(labels), len(toc))
+	assert.Equals(t, len(labels), 2)
 	assert.Equals(t, labels[0], "foo")
 	assert.Equals(t, labels[1], "bar")
 

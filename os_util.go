@@ -141,3 +141,13 @@ func runCmdTeeStdio(cmd *exec.Cmd, stdOutPath, stdErrPath string) error {
 	return runCommandErr
 
 }
+
+func containsString(values []string, testValue string) bool {
+	for _, v := range values {
+		if v == testValue {
+			return true
+		}
+	}
+	return false
+
+}

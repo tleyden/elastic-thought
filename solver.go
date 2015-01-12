@@ -520,7 +520,10 @@ func addLabelsToToc(tableOfContents []string) ([]string, []string) {
 			}
 			currentDirectory = dir
 		}
-		labels = append(labels, dir)
+
+		if !containsString(labels, dir) {
+			labels = append(labels, dir)
+		}
 
 		tocEntryWithLabel := fmt.Sprintf("%v %v", tocEntry, labelIndex)
 		tocWithLabels = append(tocWithLabels, tocEntryWithLabel)
