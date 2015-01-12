@@ -537,6 +537,10 @@ func translateLabels(results map[string]string, labels []string) (map[string]str
 			return nil, err
 		}
 
+		if int(numericLabel) > (len(labels) - 1) {
+			return nil, fmt.Errorf("No label at index: %v", numericLabel)
+		}
+
 		// 14 -> "E"
 		label := labels[numericLabel]
 

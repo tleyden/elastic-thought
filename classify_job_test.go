@@ -117,6 +117,20 @@ func TestTranslateLabels(t *testing.T) {
 
 }
 
+func TestTranslateLabelsError(t *testing.T) {
+
+	results := map[string]string{
+		"foo": "1",
+		"bar": "5",
+	}
+
+	labels := []string{}
+
+	_, err := translateLabels(results, labels)
+	assert.True(t, err != nil)
+
+}
+
 func validatePathExists(path string) error {
 	_, err := os.Stat(path)
 	if err != nil {
