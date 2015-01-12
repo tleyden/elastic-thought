@@ -101,6 +101,22 @@ func TestUpdateClassifyJobProcessingState(t *testing.T) {
 
 }
 
+func TestTranslateLabels(t *testing.T) {
+
+	results := map[string]string{
+		"foo": "1",
+		"bar": "5",
+	}
+
+	labels := []string{"a", "b", "c", "d", "e", "f", "g"}
+
+	resultsTranslated, err := translateLabels(results, labels)
+	assert.True(t, err == nil)
+	assert.Equals(t, resultsTranslated["foo"], "b")
+	assert.Equals(t, resultsTranslated["bar"], "f")
+
+}
+
 func validatePathExists(path string) error {
 	_, err := os.Stat(path)
 	if err != nil {

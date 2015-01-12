@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"reflect"
 	"sync"
 
 	"github.com/couchbaselabs/logg"
@@ -22,6 +23,7 @@ type TrainingJob struct {
 	StdOutUrl       string          `json:"std-out-url"`
 	StdErrUrl       string          `json:"std-err-url"`
 	TrainedModelUrl string          `json:"trained-model-url"`
+	Labels          []string        `json:"labels"`
 
 	// had to make exported, due to https://github.com/gin-gonic/gin/pull/123
 	// waiting for this to get merged into master branch, since go get
@@ -96,6 +98,20 @@ func (j *TrainingJob) UpdateProcessingLog(val string) (bool, error) {
 
 	doneMetric := func(trainingJob TrainingJob) bool {
 		return trainingJob.ProcessingLog == val
+	}
+
+	return j.casUpdate(updater, doneMetric)
+
+}
+
+func (j *TrainingJob) UpdateLabels(labels []string) (bool, error) {
+
+	updater := func(trainingJob *TrainingJob) {
+		trainingJob.Labels = labels
+	}
+
+	doneMetric := func(trainingJob TrainingJob) bool {
+		return reflect.DeepEqual(labels, trainingJob.Labels)
 	}
 
 	return j.casUpdate(updater, doneMetric)
@@ -361,9 +377,16 @@ func (j TrainingJob) extractData() error {
 
 func (j TrainingJob) saveTrainTestData(s Solver) error {
 
-	if err := s.SaveTrainTestData(j.Configuration, j.getWorkDirectory()); err != nil {
+	labels, err := s.SaveTrainTestData(j.Configuration, j.getWorkDirectory())
+	if err != nil {
 		return err
 	}
+	logg.LogTo("TRAINING_JOB", "labels: %v", labels)
+
+	if _, err := j.UpdateLabels(labels); err != nil {
+		return err
+	}
+
 	return nil
 
 }

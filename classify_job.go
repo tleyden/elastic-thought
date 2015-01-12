@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"sync"
 
 	"github.com/couchbaselabs/logg"
@@ -82,9 +83,23 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 		return
 	}
 
+	// get the training job
+	trainingJob, err := c.getTrainingJob()
+	if err != nil {
+		c.recordProcessingError(err)
+		return
+	}
+
+	// modify results to map numeric labels with actual labels
+	resultsMapLabelled, err := translateLabels(resultsMap, trainingJob.Labels)
+	if err != nil {
+		c.recordProcessingError(err)
+		return
+	}
+
 	// update classifyjob with results
-	logg.LogTo("CLASSIFY_JOB", "resultsMap: %+v", resultsMap)
-	_, err = c.SetResults(resultsMap)
+	logg.LogTo("CLASSIFY_JOB", "resultsMap: %+v", resultsMapLabelled)
+	_, err = c.SetResults(resultsMapLabelled)
 	if err != nil {
 		c.recordProcessingError(err)
 		return
@@ -101,6 +116,11 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 
 }
 
+// Invoke caffe to do classification and return a map with:
+//    <image_sha1>:<numeric_label_string>
+//
+// Example:
+//    {"b56b61d15ccff4a81a4":"9","daf9e2c49ddbee3d48":"14"}
 func (c ClassifyJob) invokeCaffe() (map[string]string, error) {
 
 	// call "python classifier.py"
@@ -499,5 +519,32 @@ func (c ClassifyJob) Failed(db couch.Database, processingErr error) error {
 	}
 
 	return nil
+
+}
+
+// Given {"b56b61d15ccff4a81a4":"9","daf9e2c49ddbee3d48":"14"} return a map
+// with numeric labels translated into actual labels.
+// Example: {"b56b61d15ccff4a81a4":"9","daf9e2c49ddbee3d48":"E"}
+func translateLabels(results map[string]string, labels []string) (map[string]string, error) {
+
+	transformedResults := map[string]string{}
+
+	for imageSha1, numericLabelString := range results {
+
+		// "14" -> 14
+		numericLabel, err := strconv.ParseInt(numericLabelString, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		// 14 -> "E"
+		label := labels[numericLabel]
+
+		// store in result
+		transformedResults[imageSha1] = label
+
+	}
+
+	return transformedResults, nil
 
 }

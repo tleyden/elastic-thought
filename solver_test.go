@@ -13,7 +13,7 @@ import (
 func TestAddLabelsToToc(t *testing.T) {
 
 	var toc = []string{"foo/1.txt", "bar/1.txt", "bar/2.txt"}
-	tocWithLabels := addLabelsToToc(toc)
+	tocWithLabels, labels := addLabelsToToc(toc)
 	for _, entry := range tocWithLabels {
 		logg.LogTo("TEST", "entry: %v", entry)
 	}
@@ -21,6 +21,10 @@ func TestAddLabelsToToc(t *testing.T) {
 	assert.True(t, strings.HasSuffix(tocWithLabels[0], "0"))
 	assert.True(t, strings.HasSuffix(tocWithLabels[1], "1"))
 	assert.True(t, strings.HasSuffix(tocWithLabels[2], "1"))
+
+	assert.Equals(t, len(labels), len(toc))
+	assert.Equals(t, labels[0], "foo")
+	assert.Equals(t, labels[1], "bar")
 
 }
 

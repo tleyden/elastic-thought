@@ -352,13 +352,18 @@ func (s Solver) writeCbfsFile(config Configuration, destDirectory, sourceUrl str
 
 // Download and untar the training and test .tar.gz files associated w/ solver,
 // as well as index files.
-func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) error {
+//
+// Returns the label index (each label indexed by its numeric label id), and
+// an error or nil
+func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) ([]string, error) {
 
 	// find cbfs paths to artificacts
 	dataset := NewDataset(config)
 	dataset.Id = s.DatasetId
 	trainingArtifact := dataset.TrainingArtifactPath()
 	testArtifact := dataset.TestingArtifactPath()
+	trainingLabelIndex := []string{}
+	// TODO: testLabelIndex := []string{}
 
 	artificactPaths := []string{trainingArtifact, testArtifact}
 	for _, artificactPath := range artificactPaths {
@@ -366,14 +371,14 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) er
 		// create cbfs client
 		cbfs, err := cbfsclient.New(config.CbfsUrl)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		// open stream to artifact in cbfs
 		logg.LogTo("TRAINING_JOB", "Cbfs get %v", artificactPath)
 		reader, err := cbfs.Get(artificactPath)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		defer reader.Close()
 
@@ -385,7 +390,7 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) er
 		logg.LogTo("TRAINING_JOB", "Using TeeReader to save copy to %v", destFile)
 		f, err := os.Create(destFile)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		defer f.Close()
 		teeReader := io.TeeReader(reader, f)
@@ -402,20 +407,27 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) er
 		destDirectoryToUse := path.Join(destDirectory, subdirectory)
 
 		toc, err := untarGzWithToc(teeReader, destDirectoryToUse)
-		tocWithLabels := addLabelsToToc(toc)
+		tocWithLabels, labelIndex := addLabelsToToc(toc)
 		tocWithSubdir := addParentDirToToc(tocWithLabels, subdirectory)
+
+		if artificactPath == trainingArtifact {
+			trainingLabelIndex = labelIndex
+		}
 
 		for _, tocEntry := range tocWithSubdir {
 			logg.LogTo("TRAINING_JOB", "tocEntry %v", tocEntry)
 		}
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		writeTocToFile(tocWithSubdir, destTocFile)
 
 	}
-	return nil
+
+	// TODO: make sure trainingLabelIndex == testLabelIndex
+
+	return trainingLabelIndex, nil
 
 }
 
@@ -479,12 +491,15 @@ Add a numeric label to each line, eg:
 Where the label starts at 0 and is incremented for
 each new directory found.
 
+Return the new toc with numeric labels, followed by the label index.
+
 */
-func addLabelsToToc(tableOfContents []string) []string {
+func addLabelsToToc(tableOfContents []string) ([]string, []string) {
 
 	currentDirectory := ""
 	labelIndex := 0
 	tocWithLabels := []string{}
+	labels := []string{}
 
 	for _, tocEntry := range tableOfContents {
 
@@ -505,13 +520,14 @@ func addLabelsToToc(tableOfContents []string) []string {
 			}
 			currentDirectory = dir
 		}
+		labels = append(labels, dir)
 
 		tocEntryWithLabel := fmt.Sprintf("%v %v", tocEntry, labelIndex)
 		tocWithLabels = append(tocWithLabels, tocEntryWithLabel)
 
 	}
 
-	return tocWithLabels
+	return tocWithLabels, labels
 
 }
 
