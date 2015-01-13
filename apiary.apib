@@ -39,8 +39,43 @@ The url passed in the JSON must point to a .tar.gz file.  That is currently the 
 
     + Body
 
-            { "url": "http://s3.com/mnist-data.tar.gz" }
+            { 
+                "url": "http://s3.com/mnist-data.tar.gz",
+                "layers_type": "IMAGE_DATA"
+            }
+    + Schema 
 
+            {
+                "$schema":"http://json-schema.org/draft-04/schema#",
+                "title":"Add Datafile Request",
+                "description":"A request to create a new Datafile",
+                "type":"object",
+                "properties":{
+                    "url":{
+                        "description":"The url with the content of the datafile.",
+                        "type":"string"
+                    },
+                    "layers_type":{
+                        "description":"The format of the data (IMAGE_DATA or DATA).",
+                        "type":"string"
+                    },
+                    "layers_data_param":{
+                        "description":"The parameters associated with this data layer.",
+                        "type":"object",
+                        "properties":{
+                            "backend":{
+                                "type":"string",
+                                "description":"The backend this DATA layer should use (LEVELDB or LMDB) - defaults to LEVELDB"
+                            }
+                        }
+                    }
+                },
+                "required":[
+                    "url",
+                    "layers_type"
+                ],
+                "additionalProperties":false
+            }
         
 
 + Response 201 (application/json)
