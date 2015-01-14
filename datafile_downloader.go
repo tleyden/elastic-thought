@@ -48,10 +48,6 @@ func (d DatafileDownloader) Run(wg *sync.WaitGroup) {
 		return
 	}
 
-	// TODO:
-	// figure out what kind datafile this is and update fields
-	// layers_type=DATA layers_data_param=LEVELDB
-
 	// build a url to the cbfs file
 	cbfsUrl := fmt.Sprintf("%v/%v", d.Configuration.CbfsUrl, cbfsDestPath)
 	d.Datafile.Url = cbfsUrl
