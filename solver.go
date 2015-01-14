@@ -406,10 +406,10 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) ([
 		subdirectory := ""
 		destTocFile := ""
 		if artificactPath == trainingArtifact {
-			subdirectory = "training-data"
+			subdirectory = TRAINING_DIR
 			destTocFile = path.Join(destDirectory, TRAINING_INDEX)
 		} else {
-			subdirectory = "test-data"
+			subdirectory = TESTING_DIR
 			destTocFile = path.Join(destDirectory, TESTING_INDEX)
 		}
 		destDirectoryToUse := path.Join(destDirectory, subdirectory)

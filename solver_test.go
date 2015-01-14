@@ -31,7 +31,7 @@ func TestAddLabelsToToc(t *testing.T) {
 func TestAddDirToToc(t *testing.T) {
 
 	var toc = []string{"foo/1.txt 0", "bar/1.txt 1", "bar/2.txt 1"}
-	dir := "training-data"
+	dir := TRAINING_DIR
 	tocWithDirs := addParentDirToToc(toc, dir)
 	for _, entry := range tocWithDirs {
 		logg.LogTo("TEST", "entry: %v", entry)

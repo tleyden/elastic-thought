@@ -112,6 +112,8 @@ func (e EndpointContext) CreateDataSetsEndpoint(c *gin.Context) {
 		return
 	}
 
+	// the changes listener will see new datafile and download to cbfs
+
 	// update with urls of training/testing artifacts (which don't exist yet)
 	if err := dataset.AddArtifactUrls(); err != nil {
 		errMsg := fmt.Sprintf("Error updating dataset: %+v.  Err: %v", dataset, err)
