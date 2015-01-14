@@ -17,12 +17,10 @@ import (
 // A single datafile can be used to create any number of dataset objects.
 type Datafile struct {
 	ElasticThoughtDoc
-	ProcessingState ProcessingState   `json:"processing-state"`
-	ProcessingLog   string            `json:"processing-log"`
-	UserID          string            `json:"user-id"`
-	Url             string            `json:"url" binding:"required"`
-	LayersType      string            `json:"layers_type" binding:"required"`
-	LayersDataParam map[string]string `json:"layers_data_param"`
+	ProcessingState ProcessingState `json:"processing-state"`
+	ProcessingLog   string          `json:"processing-log"`
+	UserID          string          `json:"user-id"`
+	Url             string          `json:"url" binding:"required"`
 
 	// had to make exported, due to https://github.com/gin-gonic/gin/pull/123
 	// waiting for this to get merged into master branch, since go get
