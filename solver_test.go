@@ -72,10 +72,7 @@ func TestGetModifiedSolverSpec(t *testing.T) {
 	    # solver mode: CPU or GPU
 	    solver_mode: CPU`
 
-	configuration := NewDefaultConfiguration()
-	s := NewSolver(*configuration)
-
-	modifiedBytes, err := s.modifySolverSpec([]byte(protoText))
+	modifiedBytes, err := modifySolverSpec([]byte(protoText))
 	if err != nil {
 		logg.LogError(err)
 	}
@@ -142,10 +139,7 @@ func TestGetModifiedSolverNetSpec(t *testing.T) {
 	      }
 	    }`
 
-	configuration := NewDefaultConfiguration()
-	s := NewSolver(*configuration)
-
-	modifiedBytes, err := s.modifySolverNetSpec([]byte(protoText))
+	modifiedBytes, err := modifySolverNetSpec([]byte(protoText))
 	if err != nil {
 		logg.LogError(err)
 	}

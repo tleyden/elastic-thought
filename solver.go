@@ -111,7 +111,7 @@ func (s Solver) getModifiedSolverSpec() ([]byte, error) {
 	}
 
 	// pass in []byte to modifier and get modified []byte
-	modified, err := s.modifySolverSpec(content)
+	modified, err := modifySolverSpec(content)
 	if err != nil {
 		return nil, fmt.Errorf("Error modifying: %v.  %v", string(content), err)
 	}
@@ -131,7 +131,7 @@ func (s Solver) getModifiedSolverNetSpec() ([]byte, error) {
 	}
 
 	// pass in []byte to modifier and get modified []byte
-	modified, err := s.modifySolverNetSpec(content)
+	modified, err := modifySolverNetSpec(content)
 	if err != nil {
 		return nil, fmt.Errorf("Error modifying: %v.  %v", string(content), err)
 	}
@@ -140,7 +140,7 @@ func (s Solver) getModifiedSolverNetSpec() ([]byte, error) {
 
 }
 
-func (s Solver) modifySolverNetSpec(sourceBytes []byte) ([]byte, error) {
+func modifySolverNetSpec(sourceBytes []byte) ([]byte, error) {
 
 	// read into object with protobuf (must have already generated go protobuf code)
 	netParam := &caffe.NetParameter{}
@@ -152,17 +152,27 @@ func (s Solver) modifySolverNetSpec(sourceBytes []byte) ([]byte, error) {
 	// modify object fields
 	for _, layerParam := range netParam.Layers {
 
-		// TODO: we also support DATA
-		if *layerParam.Type != caffe.LayerParameter_IMAGE_DATA {
-			continue
+		switch *layerParam.Type {
+		case caffe.LayerParameter_IMAGE_DATA:
+
+			if layerParam.IsTrainingPhase() {
+				layerParam.ImageDataParam.Source = proto.String(TRAINING_INDEX)
+			}
+			if layerParam.IsTestingPhase() {
+				layerParam.ImageDataParam.Source = proto.String(TESTING_INDEX)
+			}
+
+		case caffe.LayerParameter_DATA:
+
+			if layerParam.IsTrainingPhase() {
+				layerParam.DataParam.Source = proto.String(TRAINING_DIR)
+			}
+			if layerParam.IsTestingPhase() {
+				layerParam.DataParam.Source = proto.String(TESTING_DIR)
+			}
+
 		}
 
-		if layerParam.IsTrainingPhase() {
-			layerParam.ImageDataParam.Source = proto.String(TRAINING_INDEX)
-		}
-		if layerParam.IsTestingPhase() {
-			layerParam.ImageDataParam.Source = proto.String(TESTING_INDEX)
-		}
 	}
 
 	buf := new(bytes.Buffer)
@@ -174,7 +184,7 @@ func (s Solver) modifySolverNetSpec(sourceBytes []byte) ([]byte, error) {
 
 }
 
-func (s Solver) modifySolverSpec(source []byte) ([]byte, error) {
+func modifySolverSpec(source []byte) ([]byte, error) {
 
 	// read into object with protobuf (must have already generated go protobuf code)
 	solverParam := &caffe.SolverParameter{}
