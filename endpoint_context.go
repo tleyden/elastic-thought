@@ -107,16 +107,14 @@ func (e EndpointContext) CreateDataSetsEndpoint(c *gin.Context) {
 	logg.LogTo("REST", "dataset: %+v", dataset)
 
 	// save dataset in db
-	dataset, err := dataset.Insert(db)
-	if err != nil {
+	if err := dataset.Insert(); err != nil {
 		c.Fail(500, err)
 		return
 	}
 
 	// update with urls of training/testing artifacts (which don't exist yet)
-	dataset, err = dataset.AddArtifactUrls(db)
-	if err != nil {
-		errMsg := fmt.Sprintf("Error updating dataset: %v.  Err: %v", dataset.Id, err)
+	if err := dataset.AddArtifactUrls(); err != nil {
+		errMsg := fmt.Sprintf("Error updating dataset: %+v.  Err: %v", dataset, err)
 		c.Fail(500, errors.New(errMsg))
 		return
 	}

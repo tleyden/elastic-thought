@@ -50,23 +50,20 @@ func NewDataset(c Configuration) *Dataset {
 
 // Insert into database (only call this if you know it doesn't arleady exist,
 // or else you'll end up w/ unwanted dupes)
-func (d Dataset) Insert(db couch.Database) (*Dataset, error) {
+func (d *Dataset) Insert() error {
 
-	id, _, err := db.Insert(d)
+	db := d.Configuration.DbConnection()
+
+	id, rev, err := db.Insert(d)
 	if err != nil {
-		err := fmt.Errorf("Error inserting dataset: %v.  Err: %v", d, err)
-		return nil, err
+		err := fmt.Errorf("Error inserting: %+v.  Err: %v", d, err)
+		return err
 	}
 
-	// load dataset object from db (so we have id/rev fields)
-	dataset := &Dataset{}
-	err = db.Retrieve(id, dataset)
-	if err != nil {
-		err := fmt.Errorf("Error fetching dataset: %v.  Err: %v", id, err)
-		return nil, err
-	}
+	d.Id = id
+	d.Revision = rev
 
-	return dataset, nil
+	return nil
 
 }
 
@@ -213,6 +210,22 @@ func (d *Dataset) UpdateProcessingLog(val string) (bool, error) {
 
 }
 
+func (d *Dataset) UpdateArtifactUrls(trainingDatasetUrl, testingDatasetUrl string) (bool, error) {
+
+	updater := func(dataset *Dataset) {
+		dataset.TrainingDataset.Url = trainingDatasetUrl
+		dataset.TestDataset.Url = testingDatasetUrl
+	}
+
+	doneMetric := func(dataset Dataset) bool {
+		return (dataset.TrainingDataset.Url == trainingDatasetUrl &&
+			dataset.TestDataset.Url == testingDatasetUrl)
+	}
+
+	return d.casUpdate(updater, doneMetric)
+
+}
+
 // Path to training artifact file, eg <id>/training.tar.gz
 func (d Dataset) TrainingArtifactPath() string {
 	return fmt.Sprintf("%v/%v", d.Id, TRAINING_ARTIFACT)
@@ -225,26 +238,13 @@ func (d Dataset) TestingArtifactPath() string {
 
 // Update this dataset with the artifact urls (cbfs://<id>/training.tar.gz, ..)
 // even though these artifacts might not exist yet.
-func (d Dataset) AddArtifactUrls(db couch.Database) (*Dataset, error) {
+func (d *Dataset) AddArtifactUrls() error {
 
-	d.TrainingDataset.Url = fmt.Sprintf("%v%v", CBFS_URI_PREFIX, d.TrainingArtifactPath())
-	d.TestDataset.Url = fmt.Sprintf("%v%v", CBFS_URI_PREFIX, d.TestingArtifactPath())
+	trainingDatasetUrl := fmt.Sprintf("%v%v", CBFS_URI_PREFIX, d.TrainingArtifactPath())
+	testingDatasetUrl := fmt.Sprintf("%v%v", CBFS_URI_PREFIX, d.TestingArtifactPath())
 
-	// TODO: retry if 409 error
-	_, err := db.Edit(d)
-
-	if err != nil {
-		return nil, err
-	}
-
-	// load latest version of dataset to return
-	dataset := &Dataset{}
-	err = db.Retrieve(d.Id, dataset)
-	if err != nil {
-		return nil, err
-	}
-
-	return dataset, nil
+	_, err := d.UpdateArtifactUrls(trainingDatasetUrl, testingDatasetUrl)
+	return err
 
 }
 
