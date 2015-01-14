@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 
@@ -149,5 +151,27 @@ func containsString(values []string, testValue string) bool {
 		}
 	}
 	return false
+
+}
+
+func getUrlContent(url string) ([]byte, error) {
+
+	// open stream to source url
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("Error doing GET on: %v.  %v", url, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("%v response to GET on: %v", resp.StatusCode, url)
+	}
+
+	sourceBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("Error reading body from: %v.  %v", url, err)
+	}
+
+	return sourceBytes, nil
 
 }

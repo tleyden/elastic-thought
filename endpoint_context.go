@@ -132,8 +132,7 @@ func (e EndpointContext) CreateSolverEndpoint(c *gin.Context) {
 	db := c.MustGet(MIDDLEWARE_KEY_DB).(couch.Database)
 	logg.LogTo("REST", "user: %v db: %v", user, db)
 
-	solver := NewSolver()
-	solver.Configuration = e.Configuration
+	solver := NewSolver(e.Configuration)
 
 	// bind the input struct to the JSON request
 	if ok := c.Bind(solver); !ok {

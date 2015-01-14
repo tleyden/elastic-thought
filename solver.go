@@ -34,9 +34,10 @@ type Solver struct {
 
 // Create a new solver.  If you don't use this, you must set the
 // embedded ElasticThoughtDoc Type field.
-func NewSolver() *Solver {
+func NewSolver(config Configuration) *Solver {
 	return &Solver{
 		ElasticThoughtDoc: ElasticThoughtDoc{Type: DOC_TYPE_SOLVER},
+		Configuration:     config,
 	}
 }
 
@@ -109,7 +110,55 @@ func (s Solver) getModifiedSolverSpec() ([]byte, error) {
 // download contents of solver-spec-net-url and make the following modifications:
 // - Replace layers / image_data_param / source with "train" and "test"
 func (s Solver) getModifiedSolverNetSpec() ([]byte, error) {
-	return getModifiedSpec(s.SpecificationNetUrl, getModifiedSolverNetSpec)
+
+	// read in spec from url -> []byte
+	content, err := getUrlContent(s.SpecificationNetUrl)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting data: %v.  %v", s.SpecificationNetUrl, err)
+	}
+
+	// pass in []byte to modifier (s.solverNetModifier()) and get modified []byte
+	modified, err := s.modifySolverNetSpec(content)
+	if err != nil {
+		return nil, fmt.Errorf("Error modifying: %v.  %v", string(content), err)
+	}
+
+	return modified, nil
+
+}
+
+func (s Solver) modifySolverNetSpec(sourceBytes []byte) ([]byte, error) {
+
+	// read into object with protobuf (must have already generated go protobuf code)
+	netParam := &caffe.NetParameter{}
+
+	if err := proto.UnmarshalText(string(sourceBytes), netParam); err != nil {
+		return nil, err
+	}
+
+	// modify object fields
+	for _, layerParam := range netParam.Layers {
+
+		// TODO: we also support DATA
+		if *layerParam.Type != caffe.LayerParameter_IMAGE_DATA {
+			continue
+		}
+
+		if layerParam.IsTrainingPhase() {
+			layerParam.ImageDataParam.Source = proto.String(TRAINING_INDEX)
+		}
+		if layerParam.IsTestingPhase() {
+			layerParam.ImageDataParam.Source = proto.String(TESTING_INDEX)
+		}
+	}
+
+	buf := new(bytes.Buffer)
+	if err := proto.MarshalText(buf, netParam); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+
 }
 
 func getModifiedSpec(url string, modifier func(string) ([]byte, error)) ([]byte, error) {
@@ -149,38 +198,6 @@ func getModifiedSolverSpec(source string) ([]byte, error) {
 
 	buf := new(bytes.Buffer)
 	if err := proto.MarshalText(buf, solverParam); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-
-}
-
-func getModifiedSolverNetSpec(source string) ([]byte, error) {
-
-	// read into object with protobuf (must have already generated go protobuf code)
-	netParam := &caffe.NetParameter{}
-
-	if err := proto.UnmarshalText(source, netParam); err != nil {
-		return nil, err
-	}
-
-	// modify object fields
-	for _, layerParam := range netParam.Layers {
-		if *layerParam.Type != caffe.LayerParameter_IMAGE_DATA {
-			continue
-		}
-
-		if layerParam.IsTrainingPhase() {
-			layerParam.ImageDataParam.Source = proto.String(TRAINING_INDEX)
-		}
-		if layerParam.IsTestingPhase() {
-			layerParam.ImageDataParam.Source = proto.String(TESTING_INDEX)
-		}
-	}
-
-	buf := new(bytes.Buffer)
-	if err := proto.MarshalText(buf, netParam); err != nil {
 		return nil, err
 	}
 

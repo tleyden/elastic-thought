@@ -139,7 +139,10 @@ func TestGetModifiedSolverNetSpec(t *testing.T) {
 	      }
 	    }`
 
-	modifiedBytes, err := getModifiedSolverNetSpec(protoText)
+	configuration := NewDefaultConfiguration()
+	s := NewSolver(*configuration)
+
+	modifiedBytes, err := s.modifySolverNetSpec([]byte(protoText))
 	if err != nil {
 		logg.LogError(err)
 	}
