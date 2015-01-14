@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -104,7 +103,21 @@ func (s Solver) getSolverParameter() (*caffe.SolverParameter, error) {
 // - Replace net with "solver-net.prototxt"
 // - Replace snapshot_prefix with "snapshot"
 func (s Solver) getModifiedSolverSpec() ([]byte, error) {
-	return getModifiedSpec(s.SpecificationUrl, getModifiedSolverSpec)
+
+	// read in spec from url -> []byte
+	content, err := getUrlContent(s.SpecificationUrl)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting data: %v.  %v", s.SpecificationUrl, err)
+	}
+
+	// pass in []byte to modifier and get modified []byte
+	modified, err := s.modifySolverSpec(content)
+	if err != nil {
+		return nil, fmt.Errorf("Error modifying: %v.  %v", string(content), err)
+	}
+
+	return modified, nil
+
 }
 
 // download contents of solver-spec-net-url and make the following modifications:
@@ -117,7 +130,7 @@ func (s Solver) getModifiedSolverNetSpec() ([]byte, error) {
 		return nil, fmt.Errorf("Error getting data: %v.  %v", s.SpecificationNetUrl, err)
 	}
 
-	// pass in []byte to modifier (s.solverNetModifier()) and get modified []byte
+	// pass in []byte to modifier and get modified []byte
 	modified, err := s.modifySolverNetSpec(content)
 	if err != nil {
 		return nil, fmt.Errorf("Error modifying: %v.  %v", string(content), err)
@@ -161,34 +174,12 @@ func (s Solver) modifySolverNetSpec(sourceBytes []byte) ([]byte, error) {
 
 }
 
-func getModifiedSpec(url string, modifier func(string) ([]byte, error)) ([]byte, error) {
-
-	// open stream to source url
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("Error doing GET on: %v.  %v", url, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("%v response to GET on: %v", resp.StatusCode, url)
-	}
-
-	sourceBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("Error reading body from: %v.  %v", url, err)
-	}
-
-	return modifier(string(sourceBytes))
-
-}
-
-func getModifiedSolverSpec(source string) ([]byte, error) {
+func (s Solver) modifySolverSpec(source []byte) ([]byte, error) {
 
 	// read into object with protobuf (must have already generated go protobuf code)
 	solverParam := &caffe.SolverParameter{}
 
-	if err := proto.UnmarshalText(source, solverParam); err != nil {
+	if err := proto.UnmarshalText(string(source), solverParam); err != nil {
 		return nil, err
 	}
 
