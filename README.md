@@ -39,9 +39,10 @@ Although not shown, all components would be running inside of [Docker](https://w
 
 ## Roadmap
 
-*Current Status: on step 1, everything under heavy construction, not ready for public consumption yet*
+*Current Status: everything under heavy construction, not ready for public consumption yet*
 
-1. --> Support a single caffe use case: IMAGE_DATA caffe layer using a single test set with a single training set
+1. **[done]** Working end-to-end with IMAGE_DATA caffe layer using a single test set with a single training set, and ability to query trained set.
+1. **[in progress]** ---> Support LEVELDB / LMDB data formats, to run mnist example.
 1. Support the majority of caffe use cases
 1. Package everything up to make it easy to deploy  <-- initial release
 1. Ability to auto-scale worker instances up and down based on how many jobs are in the message queue.
