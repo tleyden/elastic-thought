@@ -3,15 +3,15 @@ Scalable REST API wrapper for the [Caffe](http://caffe.berkeleyvision.org) deep 
 
 ## The problem
 
-After using Caffe for a while, I started finding it inconvenient to run things on my own laptop.  Often I'd kick off a job and then need to throw my laptop in my backpack and run out the door, and the job would stop running.  
+Caffe is an awesome deep learning framework, but running it on a single laptop or desktop computer isn't nearly as productive as running it in the cloud at scale.
 
-I came to the realization that I needed to run Caffe in the cloud, and came up with the following requirements:
+ElasticThought gives you the ability to:
 
-* Run multiple training jobs in parallel
-* Queue up a lot of training jobs at once 
+* Run multiple Caffe training jobs in parallel
+* Queue up training jobs
 * Tune the number of workers that process jobs on the queue 
 * Interact with it via a REST API (and later build Web/Mobile apps on top of it)
-* Support teams: multi-tenancy to allow multiple users to interact with it, where each user only sees their own data
+* Multi-tenancy to allow multiple users to interact with it, each having access to only their own data
 
 ## Components
 
