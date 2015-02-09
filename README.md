@@ -3,6 +3,8 @@ Scalable REST API wrapper for the [Caffe](http://caffe.berkeleyvision.org) deep 
 
 ## The problem
 
+[![Join the chat at https://gitter.im/tleyden/elastic-thought](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/tleyden/elastic-thought?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Caffe is an awesome deep learning framework, but running it on a single laptop or desktop computer isn't nearly as productive as running it in the cloud at scale.
 
 ElasticThought gives you the ability to:
