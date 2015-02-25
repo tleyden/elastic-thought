@@ -2,6 +2,9 @@
 # this gives us access to $COREOS_PRIVATE_IPV4 etc
 source /etc/environment
 
+set -e
+set -x
+
 function untilsuccessful() {
 	"$@"
 	while [ $? -ne 0 ]; do
@@ -52,39 +55,14 @@ CB_PASSWORD=${array[1]}
 
 # Kick off couchbase cluster 
 echo "Kick off couchbase cluster"
-wget https://raw.githubusercontent.com/couchbaselabs/couchbase-server-docker/master/scripts/cluster-init.sh
-chmod +x cluster-init.sh
-./cluster-init.sh -v $version -n $numnodes -u $userpass
+sudo docker run --net=host tleyden5iwx/couchbase-cluster-go couchbase-fleet launch-cbs --version 3.0.1 --num-nodes $numnodes --userpass "$CB_USERNAME:$CB_PASSWORD"
 
-if [ $? -ne 0 ]; then
-    echo "Error executing cluster-init.sh"
-    exit 1 
-fi
+# get an ip address of a running node in the cluster
+COUCHBASE_CLUSTER=$(sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper couchbase-cluster get-live-node-ip)
+echo "Couchbase cluster node: $COUCHBASE_CLUSTER"
 
-# Wait until bootstrap node is up
-echo "Wait until Couchbase bootstrap node is up"
-while [ -z "$COUCHBASE_CLUSTER" ]; do
-    echo Retrying...
-    COUCHBASE_CLUSTER=$(etcdctl get /services/couchbase/bootstrap_ip)
-    sleep 5
-done
-
-echo "Couchbase Server bootstrap ip: $COUCHBASE_CLUSTER"
-
-# wait until all couchbase nodes come up
-echo "Wait until $numnodes Couchbase Servers running"
-NUM_COUCHBASE_SERVERS="0"
-while (( $NUM_COUCHBASE_SERVERS != $numnodes )); do
-    echo "Retrying... $NUM_COUCHBASE_SERVERS != $numnodes"
-    NUM_COUCHBASE_SERVERS=$(sudo docker run tleyden5iwx/couchbase-server-$version /opt/couchbase/bin/couchbase-cli server-list -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD | wc -l)
-    sleep 5
-done
-echo "Done waiting: $numnodes Couchbase Servers are running"
-
+# list units
 fleetctl list-units
-
-# rebalance cluster
-untilsuccessful sudo docker run tleyden5iwx/couchbase-server-$version /opt/couchbase/bin/couchbase-cli rebalance -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD
 
 # create cbfs bucket
 TOTAL_MEM_MB=$(free -m | awk '/^Mem:/{print $2}')
@@ -106,6 +84,7 @@ for i in `seq 1 $numnodes`; do
 done
 echo "Done: cbfs nodes up"
 
+# list units
 fleetctl list-units
 
 # create elastic-thought bucket
@@ -123,23 +102,15 @@ cat /tmp/sync_gw_config.json
 echo "Upload sync gateway config to cbfs: http://$COREOS_PRIVATE_IPV4:8484/"
 untilsuccessful sudo docker run --net=host -v /tmp:/tmp tleyden5iwx/cbfs cbfsclient http://$COREOS_PRIVATE_IPV4:8484/ upload /tmp/sync_gw_config.json /sync_gw_config.json 
 
-
 # kick off sync gateway 
 echo "Kick off sync gateway"
-mkdir sync-gateway && \
-  cd sync-gateway && \
-  wget https://raw.githubusercontent.com/tleyden/sync-gateway-coreos/master/scripts/sync-gw-cluster-init.sh && \
-  chmod +x sync-gw-cluster-init.sh && \
-  ./sync-gw-cluster-init.sh -n $numnodes -c "master" -g http://$COREOS_PRIVATE_IPV4:8484/sync_gw_config.json -v 0 && \
-  cd ~ 
+sudo docker run --net=host tleyden5iwx/couchbase-cluster-go sync-gw-cluster launch-sgw --num-nodes=$numnodes --config-url=http://$COREOS_PRIVATE_IPV4:8484/sync_gw_config.json 
 
 # wait for all sync gw nodes to come up 
-echo "Wait for sync gateway nodes to come up"
-for i in `seq 1 $numnodes`; do 
-    untilsuccessful etcdctl get /services/sync_gw/sync_gw_node@$i
-done
+echo "TODO: Wait for sync gateway nodes to come up"
 echo "Done: sync gateway nodes up"
 
+# list units
 fleetctl list-units
 
 # run elastic-thought environment sanity check
