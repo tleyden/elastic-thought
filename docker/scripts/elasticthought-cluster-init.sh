@@ -53,9 +53,12 @@ IFS=':' read -a array <<< "$userpass"
 CB_USERNAME=${array[0]}
 CB_PASSWORD=${array[1]}
 
+# make sure we're on the bleeding edge and have latest code
+etcdctl set /couchbase.com/enable-code-refresh true
+
 # Kick off couchbase cluster 
 echo "Kick off couchbase cluster"
-sudo docker run --net=host tleyden5iwx/couchbase-cluster-go couchbase-fleet launch-cbs --version 3.0.1 --num-nodes $numnodes --userpass "$CB_USERNAME:$CB_PASSWORD"
+sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper couchbase-fleet launch-cbs --version 3.0.1 --num-nodes $numnodes --userpass "$CB_USERNAME:$CB_PASSWORD"
 
 # get an ip address of a running node in the cluster
 COUCHBASE_CLUSTER=$(sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper couchbase-cluster get-live-node-ip)
@@ -77,10 +80,11 @@ git clone https://github.com/tleyden/elastic-thought.git
 cd elastic-thought/docker/fleet && fleetctl submit cbfs_node@.service && fleetctl submit cbfs_announce@.service && cd ~
 for i in `seq 1 $numnodes`; do fleetctl start cbfs_node@$i.service; fleetctl start cbfs_announce@$i.service; done
 
+
 # wait for all cbfs nodes to come up 
 echo "Wait for cbfs nodes to come up"
 for i in `seq 1 $numnodes`; do 
-    untilsuccessful etcdctl get /services/cbfs/cbfs_node@$i
+    untilsuccessful etcdctl get /couchbase.com/cbfs/cbfs_node@$i
 done
 echo "Done: cbfs nodes up"
 
@@ -104,7 +108,7 @@ untilsuccessful sudo docker run --net=host -v /tmp:/tmp tleyden5iwx/cbfs cbfscli
 
 # kick off sync gateway 
 echo "Kick off sync gateway"
-sudo docker run --net=host tleyden5iwx/couchbase-cluster-go sync-gw-cluster launch-sgw --num-nodes=$numnodes --config-url=http://$COREOS_PRIVATE_IPV4:8484/sync_gw_config.json 
+sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper sync-gw-cluster launch-sgw --num-nodes=$numnodes --config-url=http://$COREOS_PRIVATE_IPV4:8484/sync_gw_config.json 
 
 # wait for all sync gw nodes to come up 
 echo "TODO: Wait for sync gateway nodes to come up"
