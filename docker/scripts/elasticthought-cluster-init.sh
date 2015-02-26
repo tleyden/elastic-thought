@@ -74,7 +74,7 @@ echo "Create a cbfs bucket of size: $CBFS_BUCKET_SIZE_MB"
 untilsuccessful sudo docker run tleyden5iwx/couchbase-server-$version /opt/couchbase/bin/couchbase-cli bucket-create -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD --bucket=cbfs --bucket-ramsize=$CBFS_BUCKET_SIZE_MB
 echo "Done: created a cbfs bucket"
 
-# kick off 3 cbfs nodes (TODO: num nodes should be a parameter)
+# kick off cbfs nodes
 echo "Kick off cbfs nodes"
 git clone https://github.com/tleyden/elastic-thought.git
 cd elastic-thought/docker/fleet && fleetctl submit cbfs_node@.service && fleetctl submit cbfs_announce@.service && cd ~
@@ -111,6 +111,8 @@ echo "Kick off sync gateway"
 sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper sync-gw-cluster launch-sgw --num-nodes=$numnodes --config-url=http://$COREOS_PRIVATE_IPV4:8484/sync_gw_config.json 
 
 # wait for all sync gw nodes to come up 
+# TODO: need sync gw sidekicks which publish to /couchbase.com/sgw-node-state/x..
+# TODO: but only AFTER its detected to be running
 echo "TODO: Wait for sync gateway nodes to come up"
 echo "Done: sync gateway nodes up"
 
