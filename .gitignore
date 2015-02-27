@@ -17,3 +17,4 @@ docker/scripts/generate_dockerfiles/generate_dockerfiles
 .DS_Store
 tools/tools
 cli/envcheck/envcheck
+cli/update-wrapper/update-wrapper
