@@ -2,9 +2,6 @@
 # this gives us access to $COREOS_PRIVATE_IPV4 etc
 source /etc/environment
 
-set -e
-set -x
-
 function untilsuccessful() {
 	"$@"
 	while [ $? -ne 0 ]; do
@@ -109,6 +106,11 @@ untilsuccessful sudo docker run --net=host -v /tmp:/tmp tleyden5iwx/cbfs cbfscli
 # kick off sync gateway 
 echo "Kick off sync gateway"
 sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper sync-gw-cluster launch-sgw --num-nodes=$numnodes --config-url=http://$COREOS_PRIVATE_IPV4:8484/sync_gw_config.json 
+
+if [ $? != 0 ]; then 
+    echo "Failed to kick off sync gateway";
+    exit 1
+fi
 
 # wait for all sync gw nodes to come up 
 # TODO: need sync gw sidekicks which publish to /couchbase.com/sgw-node-state/x..
