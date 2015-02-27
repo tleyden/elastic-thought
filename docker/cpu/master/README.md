@@ -1,17 +1,18 @@
+[![Join the chat at https://gitter.im/tleyden/elastic-thought](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/tleyden/elastic-thought?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Scalable REST API wrapper for the [Caffe](caffe.berkeleyvision.org) deep learning framework. 
+Scalable REST API wrapper for the [Caffe](http://caffe.berkeleyvision.org) deep learning framework. 
 
 ## The problem
 
-After using Caffe for a while, I started finding it inconvenient to run things on my own laptop.  Often I'd kick off a job and then need to throw my laptop in my backpack and run out the door, and the job would stop running.  
+Caffe is an awesome deep learning framework, but running it on a single laptop or desktop computer isn't nearly as productive as running it in the cloud at scale.
 
-I came to the realization that I needed to run Caffe in the cloud, and came up with the following requirements:
+ElasticThought gives you the ability to:
 
-* Run multiple training jobs in parallel
-* Queue up a lot of training jobs at once 
+* Run multiple Caffe training jobs in parallel
+* Queue up training jobs
 * Tune the number of workers that process jobs on the queue 
 * Interact with it via a REST API (and later build Web/Mobile apps on top of it)
-* Support teams: multi-tenancy to allow multiple users to interact with it, where each user only sees their own data
+* Multi-tenancy to allow multiple users to interact with it, each having access to only their own data
 
 ## Components
 
@@ -39,9 +40,10 @@ Although not shown, all components would be running inside of [Docker](https://w
 
 ## Roadmap
 
-*Current Status: on step 1, everything under heavy construction, not ready for public consumption yet*
+*Current Status: everything under heavy construction, not ready for public consumption yet*
 
-1. --> Support a single caffe use case: IMAGE_DATA caffe layer using a single test set with a single training set
+1. **[done]** Working end-to-end with IMAGE_DATA caffe layer using a single test set with a single training set, and ability to query trained set.
+1. **[in progress]** ---> Support LEVELDB / LMDB data formats, to run mnist example.
 1. Support the majority of caffe use cases
 1. Package everything up to make it easy to deploy  <-- initial release
 1. Ability to auto-scale worker instances up and down based on how many jobs are in the message queue.
