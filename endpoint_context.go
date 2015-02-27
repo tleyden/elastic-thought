@@ -225,12 +225,15 @@ func (e EndpointContext) CreateClassifierEndpoint(c *gin.Context) {
 	logg.LogTo("REST", "classifier: %+v", classifier)
 
 	// make sure the classifier points to a valid training job
+	logg.LogTo("REST", "Validating classifier")
 	if err := classifier.Validate(); err != nil {
+		logg.LogTo("REST", "Classifier failed validation: %v", err)
 		c.Fail(400, err)
 		return
 	}
 
 	// save classifier in db
+	logg.LogTo("REST", "Save classifier to db")
 	err := classifier.Insert()
 	if err != nil {
 		c.Fail(500, err)
@@ -246,6 +249,7 @@ func (e EndpointContext) CreateClassifierEndpoint(c *gin.Context) {
 	}
 
 	// download contents of spec-url into cbfs://<classifier-id>/classifier.prototxt
+	logg.LogTo("REST", "Save classifier.prototxt %v to cbfs", classifier.SpecificationUrl)
 	destPath := path.Join(classifier.Id, "classifier.prototxt")
 	if err := saveUrlToCbfs(classifier.SpecificationUrl, destPath, cbfs); err != nil {
 		c.Fail(500, err)
@@ -254,6 +258,7 @@ func (e EndpointContext) CreateClassifierEndpoint(c *gin.Context) {
 	}
 
 	// update the spec url to point to the classifier.prototxt in cbfs
+	logg.LogTo("REST", "update the spec url to point to the classifier.prototxt in cbfs")
 	specUrlCbfs := fmt.Sprintf("%v%v", CBFS_URI_PREFIX, destPath)
 	if err := classifier.SetSpecificationUrl(specUrlCbfs); err != nil {
 		c.Fail(500, err)
