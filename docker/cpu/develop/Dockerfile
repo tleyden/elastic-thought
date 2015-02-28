@@ -1,5 +1,5 @@
 
-FROM tleyden5iwx/caffe-cpu-develop
+FROM tleyden5iwx/caffe-cpu-master
 
 MAINTAINER Traun Leyden tleyden@couchbase.com
 

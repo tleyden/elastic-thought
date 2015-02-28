@@ -1,5 +1,5 @@
 
-FROM tleyden5iwx/caffe-gpu-develop
+FROM tleyden5iwx/caffe-gpu-master
 
 MAINTAINER Traun Leyden tleyden@couchbase.com
 

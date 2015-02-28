@@ -1,5 +1,5 @@
 
-FROM tleyden5iwx/caffe-{{ .ProcessorType }}-{{ .CaffeBranch }}
+FROM tleyden5iwx/caffe-{{ .ProcessorType }}-master
 
 MAINTAINER Traun Leyden tleyden@couchbase.com
 
