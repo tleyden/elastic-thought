@@ -116,13 +116,17 @@ func (c *Classifier) Find(id string) error {
 
 func (c Classifier) Validate() error {
 
+	logg.LogTo("CLASSIFIER", "Validate training job")
 	if err := c.validateTrainingJob(); err != nil {
 		return err
 	}
 
+	logg.LogTo("CLASSIFIER", "Validate classifier net")
 	if err := c.validateClassifierNet(); err != nil {
 		return err
 	}
+
+	logg.LogTo("CLASSIFIER", "Validation passed")
 
 	return nil
 }
@@ -163,6 +167,7 @@ func (c Classifier) classifierNet() (*caffe.NetParameter, error) {
 	netParam := &caffe.NetParameter{}
 
 	if err := proto.UnmarshalText(string(specContents), netParam); err != nil {
+		logg.LogTo("CLASSIFIER", "Error unmarshalling %v", string(specContents))
 		return nil, err
 	}
 
