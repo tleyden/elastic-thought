@@ -1,6 +1,6 @@
 name: "alpha"
 input: "data"
-input_dim: 64
+input_dim: 1
 input_dim: 1
 input_dim: 28
 input_dim: 28
