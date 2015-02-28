@@ -28,13 +28,14 @@ image_dims=(28, 28)
 # TODO: this should be parameterized
 COLOR=False
 
+# TODO: this should be parameterized
+caffe.set_mode_cpu()
+
 net = caffe.Classifier(MODEL_FILE, 
                        PRETRAINED,
                        raw_scale=RAW_SCALE,
                        image_dims=image_dims)
 
-net.set_phase_test()
-net.set_mode_cpu()
 
 # go into images subdir
 os.chdir("images")
