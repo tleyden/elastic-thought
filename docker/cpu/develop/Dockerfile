@@ -35,5 +35,3 @@ RUN go get -u -v -t github.com/tleyden/elastic-thought && \
 RUN cp /opt/go/bin/worker /usr/local/bin && \
     cp /opt/go/bin/httpd /usr/local/bin
 
-# Copy all .bin binaries -> /usr/local/bin and remove .bin extension
-RUN cd /opt/caffe/.build_release/tools && find * -name "*.bin" -exec sh -c 'DEST=$(echo {} | cut -d"." -f1) && echo "{} to /usr/local/bin/$DEST"; cp {} /usr/local/bin/$DEST && chmod +x /usr/local/bin/$DEST' \;
