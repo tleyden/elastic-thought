@@ -18,8 +18,10 @@ It has these top-level messages:
 	SolverState
 	NetState
 	NetStateRule
+	ParamSpec
 	LayerParameter
 	TransformationParameter
+	LossParameter
 	AccuracyParameter
 	ArgMaxParameter
 	ConcatParameter
@@ -41,6 +43,7 @@ It has these top-level messages:
 	MVNParameter
 	PoolingParameter
 	PowerParameter
+	PythonParameter
 	ReLUParameter
 	SigmoidParameter
 	SliceParameter
@@ -48,6 +51,7 @@ It has these top-level messages:
 	TanHParameter
 	ThresholdParameter
 	WindowDataParameter
+	V1LayerParameter
 	V0LayerParameter
 */
 package caffe
@@ -163,192 +167,38 @@ func (x *SolverParameter_SolverType) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// NOTE
-// Add new LayerTypes to the enum below in lexicographical order (other than
-// starting with NONE), starting with the next available ID in the comment
-// line above the enum. Update the next available ID when you add a new
-// LayerType.
-//
-// LayerType next available ID: 39 (last added: EXP)
-type LayerParameter_LayerType int32
-
-const (
-	// "NONE" layer type is 0th enum element so that we don't cause confusion
-	// by defaulting to an existent LayerType (instead, should usually error if
-	// the type is unspecified).
-	LayerParameter_NONE                       LayerParameter_LayerType = 0
-	LayerParameter_ABSVAL                     LayerParameter_LayerType = 35
-	LayerParameter_ACCURACY                   LayerParameter_LayerType = 1
-	LayerParameter_ARGMAX                     LayerParameter_LayerType = 30
-	LayerParameter_BNLL                       LayerParameter_LayerType = 2
-	LayerParameter_CONCAT                     LayerParameter_LayerType = 3
-	LayerParameter_CONTRASTIVE_LOSS           LayerParameter_LayerType = 37
-	LayerParameter_CONVOLUTION                LayerParameter_LayerType = 4
-	LayerParameter_DATA                       LayerParameter_LayerType = 5
-	LayerParameter_DROPOUT                    LayerParameter_LayerType = 6
-	LayerParameter_DUMMY_DATA                 LayerParameter_LayerType = 32
-	LayerParameter_EUCLIDEAN_LOSS             LayerParameter_LayerType = 7
-	LayerParameter_ELTWISE                    LayerParameter_LayerType = 25
-	LayerParameter_EXP                        LayerParameter_LayerType = 38
-	LayerParameter_FLATTEN                    LayerParameter_LayerType = 8
-	LayerParameter_HDF5_DATA                  LayerParameter_LayerType = 9
-	LayerParameter_HDF5_OUTPUT                LayerParameter_LayerType = 10
-	LayerParameter_HINGE_LOSS                 LayerParameter_LayerType = 28
-	LayerParameter_IM2COL                     LayerParameter_LayerType = 11
-	LayerParameter_IMAGE_DATA                 LayerParameter_LayerType = 12
-	LayerParameter_INFOGAIN_LOSS              LayerParameter_LayerType = 13
-	LayerParameter_INNER_PRODUCT              LayerParameter_LayerType = 14
-	LayerParameter_LRN                        LayerParameter_LayerType = 15
-	LayerParameter_MEMORY_DATA                LayerParameter_LayerType = 29
-	LayerParameter_MULTINOMIAL_LOGISTIC_LOSS  LayerParameter_LayerType = 16
-	LayerParameter_MVN                        LayerParameter_LayerType = 34
-	LayerParameter_POOLING                    LayerParameter_LayerType = 17
-	LayerParameter_POWER                      LayerParameter_LayerType = 26
-	LayerParameter_RELU                       LayerParameter_LayerType = 18
-	LayerParameter_SIGMOID                    LayerParameter_LayerType = 19
-	LayerParameter_SIGMOID_CROSS_ENTROPY_LOSS LayerParameter_LayerType = 27
-	LayerParameter_SILENCE                    LayerParameter_LayerType = 36
-	LayerParameter_SOFTMAX                    LayerParameter_LayerType = 20
-	LayerParameter_SOFTMAX_LOSS               LayerParameter_LayerType = 21
-	LayerParameter_SPLIT                      LayerParameter_LayerType = 22
-	LayerParameter_SLICE                      LayerParameter_LayerType = 33
-	LayerParameter_TANH                       LayerParameter_LayerType = 23
-	LayerParameter_WINDOW_DATA                LayerParameter_LayerType = 24
-	LayerParameter_THRESHOLD                  LayerParameter_LayerType = 31
-)
-
-var LayerParameter_LayerType_name = map[int32]string{
-	0:  "NONE",
-	35: "ABSVAL",
-	1:  "ACCURACY",
-	30: "ARGMAX",
-	2:  "BNLL",
-	3:  "CONCAT",
-	37: "CONTRASTIVE_LOSS",
-	4:  "CONVOLUTION",
-	5:  "DATA",
-	6:  "DROPOUT",
-	32: "DUMMY_DATA",
-	7:  "EUCLIDEAN_LOSS",
-	25: "ELTWISE",
-	38: "EXP",
-	8:  "FLATTEN",
-	9:  "HDF5_DATA",
-	10: "HDF5_OUTPUT",
-	28: "HINGE_LOSS",
-	11: "IM2COL",
-	12: "IMAGE_DATA",
-	13: "INFOGAIN_LOSS",
-	14: "INNER_PRODUCT",
-	15: "LRN",
-	29: "MEMORY_DATA",
-	16: "MULTINOMIAL_LOGISTIC_LOSS",
-	34: "MVN",
-	17: "POOLING",
-	26: "POWER",
-	18: "RELU",
-	19: "SIGMOID",
-	27: "SIGMOID_CROSS_ENTROPY_LOSS",
-	36: "SILENCE",
-	20: "SOFTMAX",
-	21: "SOFTMAX_LOSS",
-	22: "SPLIT",
-	33: "SLICE",
-	23: "TANH",
-	24: "WINDOW_DATA",
-	31: "THRESHOLD",
-}
-var LayerParameter_LayerType_value = map[string]int32{
-	"NONE":                      0,
-	"ABSVAL":                    35,
-	"ACCURACY":                  1,
-	"ARGMAX":                    30,
-	"BNLL":                      2,
-	"CONCAT":                    3,
-	"CONTRASTIVE_LOSS":          37,
-	"CONVOLUTION":               4,
-	"DATA":                      5,
-	"DROPOUT":                   6,
-	"DUMMY_DATA":                32,
-	"EUCLIDEAN_LOSS":            7,
-	"ELTWISE":                   25,
-	"EXP":                       38,
-	"FLATTEN":                   8,
-	"HDF5_DATA":                 9,
-	"HDF5_OUTPUT":               10,
-	"HINGE_LOSS":                28,
-	"IM2COL":                    11,
-	"IMAGE_DATA":                12,
-	"INFOGAIN_LOSS":             13,
-	"INNER_PRODUCT":             14,
-	"LRN":                       15,
-	"MEMORY_DATA":               29,
-	"MULTINOMIAL_LOGISTIC_LOSS": 16,
-	"MVN":                        34,
-	"POOLING":                    17,
-	"POWER":                      26,
-	"RELU":                       18,
-	"SIGMOID":                    19,
-	"SIGMOID_CROSS_ENTROPY_LOSS": 27,
-	"SILENCE":                    36,
-	"SOFTMAX":                    20,
-	"SOFTMAX_LOSS":               21,
-	"SPLIT":                      22,
-	"SLICE":                      33,
-	"TANH":                       23,
-	"WINDOW_DATA":                24,
-	"THRESHOLD":                  31,
-}
-
-func (x LayerParameter_LayerType) Enum() *LayerParameter_LayerType {
-	p := new(LayerParameter_LayerType)
-	*p = x
-	return p
-}
-func (x LayerParameter_LayerType) String() string {
-	return proto.EnumName(LayerParameter_LayerType_name, int32(x))
-}
-func (x *LayerParameter_LayerType) UnmarshalJSON(data []byte) error {
-	value, err := proto.UnmarshalJSONEnum(LayerParameter_LayerType_value, data, "LayerParameter_LayerType")
-	if err != nil {
-		return err
-	}
-	*x = LayerParameter_LayerType(value)
-	return nil
-}
-
-type LayerParameter_DimCheckMode int32
+type ParamSpec_DimCheckMode int32
 
 const (
 	// STRICT (default) requires that num, channels, height, width each match.
-	LayerParameter_STRICT LayerParameter_DimCheckMode = 0
+	ParamSpec_STRICT ParamSpec_DimCheckMode = 0
 	// PERMISSIVE requires only the count (num*channels*height*width) to match.
-	LayerParameter_PERMISSIVE LayerParameter_DimCheckMode = 1
+	ParamSpec_PERMISSIVE ParamSpec_DimCheckMode = 1
 )
 
-var LayerParameter_DimCheckMode_name = map[int32]string{
+var ParamSpec_DimCheckMode_name = map[int32]string{
 	0: "STRICT",
 	1: "PERMISSIVE",
 }
-var LayerParameter_DimCheckMode_value = map[string]int32{
+var ParamSpec_DimCheckMode_value = map[string]int32{
 	"STRICT":     0,
 	"PERMISSIVE": 1,
 }
 
-func (x LayerParameter_DimCheckMode) Enum() *LayerParameter_DimCheckMode {
-	p := new(LayerParameter_DimCheckMode)
+func (x ParamSpec_DimCheckMode) Enum() *ParamSpec_DimCheckMode {
+	p := new(ParamSpec_DimCheckMode)
 	*p = x
 	return p
 }
-func (x LayerParameter_DimCheckMode) String() string {
-	return proto.EnumName(LayerParameter_DimCheckMode_name, int32(x))
+func (x ParamSpec_DimCheckMode) String() string {
+	return proto.EnumName(ParamSpec_DimCheckMode_name, int32(x))
 }
-func (x *LayerParameter_DimCheckMode) UnmarshalJSON(data []byte) error {
-	value, err := proto.UnmarshalJSONEnum(LayerParameter_DimCheckMode_value, data, "LayerParameter_DimCheckMode")
+func (x *ParamSpec_DimCheckMode) UnmarshalJSON(data []byte) error {
+	value, err := proto.UnmarshalJSONEnum(ParamSpec_DimCheckMode_value, data, "ParamSpec_DimCheckMode")
 	if err != nil {
 		return err
 	}
-	*x = LayerParameter_DimCheckMode(value)
+	*x = ParamSpec_DimCheckMode(value)
 	return nil
 }
 
@@ -739,6 +589,186 @@ func (x *TanHParameter_Engine) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type V1LayerParameter_LayerType int32
+
+const (
+	V1LayerParameter_NONE                       V1LayerParameter_LayerType = 0
+	V1LayerParameter_ABSVAL                     V1LayerParameter_LayerType = 35
+	V1LayerParameter_ACCURACY                   V1LayerParameter_LayerType = 1
+	V1LayerParameter_ARGMAX                     V1LayerParameter_LayerType = 30
+	V1LayerParameter_BNLL                       V1LayerParameter_LayerType = 2
+	V1LayerParameter_CONCAT                     V1LayerParameter_LayerType = 3
+	V1LayerParameter_CONTRASTIVE_LOSS           V1LayerParameter_LayerType = 37
+	V1LayerParameter_CONVOLUTION                V1LayerParameter_LayerType = 4
+	V1LayerParameter_DATA                       V1LayerParameter_LayerType = 5
+	V1LayerParameter_DECONVOLUTION              V1LayerParameter_LayerType = 39
+	V1LayerParameter_DROPOUT                    V1LayerParameter_LayerType = 6
+	V1LayerParameter_DUMMY_DATA                 V1LayerParameter_LayerType = 32
+	V1LayerParameter_EUCLIDEAN_LOSS             V1LayerParameter_LayerType = 7
+	V1LayerParameter_ELTWISE                    V1LayerParameter_LayerType = 25
+	V1LayerParameter_EXP                        V1LayerParameter_LayerType = 38
+	V1LayerParameter_FLATTEN                    V1LayerParameter_LayerType = 8
+	V1LayerParameter_HDF5_DATA                  V1LayerParameter_LayerType = 9
+	V1LayerParameter_HDF5_OUTPUT                V1LayerParameter_LayerType = 10
+	V1LayerParameter_HINGE_LOSS                 V1LayerParameter_LayerType = 28
+	V1LayerParameter_IM2COL                     V1LayerParameter_LayerType = 11
+	V1LayerParameter_IMAGE_DATA                 V1LayerParameter_LayerType = 12
+	V1LayerParameter_INFOGAIN_LOSS              V1LayerParameter_LayerType = 13
+	V1LayerParameter_INNER_PRODUCT              V1LayerParameter_LayerType = 14
+	V1LayerParameter_LRN                        V1LayerParameter_LayerType = 15
+	V1LayerParameter_MEMORY_DATA                V1LayerParameter_LayerType = 29
+	V1LayerParameter_MULTINOMIAL_LOGISTIC_LOSS  V1LayerParameter_LayerType = 16
+	V1LayerParameter_MVN                        V1LayerParameter_LayerType = 34
+	V1LayerParameter_POOLING                    V1LayerParameter_LayerType = 17
+	V1LayerParameter_POWER                      V1LayerParameter_LayerType = 26
+	V1LayerParameter_RELU                       V1LayerParameter_LayerType = 18
+	V1LayerParameter_SIGMOID                    V1LayerParameter_LayerType = 19
+	V1LayerParameter_SIGMOID_CROSS_ENTROPY_LOSS V1LayerParameter_LayerType = 27
+	V1LayerParameter_SILENCE                    V1LayerParameter_LayerType = 36
+	V1LayerParameter_SOFTMAX                    V1LayerParameter_LayerType = 20
+	V1LayerParameter_SOFTMAX_LOSS               V1LayerParameter_LayerType = 21
+	V1LayerParameter_SPLIT                      V1LayerParameter_LayerType = 22
+	V1LayerParameter_SLICE                      V1LayerParameter_LayerType = 33
+	V1LayerParameter_TANH                       V1LayerParameter_LayerType = 23
+	V1LayerParameter_WINDOW_DATA                V1LayerParameter_LayerType = 24
+	V1LayerParameter_THRESHOLD                  V1LayerParameter_LayerType = 31
+)
+
+var V1LayerParameter_LayerType_name = map[int32]string{
+	0:  "NONE",
+	35: "ABSVAL",
+	1:  "ACCURACY",
+	30: "ARGMAX",
+	2:  "BNLL",
+	3:  "CONCAT",
+	37: "CONTRASTIVE_LOSS",
+	4:  "CONVOLUTION",
+	5:  "DATA",
+	39: "DECONVOLUTION",
+	6:  "DROPOUT",
+	32: "DUMMY_DATA",
+	7:  "EUCLIDEAN_LOSS",
+	25: "ELTWISE",
+	38: "EXP",
+	8:  "FLATTEN",
+	9:  "HDF5_DATA",
+	10: "HDF5_OUTPUT",
+	28: "HINGE_LOSS",
+	11: "IM2COL",
+	12: "IMAGE_DATA",
+	13: "INFOGAIN_LOSS",
+	14: "INNER_PRODUCT",
+	15: "LRN",
+	29: "MEMORY_DATA",
+	16: "MULTINOMIAL_LOGISTIC_LOSS",
+	34: "MVN",
+	17: "POOLING",
+	26: "POWER",
+	18: "RELU",
+	19: "SIGMOID",
+	27: "SIGMOID_CROSS_ENTROPY_LOSS",
+	36: "SILENCE",
+	20: "SOFTMAX",
+	21: "SOFTMAX_LOSS",
+	22: "SPLIT",
+	33: "SLICE",
+	23: "TANH",
+	24: "WINDOW_DATA",
+	31: "THRESHOLD",
+}
+var V1LayerParameter_LayerType_value = map[string]int32{
+	"NONE":                      0,
+	"ABSVAL":                    35,
+	"ACCURACY":                  1,
+	"ARGMAX":                    30,
+	"BNLL":                      2,
+	"CONCAT":                    3,
+	"CONTRASTIVE_LOSS":          37,
+	"CONVOLUTION":               4,
+	"DATA":                      5,
+	"DECONVOLUTION":             39,
+	"DROPOUT":                   6,
+	"DUMMY_DATA":                32,
+	"EUCLIDEAN_LOSS":            7,
+	"ELTWISE":                   25,
+	"EXP":                       38,
+	"FLATTEN":                   8,
+	"HDF5_DATA":                 9,
+	"HDF5_OUTPUT":               10,
+	"HINGE_LOSS":                28,
+	"IM2COL":                    11,
+	"IMAGE_DATA":                12,
+	"INFOGAIN_LOSS":             13,
+	"INNER_PRODUCT":             14,
+	"LRN":                       15,
+	"MEMORY_DATA":               29,
+	"MULTINOMIAL_LOGISTIC_LOSS": 16,
+	"MVN":                        34,
+	"POOLING":                    17,
+	"POWER":                      26,
+	"RELU":                       18,
+	"SIGMOID":                    19,
+	"SIGMOID_CROSS_ENTROPY_LOSS": 27,
+	"SILENCE":                    36,
+	"SOFTMAX":                    20,
+	"SOFTMAX_LOSS":               21,
+	"SPLIT":                      22,
+	"SLICE":                      33,
+	"TANH":                       23,
+	"WINDOW_DATA":                24,
+	"THRESHOLD":                  31,
+}
+
+func (x V1LayerParameter_LayerType) Enum() *V1LayerParameter_LayerType {
+	p := new(V1LayerParameter_LayerType)
+	*p = x
+	return p
+}
+func (x V1LayerParameter_LayerType) String() string {
+	return proto.EnumName(V1LayerParameter_LayerType_name, int32(x))
+}
+func (x *V1LayerParameter_LayerType) UnmarshalJSON(data []byte) error {
+	value, err := proto.UnmarshalJSONEnum(V1LayerParameter_LayerType_value, data, "V1LayerParameter_LayerType")
+	if err != nil {
+		return err
+	}
+	*x = V1LayerParameter_LayerType(value)
+	return nil
+}
+
+type V1LayerParameter_DimCheckMode int32
+
+const (
+	V1LayerParameter_STRICT     V1LayerParameter_DimCheckMode = 0
+	V1LayerParameter_PERMISSIVE V1LayerParameter_DimCheckMode = 1
+)
+
+var V1LayerParameter_DimCheckMode_name = map[int32]string{
+	0: "STRICT",
+	1: "PERMISSIVE",
+}
+var V1LayerParameter_DimCheckMode_value = map[string]int32{
+	"STRICT":     0,
+	"PERMISSIVE": 1,
+}
+
+func (x V1LayerParameter_DimCheckMode) Enum() *V1LayerParameter_DimCheckMode {
+	p := new(V1LayerParameter_DimCheckMode)
+	*p = x
+	return p
+}
+func (x V1LayerParameter_DimCheckMode) String() string {
+	return proto.EnumName(V1LayerParameter_DimCheckMode_name, int32(x))
+}
+func (x *V1LayerParameter_DimCheckMode) UnmarshalJSON(data []byte) error {
+	value, err := proto.UnmarshalJSONEnum(V1LayerParameter_DimCheckMode_value, data, "V1LayerParameter_DimCheckMode")
+	if err != nil {
+		return err
+	}
+	*x = V1LayerParameter_DimCheckMode(value)
+	return nil
+}
+
 type V0LayerParameter_PoolMethod int32
 
 const (
@@ -931,7 +961,7 @@ type FillerParameter struct {
 	Max   *float32 `protobuf:"fixed32,4,opt,name=max,def=1" json:"max,omitempty"`
 	Mean  *float32 `protobuf:"fixed32,5,opt,name=mean,def=0" json:"mean,omitempty"`
 	Std   *float32 `protobuf:"fixed32,6,opt,name=std,def=1" json:"std,omitempty"`
-	// The expected number of non-zero input weights for a given output in
+	// The expected number of non-zero output weights for a given input in
 	// Gaussian filler -- the default -1 means don't perform sparsification.
 	Sparse           *int32 `protobuf:"varint,7,opt,name=sparse,def=-1" json:"sparse,omitempty"`
 	XXX_unrecognized []byte `json:"-"`
@@ -999,8 +1029,7 @@ func (m *FillerParameter) GetSparse() int32 {
 }
 
 type NetParameter struct {
-	Name   *string           `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Layers []*LayerParameter `protobuf:"bytes,2,rep,name=layers" json:"layers,omitempty"`
+	Name *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// The input blobs to the network.
 	Input []string `protobuf:"bytes,3,rep,name=input" json:"input,omitempty"`
 	// The dim of the input blobs. For each input blob there should be four
@@ -1014,8 +1043,16 @@ type NetParameter struct {
 	// The current "state" of the network, including the phase, level, and stage.
 	// Some layers may be included/excluded depending on this state and the states
 	// specified in the layers' include and exclude fields.
-	State            *NetState `protobuf:"bytes,6,opt,name=state" json:"state,omitempty"`
-	XXX_unrecognized []byte    `json:"-"`
+	State *NetState `protobuf:"bytes,6,opt,name=state" json:"state,omitempty"`
+	// Print debugging information about results while running Net::Forward,
+	// Net::Backward, and Net::Update.
+	DebugInfo *bool `protobuf:"varint,7,opt,name=debug_info,def=0" json:"debug_info,omitempty"`
+	// The layers that make up the net.  Each of their configurations, including
+	// connectivity and behavior, is specified as a LayerParameter.
+	Layer []*LayerParameter `protobuf:"bytes,100,rep,name=layer" json:"layer,omitempty"`
+	// DEPRECATED: use 'layer' instead.
+	Layers           []*V1LayerParameter `protobuf:"bytes,2,rep,name=layers" json:"layers,omitempty"`
+	XXX_unrecognized []byte              `json:"-"`
 }
 
 func (m *NetParameter) Reset()         { *m = NetParameter{} }
@@ -1023,19 +1060,13 @@ func (m *NetParameter) String() string { return proto.CompactTextString(m) }
 func (*NetParameter) ProtoMessage()    {}
 
 const Default_NetParameter_ForceBackward bool = false
+const Default_NetParameter_DebugInfo bool = false
 
 func (m *NetParameter) GetName() string {
 	if m != nil && m.Name != nil {
 		return *m.Name
 	}
 	return ""
-}
-
-func (m *NetParameter) GetLayers() []*LayerParameter {
-	if m != nil {
-		return m.Layers
-	}
-	return nil
 }
 
 func (m *NetParameter) GetInput() []string {
@@ -1066,10 +1097,31 @@ func (m *NetParameter) GetState() *NetState {
 	return nil
 }
 
+func (m *NetParameter) GetDebugInfo() bool {
+	if m != nil && m.DebugInfo != nil {
+		return *m.DebugInfo
+	}
+	return Default_NetParameter_DebugInfo
+}
+
+func (m *NetParameter) GetLayer() []*LayerParameter {
+	if m != nil {
+		return m.Layer
+	}
+	return nil
+}
+
+func (m *NetParameter) GetLayers() []*V1LayerParameter {
+	if m != nil {
+		return m.Layers
+	}
+	return nil
+}
+
 // NOTE
 // Update the next available ID when you add a new SolverParameter field.
 //
-// SolverParameter next available ID: 35 (last added: stepvalue)
+// SolverParameter next available ID: 36 (last added: clip_gradients)
 type SolverParameter struct {
 	// Proto filename for the train net, possibly combined with one or more
 	// test nets.
@@ -1115,9 +1167,12 @@ type SolverParameter struct {
 	// the stepsize for learning rate policy "step"
 	Stepsize *int32 `protobuf:"varint,13,opt,name=stepsize" json:"stepsize,omitempty"`
 	// the stepsize for learning rate policy "multistep"
-	Stepvalue      []int32 `protobuf:"varint,34,rep,name=stepvalue" json:"stepvalue,omitempty"`
-	Snapshot       *int32  `protobuf:"varint,14,opt,name=snapshot,def=0" json:"snapshot,omitempty"`
-	SnapshotPrefix *string `protobuf:"bytes,15,opt,name=snapshot_prefix" json:"snapshot_prefix,omitempty"`
+	Stepvalue []int32 `protobuf:"varint,34,rep,name=stepvalue" json:"stepvalue,omitempty"`
+	// Set clip_gradients to >= 0 to clip parameter gradients to that L2 norm,
+	// whenever their actual L2 norm is larger.
+	ClipGradients  *float32 `protobuf:"fixed32,35,opt,name=clip_gradients,def=-1" json:"clip_gradients,omitempty"`
+	Snapshot       *int32   `protobuf:"varint,14,opt,name=snapshot,def=0" json:"snapshot,omitempty"`
+	SnapshotPrefix *string  `protobuf:"bytes,15,opt,name=snapshot_prefix" json:"snapshot_prefix,omitempty"`
 	// whether to snapshot diff in the results or not. Snapshotting diff will help
 	// debugging but the final protocol buffer size will be much larger.
 	SnapshotDiff *bool                       `protobuf:"varint,16,opt,name=snapshot_diff,def=0" json:"snapshot_diff,omitempty"`
@@ -1148,6 +1203,7 @@ const Default_SolverParameter_TestComputeLoss bool = false
 const Default_SolverParameter_TestInitialization bool = true
 const Default_SolverParameter_AverageLoss int32 = 1
 const Default_SolverParameter_RegularizationType string = "L2"
+const Default_SolverParameter_ClipGradients float32 = -1
 const Default_SolverParameter_Snapshot int32 = 0
 const Default_SolverParameter_SnapshotDiff bool = false
 const Default_SolverParameter_SolverMode SolverParameter_SolverMode = SolverParameter_GPU
@@ -1324,6 +1380,13 @@ func (m *SolverParameter) GetStepvalue() []int32 {
 		return m.Stepvalue
 	}
 	return nil
+}
+
+func (m *SolverParameter) GetClipGradients() float32 {
+	if m != nil && m.ClipGradients != nil {
+		return *m.ClipGradients
+	}
+	return Default_SolverParameter_ClipGradients
 }
 
 func (m *SolverParameter) GetSnapshot() int32 {
@@ -1530,80 +1593,145 @@ func (m *NetStateRule) GetNotStage() []string {
 	return nil
 }
 
+// Specifies training parameters (multipliers on global learning constants,
+// and the name and other settings used for weight sharing).
+type ParamSpec struct {
+	// The names of the parameter blobs -- useful for sharing parameters among
+	// layers, but never required otherwise.  To share a parameter between two
+	// layers, give it a (non-empty) name.
+	Name *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	// Whether to require shared weights to have the same shape, or just the same
+	// count -- defaults to STRICT if unspecified.
+	ShareMode *ParamSpec_DimCheckMode `protobuf:"varint,2,opt,name=share_mode,enum=caffe.ParamSpec_DimCheckMode" json:"share_mode,omitempty"`
+	// The multiplier on the global learning rate for this parameter.
+	LrMult *float32 `protobuf:"fixed32,3,opt,name=lr_mult,def=1" json:"lr_mult,omitempty"`
+	// The multiplier on the global weight decay for this parameter.
+	DecayMult        *float32 `protobuf:"fixed32,4,opt,name=decay_mult,def=1" json:"decay_mult,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
+}
+
+func (m *ParamSpec) Reset()         { *m = ParamSpec{} }
+func (m *ParamSpec) String() string { return proto.CompactTextString(m) }
+func (*ParamSpec) ProtoMessage()    {}
+
+const Default_ParamSpec_LrMult float32 = 1
+const Default_ParamSpec_DecayMult float32 = 1
+
+func (m *ParamSpec) GetName() string {
+	if m != nil && m.Name != nil {
+		return *m.Name
+	}
+	return ""
+}
+
+func (m *ParamSpec) GetShareMode() ParamSpec_DimCheckMode {
+	if m != nil && m.ShareMode != nil {
+		return *m.ShareMode
+	}
+	return ParamSpec_STRICT
+}
+
+func (m *ParamSpec) GetLrMult() float32 {
+	if m != nil && m.LrMult != nil {
+		return *m.LrMult
+	}
+	return Default_ParamSpec_LrMult
+}
+
+func (m *ParamSpec) GetDecayMult() float32 {
+	if m != nil && m.DecayMult != nil {
+		return *m.DecayMult
+	}
+	return Default_ParamSpec_DecayMult
+}
+
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available ID: 42 (last added: exp_param)
+// LayerParameter next available layer-specific ID: 131 (last added: python_param)
 type LayerParameter struct {
-	Bottom []string `protobuf:"bytes,2,rep,name=bottom" json:"bottom,omitempty"`
-	Top    []string `protobuf:"bytes,3,rep,name=top" json:"top,omitempty"`
-	Name   *string  `protobuf:"bytes,4,opt,name=name" json:"name,omitempty"`
+	Name   *string  `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Type   *string  `protobuf:"bytes,2,opt,name=type" json:"type,omitempty"`
+	Bottom []string `protobuf:"bytes,3,rep,name=bottom" json:"bottom,omitempty"`
+	Top    []string `protobuf:"bytes,4,rep,name=top" json:"top,omitempty"`
+	// The train / test phase for computation.
+	Phase *Phase `protobuf:"varint,10,opt,name=phase,enum=caffe.Phase" json:"phase,omitempty"`
+	// The amount of weight to assign each top blob in the objective.
+	// Each layer assigns a default value, usually of either 0 or 1,
+	// to each top blob.
+	LossWeight []float32 `protobuf:"fixed32,5,rep,name=loss_weight" json:"loss_weight,omitempty"`
+	// Specifies training parameters (multipliers on global learning constants,
+	// and the name and other settings used for weight sharing).
+	Param []*ParamSpec `protobuf:"bytes,6,rep,name=param" json:"param,omitempty"`
+	// The blobs containing the numeric parameters of the layer.
+	Blobs []*BlobProto `protobuf:"bytes,7,rep,name=blobs" json:"blobs,omitempty"`
 	// Rules controlling whether and when a layer is included in the network,
 	// based on the current NetState.  You may specify a non-zero number of rules
 	// to include OR exclude, but not both.  If no include or exclude rules are
 	// specified, the layer is always included.  If the current NetState meets
 	// ANY (i.e., one or more) of the specified rules, the layer is
 	// included/excluded.
-	Include []*NetStateRule           `protobuf:"bytes,32,rep,name=include" json:"include,omitempty"`
-	Exclude []*NetStateRule           `protobuf:"bytes,33,rep,name=exclude" json:"exclude,omitempty"`
-	Type    *LayerParameter_LayerType `protobuf:"varint,5,opt,name=type,enum=caffe.LayerParameter_LayerType" json:"type,omitempty"`
-	// The blobs containing the numeric parameters of the layer
-	Blobs []*BlobProto `protobuf:"bytes,6,rep,name=blobs" json:"blobs,omitempty"`
-	// The names of the parameter blobs -- useful for sharing parameters among
-	// layers (but never required).
-	Param []string `protobuf:"bytes,1001,rep,name=param" json:"param,omitempty"`
-	// Whether to require shared weights to have the same shape, or just the same
-	// count -- defaults to STRICT if unspecified.
-	BlobShareMode []LayerParameter_DimCheckMode `protobuf:"varint,1002,rep,name=blob_share_mode,enum=caffe.LayerParameter_DimCheckMode" json:"blob_share_mode,omitempty"`
-	// The ratio that is multiplied on the global learning rate. If you want to
-	// set the learning ratio for one blob, you need to set it for all blobs.
-	BlobsLr []float32 `protobuf:"fixed32,7,rep,name=blobs_lr" json:"blobs_lr,omitempty"`
-	// The weight decay that is multiplied on the global weight decay.
-	WeightDecay []float32 `protobuf:"fixed32,8,rep,name=weight_decay" json:"weight_decay,omitempty"`
-	// The amount of weight to assign each top blob in the objective.
-	// Each layer assigns a default value, usually of either 0 or 1,
-	// to each top blob.
-	LossWeight           []float32                 `protobuf:"fixed32,35,rep,name=loss_weight" json:"loss_weight,omitempty"`
-	AccuracyParam        *AccuracyParameter        `protobuf:"bytes,27,opt,name=accuracy_param" json:"accuracy_param,omitempty"`
-	ArgmaxParam          *ArgMaxParameter          `protobuf:"bytes,23,opt,name=argmax_param" json:"argmax_param,omitempty"`
-	ConcatParam          *ConcatParameter          `protobuf:"bytes,9,opt,name=concat_param" json:"concat_param,omitempty"`
-	ContrastiveLossParam *ContrastiveLossParameter `protobuf:"bytes,40,opt,name=contrastive_loss_param" json:"contrastive_loss_param,omitempty"`
-	ConvolutionParam     *ConvolutionParameter     `protobuf:"bytes,10,opt,name=convolution_param" json:"convolution_param,omitempty"`
-	DataParam            *DataParameter            `protobuf:"bytes,11,opt,name=data_param" json:"data_param,omitempty"`
-	DropoutParam         *DropoutParameter         `protobuf:"bytes,12,opt,name=dropout_param" json:"dropout_param,omitempty"`
-	DummyDataParam       *DummyDataParameter       `protobuf:"bytes,26,opt,name=dummy_data_param" json:"dummy_data_param,omitempty"`
-	EltwiseParam         *EltwiseParameter         `protobuf:"bytes,24,opt,name=eltwise_param" json:"eltwise_param,omitempty"`
-	ExpParam             *ExpParameter             `protobuf:"bytes,41,opt,name=exp_param" json:"exp_param,omitempty"`
-	Hdf5DataParam        *HDF5DataParameter        `protobuf:"bytes,13,opt,name=hdf5_data_param" json:"hdf5_data_param,omitempty"`
-	Hdf5OutputParam      *HDF5OutputParameter      `protobuf:"bytes,14,opt,name=hdf5_output_param" json:"hdf5_output_param,omitempty"`
-	HingeLossParam       *HingeLossParameter       `protobuf:"bytes,29,opt,name=hinge_loss_param" json:"hinge_loss_param,omitempty"`
-	ImageDataParam       *ImageDataParameter       `protobuf:"bytes,15,opt,name=image_data_param" json:"image_data_param,omitempty"`
-	InfogainLossParam    *InfogainLossParameter    `protobuf:"bytes,16,opt,name=infogain_loss_param" json:"infogain_loss_param,omitempty"`
-	InnerProductParam    *InnerProductParameter    `protobuf:"bytes,17,opt,name=inner_product_param" json:"inner_product_param,omitempty"`
-	LrnParam             *LRNParameter             `protobuf:"bytes,18,opt,name=lrn_param" json:"lrn_param,omitempty"`
-	MemoryDataParam      *MemoryDataParameter      `protobuf:"bytes,22,opt,name=memory_data_param" json:"memory_data_param,omitempty"`
-	MvnParam             *MVNParameter             `protobuf:"bytes,34,opt,name=mvn_param" json:"mvn_param,omitempty"`
-	PoolingParam         *PoolingParameter         `protobuf:"bytes,19,opt,name=pooling_param" json:"pooling_param,omitempty"`
-	PowerParam           *PowerParameter           `protobuf:"bytes,21,opt,name=power_param" json:"power_param,omitempty"`
-	ReluParam            *ReLUParameter            `protobuf:"bytes,30,opt,name=relu_param" json:"relu_param,omitempty"`
-	SigmoidParam         *SigmoidParameter         `protobuf:"bytes,38,opt,name=sigmoid_param" json:"sigmoid_param,omitempty"`
-	SoftmaxParam         *SoftmaxParameter         `protobuf:"bytes,39,opt,name=softmax_param" json:"softmax_param,omitempty"`
-	SliceParam           *SliceParameter           `protobuf:"bytes,31,opt,name=slice_param" json:"slice_param,omitempty"`
-	TanhParam            *TanHParameter            `protobuf:"bytes,37,opt,name=tanh_param" json:"tanh_param,omitempty"`
-	ThresholdParam       *ThresholdParameter       `protobuf:"bytes,25,opt,name=threshold_param" json:"threshold_param,omitempty"`
-	WindowDataParam      *WindowDataParameter      `protobuf:"bytes,20,opt,name=window_data_param" json:"window_data_param,omitempty"`
+	Include []*NetStateRule `protobuf:"bytes,8,rep,name=include" json:"include,omitempty"`
+	Exclude []*NetStateRule `protobuf:"bytes,9,rep,name=exclude" json:"exclude,omitempty"`
 	// Parameters for data pre-processing.
-	TransformParam *TransformationParameter `protobuf:"bytes,36,opt,name=transform_param" json:"transform_param,omitempty"`
-	// DEPRECATED: The layer parameters specified as a V0LayerParameter.
-	// This should never be used by any code except to upgrade to the new
-	// LayerParameter specification.
-	Layer            *V0LayerParameter `protobuf:"bytes,1,opt,name=layer" json:"layer,omitempty"`
-	XXX_unrecognized []byte            `json:"-"`
+	TransformParam *TransformationParameter `protobuf:"bytes,100,opt,name=transform_param" json:"transform_param,omitempty"`
+	// Parameters shared by loss layers.
+	LossParam *LossParameter `protobuf:"bytes,101,opt,name=loss_param" json:"loss_param,omitempty"`
+	// Layer type-specific parameters.
+	//
+	// Note: certain layers may have more than one computational engine
+	// for their implementation. These layers include an Engine type and
+	// engine parameter for selecting the implementation.
+	// The default for the engine is set by the ENGINE switch at compile-time.
+	AccuracyParam        *AccuracyParameter        `protobuf:"bytes,102,opt,name=accuracy_param" json:"accuracy_param,omitempty"`
+	ArgmaxParam          *ArgMaxParameter          `protobuf:"bytes,103,opt,name=argmax_param" json:"argmax_param,omitempty"`
+	ConcatParam          *ConcatParameter          `protobuf:"bytes,104,opt,name=concat_param" json:"concat_param,omitempty"`
+	ContrastiveLossParam *ContrastiveLossParameter `protobuf:"bytes,105,opt,name=contrastive_loss_param" json:"contrastive_loss_param,omitempty"`
+	ConvolutionParam     *ConvolutionParameter     `protobuf:"bytes,106,opt,name=convolution_param" json:"convolution_param,omitempty"`
+	DataParam            *DataParameter            `protobuf:"bytes,107,opt,name=data_param" json:"data_param,omitempty"`
+	DropoutParam         *DropoutParameter         `protobuf:"bytes,108,opt,name=dropout_param" json:"dropout_param,omitempty"`
+	DummyDataParam       *DummyDataParameter       `protobuf:"bytes,109,opt,name=dummy_data_param" json:"dummy_data_param,omitempty"`
+	EltwiseParam         *EltwiseParameter         `protobuf:"bytes,110,opt,name=eltwise_param" json:"eltwise_param,omitempty"`
+	ExpParam             *ExpParameter             `protobuf:"bytes,111,opt,name=exp_param" json:"exp_param,omitempty"`
+	Hdf5DataParam        *HDF5DataParameter        `protobuf:"bytes,112,opt,name=hdf5_data_param" json:"hdf5_data_param,omitempty"`
+	Hdf5OutputParam      *HDF5OutputParameter      `protobuf:"bytes,113,opt,name=hdf5_output_param" json:"hdf5_output_param,omitempty"`
+	HingeLossParam       *HingeLossParameter       `protobuf:"bytes,114,opt,name=hinge_loss_param" json:"hinge_loss_param,omitempty"`
+	ImageDataParam       *ImageDataParameter       `protobuf:"bytes,115,opt,name=image_data_param" json:"image_data_param,omitempty"`
+	InfogainLossParam    *InfogainLossParameter    `protobuf:"bytes,116,opt,name=infogain_loss_param" json:"infogain_loss_param,omitempty"`
+	InnerProductParam    *InnerProductParameter    `protobuf:"bytes,117,opt,name=inner_product_param" json:"inner_product_param,omitempty"`
+	LrnParam             *LRNParameter             `protobuf:"bytes,118,opt,name=lrn_param" json:"lrn_param,omitempty"`
+	MemoryDataParam      *MemoryDataParameter      `protobuf:"bytes,119,opt,name=memory_data_param" json:"memory_data_param,omitempty"`
+	MvnParam             *MVNParameter             `protobuf:"bytes,120,opt,name=mvn_param" json:"mvn_param,omitempty"`
+	PoolingParam         *PoolingParameter         `protobuf:"bytes,121,opt,name=pooling_param" json:"pooling_param,omitempty"`
+	PowerParam           *PowerParameter           `protobuf:"bytes,122,opt,name=power_param" json:"power_param,omitempty"`
+	PythonParam          *PythonParameter          `protobuf:"bytes,130,opt,name=python_param" json:"python_param,omitempty"`
+	ReluParam            *ReLUParameter            `protobuf:"bytes,123,opt,name=relu_param" json:"relu_param,omitempty"`
+	SigmoidParam         *SigmoidParameter         `protobuf:"bytes,124,opt,name=sigmoid_param" json:"sigmoid_param,omitempty"`
+	SoftmaxParam         *SoftmaxParameter         `protobuf:"bytes,125,opt,name=softmax_param" json:"softmax_param,omitempty"`
+	SliceParam           *SliceParameter           `protobuf:"bytes,126,opt,name=slice_param" json:"slice_param,omitempty"`
+	TanhParam            *TanHParameter            `protobuf:"bytes,127,opt,name=tanh_param" json:"tanh_param,omitempty"`
+	ThresholdParam       *ThresholdParameter       `protobuf:"bytes,128,opt,name=threshold_param" json:"threshold_param,omitempty"`
+	WindowDataParam      *WindowDataParameter      `protobuf:"bytes,129,opt,name=window_data_param" json:"window_data_param,omitempty"`
+	XXX_unrecognized     []byte                    `json:"-"`
 }
 
 func (m *LayerParameter) Reset()         { *m = LayerParameter{} }
 func (m *LayerParameter) String() string { return proto.CompactTextString(m) }
 func (*LayerParameter) ProtoMessage()    {}
+
+func (m *LayerParameter) GetName() string {
+	if m != nil && m.Name != nil {
+		return *m.Name
+	}
+	return ""
+}
+
+func (m *LayerParameter) GetType() string {
+	if m != nil && m.Type != nil {
+		return *m.Type
+	}
+	return ""
+}
 
 func (m *LayerParameter) GetBottom() []string {
 	if m != nil {
@@ -1619,11 +1747,32 @@ func (m *LayerParameter) GetTop() []string {
 	return nil
 }
 
-func (m *LayerParameter) GetName() string {
-	if m != nil && m.Name != nil {
-		return *m.Name
+func (m *LayerParameter) GetPhase() Phase {
+	if m != nil && m.Phase != nil {
+		return *m.Phase
 	}
-	return ""
+	return Phase_TRAIN
+}
+
+func (m *LayerParameter) GetLossWeight() []float32 {
+	if m != nil {
+		return m.LossWeight
+	}
+	return nil
+}
+
+func (m *LayerParameter) GetParam() []*ParamSpec {
+	if m != nil {
+		return m.Param
+	}
+	return nil
+}
+
+func (m *LayerParameter) GetBlobs() []*BlobProto {
+	if m != nil {
+		return m.Blobs
+	}
+	return nil
 }
 
 func (m *LayerParameter) GetInclude() []*NetStateRule {
@@ -1640,51 +1789,16 @@ func (m *LayerParameter) GetExclude() []*NetStateRule {
 	return nil
 }
 
-func (m *LayerParameter) GetType() LayerParameter_LayerType {
-	if m != nil && m.Type != nil {
-		return *m.Type
-	}
-	return LayerParameter_NONE
-}
-
-func (m *LayerParameter) GetBlobs() []*BlobProto {
+func (m *LayerParameter) GetTransformParam() *TransformationParameter {
 	if m != nil {
-		return m.Blobs
+		return m.TransformParam
 	}
 	return nil
 }
 
-func (m *LayerParameter) GetParam() []string {
+func (m *LayerParameter) GetLossParam() *LossParameter {
 	if m != nil {
-		return m.Param
-	}
-	return nil
-}
-
-func (m *LayerParameter) GetBlobShareMode() []LayerParameter_DimCheckMode {
-	if m != nil {
-		return m.BlobShareMode
-	}
-	return nil
-}
-
-func (m *LayerParameter) GetBlobsLr() []float32 {
-	if m != nil {
-		return m.BlobsLr
-	}
-	return nil
-}
-
-func (m *LayerParameter) GetWeightDecay() []float32 {
-	if m != nil {
-		return m.WeightDecay
-	}
-	return nil
-}
-
-func (m *LayerParameter) GetLossWeight() []float32 {
-	if m != nil {
-		return m.LossWeight
+		return m.LossParam
 	}
 	return nil
 }
@@ -1836,6 +1950,13 @@ func (m *LayerParameter) GetPowerParam() *PowerParameter {
 	return nil
 }
 
+func (m *LayerParameter) GetPythonParam() *PythonParameter {
+	if m != nil {
+		return m.PythonParam
+	}
+	return nil
+}
+
 func (m *LayerParameter) GetReluParam() *ReLUParameter {
 	if m != nil {
 		return m.ReluParam
@@ -1881,20 +2002,6 @@ func (m *LayerParameter) GetThresholdParam() *ThresholdParameter {
 func (m *LayerParameter) GetWindowDataParam() *WindowDataParameter {
 	if m != nil {
 		return m.WindowDataParam
-	}
-	return nil
-}
-
-func (m *LayerParameter) GetTransformParam() *TransformationParameter {
-	if m != nil {
-		return m.TransformParam
-	}
-	return nil
-}
-
-func (m *LayerParameter) GetLayer() *V0LayerParameter {
-	if m != nil {
-		return m.Layer
 	}
 	return nil
 }
@@ -1960,6 +2067,36 @@ func (m *TransformationParameter) GetMeanValue() []float32 {
 		return m.MeanValue
 	}
 	return nil
+}
+
+// Message that stores parameters shared by loss layers
+type LossParameter struct {
+	// If specified, ignore instances with the given label.
+	IgnoreLabel *int32 `protobuf:"varint,1,opt,name=ignore_label" json:"ignore_label,omitempty"`
+	// If true, normalize each batch across all instances (including spatial
+	// dimesions, but not ignored instances); else, divide by batch size only.
+	Normalize        *bool  `protobuf:"varint,2,opt,name=normalize,def=1" json:"normalize,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
+}
+
+func (m *LossParameter) Reset()         { *m = LossParameter{} }
+func (m *LossParameter) String() string { return proto.CompactTextString(m) }
+func (*LossParameter) ProtoMessage()    {}
+
+const Default_LossParameter_Normalize bool = true
+
+func (m *LossParameter) GetIgnoreLabel() int32 {
+	if m != nil && m.IgnoreLabel != nil {
+		return *m.IgnoreLabel
+	}
+	return 0
+}
+
+func (m *LossParameter) GetNormalize() bool {
+	if m != nil && m.Normalize != nil {
+		return *m.Normalize
+	}
+	return Default_LossParameter_Normalize
 }
 
 // Message that stores parameters used by AccuracyLayer
@@ -2216,8 +2353,10 @@ type DataParameter struct {
 	CropSize *uint32 `protobuf:"varint,5,opt,name=crop_size,def=0" json:"crop_size,omitempty"`
 	// DEPRECATED. See TransformationParameter. Specify if we want to randomly mirror
 	// data.
-	Mirror           *bool  `protobuf:"varint,6,opt,name=mirror,def=0" json:"mirror,omitempty"`
-	XXX_unrecognized []byte `json:"-"`
+	Mirror *bool `protobuf:"varint,6,opt,name=mirror,def=0" json:"mirror,omitempty"`
+	// Force the encoded image to have 3 color channels
+	ForceEncodedColor *bool  `protobuf:"varint,9,opt,name=force_encoded_color,def=0" json:"force_encoded_color,omitempty"`
+	XXX_unrecognized  []byte `json:"-"`
 }
 
 func (m *DataParameter) Reset()         { *m = DataParameter{} }
@@ -2229,6 +2368,7 @@ const Default_DataParameter_Backend DataParameter_DB = DataParameter_LEVELDB
 const Default_DataParameter_Scale float32 = 1
 const Default_DataParameter_CropSize uint32 = 0
 const Default_DataParameter_Mirror bool = false
+const Default_DataParameter_ForceEncodedColor bool = false
 
 func (m *DataParameter) GetSource() string {
 	if m != nil && m.Source != nil {
@@ -2284,6 +2424,13 @@ func (m *DataParameter) GetMirror() bool {
 		return *m.Mirror
 	}
 	return Default_DataParameter_Mirror
+}
+
+func (m *DataParameter) GetForceEncodedColor() bool {
+	if m != nil && m.ForceEncodedColor != nil {
+		return *m.ForceEncodedColor
+	}
+	return Default_DataParameter_ForceEncodedColor
 }
 
 // Message that stores parameters used by DropoutLayer
@@ -2976,6 +3123,31 @@ func (m *PowerParameter) GetShift() float32 {
 	return Default_PowerParameter_Shift
 }
 
+// Message that stores parameters used by PythonLayer
+type PythonParameter struct {
+	Module           *string `protobuf:"bytes,1,opt,name=module" json:"module,omitempty"`
+	Layer            *string `protobuf:"bytes,2,opt,name=layer" json:"layer,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (m *PythonParameter) Reset()         { *m = PythonParameter{} }
+func (m *PythonParameter) String() string { return proto.CompactTextString(m) }
+func (*PythonParameter) ProtoMessage()    {}
+
+func (m *PythonParameter) GetModule() string {
+	if m != nil && m.Module != nil {
+		return *m.Module
+	}
+	return ""
+}
+
+func (m *PythonParameter) GetLayer() string {
+	if m != nil && m.Layer != nil {
+		return *m.Layer
+	}
+	return ""
+}
+
 // Message that stores parameters used by ReLULayer
 type ReLUParameter struct {
 	// Allow non-zero slope for negative inputs to speed up optimization
@@ -3254,6 +3426,359 @@ func (m *WindowDataParameter) GetRootFolder() string {
 		return *m.RootFolder
 	}
 	return ""
+}
+
+// DEPRECATED: use LayerParameter.
+type V1LayerParameter struct {
+	Bottom               []string                        `protobuf:"bytes,2,rep,name=bottom" json:"bottom,omitempty"`
+	Top                  []string                        `protobuf:"bytes,3,rep,name=top" json:"top,omitempty"`
+	Name                 *string                         `protobuf:"bytes,4,opt,name=name" json:"name,omitempty"`
+	Include              []*NetStateRule                 `protobuf:"bytes,32,rep,name=include" json:"include,omitempty"`
+	Exclude              []*NetStateRule                 `protobuf:"bytes,33,rep,name=exclude" json:"exclude,omitempty"`
+	Type                 *V1LayerParameter_LayerType     `protobuf:"varint,5,opt,name=type,enum=caffe.V1LayerParameter_LayerType" json:"type,omitempty"`
+	Blobs                []*BlobProto                    `protobuf:"bytes,6,rep,name=blobs" json:"blobs,omitempty"`
+	Param                []string                        `protobuf:"bytes,1001,rep,name=param" json:"param,omitempty"`
+	BlobShareMode        []V1LayerParameter_DimCheckMode `protobuf:"varint,1002,rep,name=blob_share_mode,enum=caffe.V1LayerParameter_DimCheckMode" json:"blob_share_mode,omitempty"`
+	BlobsLr              []float32                       `protobuf:"fixed32,7,rep,name=blobs_lr" json:"blobs_lr,omitempty"`
+	WeightDecay          []float32                       `protobuf:"fixed32,8,rep,name=weight_decay" json:"weight_decay,omitempty"`
+	LossWeight           []float32                       `protobuf:"fixed32,35,rep,name=loss_weight" json:"loss_weight,omitempty"`
+	AccuracyParam        *AccuracyParameter              `protobuf:"bytes,27,opt,name=accuracy_param" json:"accuracy_param,omitempty"`
+	ArgmaxParam          *ArgMaxParameter                `protobuf:"bytes,23,opt,name=argmax_param" json:"argmax_param,omitempty"`
+	ConcatParam          *ConcatParameter                `protobuf:"bytes,9,opt,name=concat_param" json:"concat_param,omitempty"`
+	ContrastiveLossParam *ContrastiveLossParameter       `protobuf:"bytes,40,opt,name=contrastive_loss_param" json:"contrastive_loss_param,omitempty"`
+	ConvolutionParam     *ConvolutionParameter           `protobuf:"bytes,10,opt,name=convolution_param" json:"convolution_param,omitempty"`
+	DataParam            *DataParameter                  `protobuf:"bytes,11,opt,name=data_param" json:"data_param,omitempty"`
+	DropoutParam         *DropoutParameter               `protobuf:"bytes,12,opt,name=dropout_param" json:"dropout_param,omitempty"`
+	DummyDataParam       *DummyDataParameter             `protobuf:"bytes,26,opt,name=dummy_data_param" json:"dummy_data_param,omitempty"`
+	EltwiseParam         *EltwiseParameter               `protobuf:"bytes,24,opt,name=eltwise_param" json:"eltwise_param,omitempty"`
+	ExpParam             *ExpParameter                   `protobuf:"bytes,41,opt,name=exp_param" json:"exp_param,omitempty"`
+	Hdf5DataParam        *HDF5DataParameter              `protobuf:"bytes,13,opt,name=hdf5_data_param" json:"hdf5_data_param,omitempty"`
+	Hdf5OutputParam      *HDF5OutputParameter            `protobuf:"bytes,14,opt,name=hdf5_output_param" json:"hdf5_output_param,omitempty"`
+	HingeLossParam       *HingeLossParameter             `protobuf:"bytes,29,opt,name=hinge_loss_param" json:"hinge_loss_param,omitempty"`
+	ImageDataParam       *ImageDataParameter             `protobuf:"bytes,15,opt,name=image_data_param" json:"image_data_param,omitempty"`
+	InfogainLossParam    *InfogainLossParameter          `protobuf:"bytes,16,opt,name=infogain_loss_param" json:"infogain_loss_param,omitempty"`
+	InnerProductParam    *InnerProductParameter          `protobuf:"bytes,17,opt,name=inner_product_param" json:"inner_product_param,omitempty"`
+	LrnParam             *LRNParameter                   `protobuf:"bytes,18,opt,name=lrn_param" json:"lrn_param,omitempty"`
+	MemoryDataParam      *MemoryDataParameter            `protobuf:"bytes,22,opt,name=memory_data_param" json:"memory_data_param,omitempty"`
+	MvnParam             *MVNParameter                   `protobuf:"bytes,34,opt,name=mvn_param" json:"mvn_param,omitempty"`
+	PoolingParam         *PoolingParameter               `protobuf:"bytes,19,opt,name=pooling_param" json:"pooling_param,omitempty"`
+	PowerParam           *PowerParameter                 `protobuf:"bytes,21,opt,name=power_param" json:"power_param,omitempty"`
+	ReluParam            *ReLUParameter                  `protobuf:"bytes,30,opt,name=relu_param" json:"relu_param,omitempty"`
+	SigmoidParam         *SigmoidParameter               `protobuf:"bytes,38,opt,name=sigmoid_param" json:"sigmoid_param,omitempty"`
+	SoftmaxParam         *SoftmaxParameter               `protobuf:"bytes,39,opt,name=softmax_param" json:"softmax_param,omitempty"`
+	SliceParam           *SliceParameter                 `protobuf:"bytes,31,opt,name=slice_param" json:"slice_param,omitempty"`
+	TanhParam            *TanHParameter                  `protobuf:"bytes,37,opt,name=tanh_param" json:"tanh_param,omitempty"`
+	ThresholdParam       *ThresholdParameter             `protobuf:"bytes,25,opt,name=threshold_param" json:"threshold_param,omitempty"`
+	WindowDataParam      *WindowDataParameter            `protobuf:"bytes,20,opt,name=window_data_param" json:"window_data_param,omitempty"`
+	TransformParam       *TransformationParameter        `protobuf:"bytes,36,opt,name=transform_param" json:"transform_param,omitempty"`
+	LossParam            *LossParameter                  `protobuf:"bytes,42,opt,name=loss_param" json:"loss_param,omitempty"`
+	Layer                *V0LayerParameter               `protobuf:"bytes,1,opt,name=layer" json:"layer,omitempty"`
+	XXX_unrecognized     []byte                          `json:"-"`
+}
+
+func (m *V1LayerParameter) Reset()         { *m = V1LayerParameter{} }
+func (m *V1LayerParameter) String() string { return proto.CompactTextString(m) }
+func (*V1LayerParameter) ProtoMessage()    {}
+
+func (m *V1LayerParameter) GetBottom() []string {
+	if m != nil {
+		return m.Bottom
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetTop() []string {
+	if m != nil {
+		return m.Top
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetName() string {
+	if m != nil && m.Name != nil {
+		return *m.Name
+	}
+	return ""
+}
+
+func (m *V1LayerParameter) GetInclude() []*NetStateRule {
+	if m != nil {
+		return m.Include
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetExclude() []*NetStateRule {
+	if m != nil {
+		return m.Exclude
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetType() V1LayerParameter_LayerType {
+	if m != nil && m.Type != nil {
+		return *m.Type
+	}
+	return V1LayerParameter_NONE
+}
+
+func (m *V1LayerParameter) GetBlobs() []*BlobProto {
+	if m != nil {
+		return m.Blobs
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetParam() []string {
+	if m != nil {
+		return m.Param
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetBlobShareMode() []V1LayerParameter_DimCheckMode {
+	if m != nil {
+		return m.BlobShareMode
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetBlobsLr() []float32 {
+	if m != nil {
+		return m.BlobsLr
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetWeightDecay() []float32 {
+	if m != nil {
+		return m.WeightDecay
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetLossWeight() []float32 {
+	if m != nil {
+		return m.LossWeight
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetAccuracyParam() *AccuracyParameter {
+	if m != nil {
+		return m.AccuracyParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetArgmaxParam() *ArgMaxParameter {
+	if m != nil {
+		return m.ArgmaxParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetConcatParam() *ConcatParameter {
+	if m != nil {
+		return m.ConcatParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetContrastiveLossParam() *ContrastiveLossParameter {
+	if m != nil {
+		return m.ContrastiveLossParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetConvolutionParam() *ConvolutionParameter {
+	if m != nil {
+		return m.ConvolutionParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetDataParam() *DataParameter {
+	if m != nil {
+		return m.DataParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetDropoutParam() *DropoutParameter {
+	if m != nil {
+		return m.DropoutParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetDummyDataParam() *DummyDataParameter {
+	if m != nil {
+		return m.DummyDataParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetEltwiseParam() *EltwiseParameter {
+	if m != nil {
+		return m.EltwiseParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetExpParam() *ExpParameter {
+	if m != nil {
+		return m.ExpParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetHdf5DataParam() *HDF5DataParameter {
+	if m != nil {
+		return m.Hdf5DataParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetHdf5OutputParam() *HDF5OutputParameter {
+	if m != nil {
+		return m.Hdf5OutputParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetHingeLossParam() *HingeLossParameter {
+	if m != nil {
+		return m.HingeLossParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetImageDataParam() *ImageDataParameter {
+	if m != nil {
+		return m.ImageDataParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetInfogainLossParam() *InfogainLossParameter {
+	if m != nil {
+		return m.InfogainLossParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetInnerProductParam() *InnerProductParameter {
+	if m != nil {
+		return m.InnerProductParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetLrnParam() *LRNParameter {
+	if m != nil {
+		return m.LrnParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetMemoryDataParam() *MemoryDataParameter {
+	if m != nil {
+		return m.MemoryDataParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetMvnParam() *MVNParameter {
+	if m != nil {
+		return m.MvnParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetPoolingParam() *PoolingParameter {
+	if m != nil {
+		return m.PoolingParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetPowerParam() *PowerParameter {
+	if m != nil {
+		return m.PowerParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetReluParam() *ReLUParameter {
+	if m != nil {
+		return m.ReluParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetSigmoidParam() *SigmoidParameter {
+	if m != nil {
+		return m.SigmoidParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetSoftmaxParam() *SoftmaxParameter {
+	if m != nil {
+		return m.SoftmaxParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetSliceParam() *SliceParameter {
+	if m != nil {
+		return m.SliceParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetTanhParam() *TanHParameter {
+	if m != nil {
+		return m.TanhParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetThresholdParam() *ThresholdParameter {
+	if m != nil {
+		return m.ThresholdParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetWindowDataParam() *WindowDataParameter {
+	if m != nil {
+		return m.WindowDataParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetTransformParam() *TransformationParameter {
+	if m != nil {
+		return m.TransformParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetLossParam() *LossParameter {
+	if m != nil {
+		return m.LossParam
+	}
+	return nil
+}
+
+func (m *V1LayerParameter) GetLayer() *V0LayerParameter {
+	if m != nil {
+		return m.Layer
+	}
+	return nil
 }
 
 // DEPRECATED: V0LayerParameter is the old way of specifying layer parameters
@@ -3631,8 +4156,7 @@ func init() {
 	proto.RegisterEnum("caffe.Phase", Phase_name, Phase_value)
 	proto.RegisterEnum("caffe.SolverParameter_SolverMode", SolverParameter_SolverMode_name, SolverParameter_SolverMode_value)
 	proto.RegisterEnum("caffe.SolverParameter_SolverType", SolverParameter_SolverType_name, SolverParameter_SolverType_value)
-	proto.RegisterEnum("caffe.LayerParameter_LayerType", LayerParameter_LayerType_name, LayerParameter_LayerType_value)
-	proto.RegisterEnum("caffe.LayerParameter_DimCheckMode", LayerParameter_DimCheckMode_name, LayerParameter_DimCheckMode_value)
+	proto.RegisterEnum("caffe.ParamSpec_DimCheckMode", ParamSpec_DimCheckMode_name, ParamSpec_DimCheckMode_value)
 	proto.RegisterEnum("caffe.ConvolutionParameter_Engine", ConvolutionParameter_Engine_name, ConvolutionParameter_Engine_value)
 	proto.RegisterEnum("caffe.DataParameter_DB", DataParameter_DB_name, DataParameter_DB_value)
 	proto.RegisterEnum("caffe.EltwiseParameter_EltwiseOp", EltwiseParameter_EltwiseOp_name, EltwiseParameter_EltwiseOp_value)
@@ -3644,5 +4168,7 @@ func init() {
 	proto.RegisterEnum("caffe.SigmoidParameter_Engine", SigmoidParameter_Engine_name, SigmoidParameter_Engine_value)
 	proto.RegisterEnum("caffe.SoftmaxParameter_Engine", SoftmaxParameter_Engine_name, SoftmaxParameter_Engine_value)
 	proto.RegisterEnum("caffe.TanHParameter_Engine", TanHParameter_Engine_name, TanHParameter_Engine_value)
+	proto.RegisterEnum("caffe.V1LayerParameter_LayerType", V1LayerParameter_LayerType_name, V1LayerParameter_LayerType_value)
+	proto.RegisterEnum("caffe.V1LayerParameter_DimCheckMode", V1LayerParameter_DimCheckMode_name, V1LayerParameter_DimCheckMode_value)
 	proto.RegisterEnum("caffe.V0LayerParameter_PoolMethod", V0LayerParameter_PoolMethod_name, V0LayerParameter_PoolMethod_value)
 }
