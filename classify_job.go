@@ -77,7 +77,8 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 	}
 
 	// invoke caffe
-	resultsMap, err := c.invokeCaffe()
+	saveStdoutCbfs := false
+	resultsMap, err := c.invokeCaffe(saveStdoutCbfs)
 	if err != nil {
 		c.recordProcessingError(err)
 		return
@@ -122,7 +123,7 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 //
 // Example:
 //    {"b56b61d15ccff4a81a4":"9","daf9e2c49ddbee3d48":"14"}
-func (c ClassifyJob) invokeCaffe() (map[string]string, error) {
+func (c ClassifyJob) invokeCaffe(saveStdoutCbfs bool) (map[string]string, error) {
 
 	// call "python classifier.py"
 	// build command args
@@ -155,15 +156,19 @@ func (c ClassifyJob) invokeCaffe() (map[string]string, error) {
 		return nil, err
 	}
 
-	// read from temp files and write to cbfs.
-	// initially I tried to write the stdout/stderr streams directly
-	// to cbfs, but ran into an error related to the io.Seeker interface.
-	if err := c.saveCmdOutputToCbfs(c.getStdOutPath()); err != nil {
-		return nil, fmt.Errorf("Could not save output to cbfs. Err: %v", err)
-	}
+	if saveStdoutCbfs {
 
-	if err := c.saveCmdOutputToCbfs(c.getStdErrPath()); err != nil {
-		return nil, fmt.Errorf("Could not save output to cbfs. Err: %v", err)
+		// read from temp files and write to cbfs.
+		// initially I tried to write the stdout/stderr streams directly
+		// to cbfs, but ran into an error related to the io.Seeker interface.
+		if err := c.saveCmdOutputToCbfs(c.getStdOutPath()); err != nil {
+			return nil, fmt.Errorf("Could not save output to cbfs. Err: %v", err)
+		}
+
+		if err := c.saveCmdOutputToCbfs(c.getStdErrPath()); err != nil {
+			return nil, fmt.Errorf("Could not save output to cbfs. Err: %v", err)
+		}
+
 	}
 
 	// read output.json file into map

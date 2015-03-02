@@ -153,21 +153,21 @@ func modifySolverNetSpec(sourceBytes []byte) ([]byte, error) {
 	for _, layerParam := range netParam.Layers {
 
 		switch *layerParam.Type {
-		case caffe.LayerParameter_IMAGE_DATA:
+		case caffe.V1LayerParameter_IMAGE_DATA:
 
-			if layerParam.IsTrainingPhase() {
+			if isTrainingPhase(layerParam) {
 				layerParam.ImageDataParam.Source = proto.String(TRAINING_INDEX)
 			}
-			if layerParam.IsTestingPhase() {
+			if isTestingPhase(layerParam) {
 				layerParam.ImageDataParam.Source = proto.String(TESTING_INDEX)
 			}
 
-		case caffe.LayerParameter_DATA:
+		case caffe.V1LayerParameter_DATA:
 
-			if layerParam.IsTrainingPhase() {
+			if isTrainingPhase(layerParam) {
 				layerParam.DataParam.Source = proto.String(TRAINING_DIR)
 			}
-			if layerParam.IsTestingPhase() {
+			if isTestingPhase(layerParam) {
 				layerParam.DataParam.Source = proto.String(TESTING_DIR)
 			}
 
@@ -182,6 +182,24 @@ func modifySolverNetSpec(sourceBytes []byte) ([]byte, error) {
 
 	return buf.Bytes(), nil
 
+}
+
+func isTrainingPhase(layer *caffe.V1LayerParameter) bool {
+	for _, includedPhase := range layer.Include {
+		if *includedPhase.Phase == caffe.Phase_TRAIN {
+			return true
+		}
+	}
+	return false
+}
+
+func isTestingPhase(layer *caffe.V1LayerParameter) bool {
+	for _, includedPhase := range layer.Include {
+		if *includedPhase.Phase == caffe.Phase_TEST {
+			return true
+		}
+	}
+	return false
 }
 
 func modifySolverSpec(source []byte) ([]byte, error) {

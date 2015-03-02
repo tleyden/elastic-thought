@@ -38,12 +38,14 @@ json.dump(result, f)
 	// create new classify job with custom work dir as temp dir
 	configuration := NewDefaultConfiguration()
 	configuration.WorkDirectory = tempDir
+	logg.LogTo("TEST", "temp dir: %v", tempDir)
 	classifyJob := NewClassifyJob(*configuration)
 
 	// call invokeCaffe
-	results, err := classifyJob.invokeCaffe()
+	saveStdoutCbfs := false
+	results, err := classifyJob.invokeCaffe(saveStdoutCbfs)
+	logg.LogTo("TEST", "classify results: %v.  err: %v", results, err)
 	assert.True(t, err == nil)
-	logg.LogTo("TEST", "classify results: %v", results)
 
 	// assert that json has what was expected
 	assert.Equals(t, results["image4434"], "5")

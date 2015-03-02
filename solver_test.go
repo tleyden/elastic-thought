@@ -153,20 +153,20 @@ func TestGetModifiedSolverNetSpec(t *testing.T) {
 
 	for _, layerParam := range netParam.Layers {
 
-		if *layerParam.Type != caffe.LayerParameter_IMAGE_DATA {
+		if *layerParam.Type != caffe.V1LayerParameter_IMAGE_DATA {
 			continue
 		}
 
 		// is this the training phase or testing phase?
-		if layerParam.IsTrainingPhase() {
+		if isTrainingPhase(layerParam) {
 			// get the image data param and make sure the source
 			// is "training"
 			logg.LogTo("TEST", "is training")
-			assert.Equals(t, layerParam.GetImageDataSource(), TRAINING_INDEX)
+			assert.Equals(t, *layerParam.ImageDataParam.Source, TRAINING_INDEX)
 		}
-		if layerParam.IsTestingPhase() {
+		if isTestingPhase(layerParam) {
 			logg.LogTo("TEST", "is testing")
-			assert.Equals(t, layerParam.GetImageDataSource(), TESTING_INDEX)
+			assert.Equals(t, *layerParam.ImageDataParam.Source, TESTING_INDEX)
 
 		}
 
@@ -179,13 +179,13 @@ func TestNetParameter(t *testing.T) {
 	// this test does nothing, was just trying to figure out
 	// the < vs { issue
 
-	layer := &caffe.LayerParameter{}
+	layer := &caffe.V1LayerParameter{}
 	layer.Name = proto.String("layer")
 
 	netParam := &caffe.NetParameter{}
 	netParam.Name = proto.String("net")
 
-	netParam.Layers = []*caffe.LayerParameter{layer}
+	netParam.Layers = []*caffe.V1LayerParameter{layer}
 
 	marshalled := proto.MarshalTextString(netParam)
 
