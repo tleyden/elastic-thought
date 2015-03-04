@@ -57,9 +57,20 @@ etcdctl set /couchbase.com/enable-code-refresh true
 echo "Kick off couchbase cluster"
 sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper couchbase-fleet launch-cbs --version 3.0.1 --num-nodes $numnodes --userpass "$CB_USERNAME:$CB_PASSWORD"
 
+if [ $? != 0 ]; then 
+    echo "Failed to kick off couchbase server";
+    exit 1
+fi
+
 # get an ip address of a running node in the cluster
 COUCHBASE_CLUSTER=$(sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper couchbase-cluster get-live-node-ip)
 echo "Couchbase cluster node: $COUCHBASE_CLUSTER"
+
+if [[ -z "$COUCHBASE_CLUSTER" ]] ; then
+    echo "Failed to find ip of couchbase node"
+    exit 1 
+fi
+
 
 # list units
 fleetctl list-units
