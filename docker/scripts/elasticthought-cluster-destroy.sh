@@ -1,7 +1,10 @@
 
-fleetctl list-units | awk {'print $1'} | grep -v UNIT | xargs fleetctl stop
+sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper couchbase-fleet stop --all-units
 
-fleetctl list-units | awk {'print $1'} | grep -v UNIT | xargs fleetctl destroy
+sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper couchbase-fleet destroy --all-units
 
-fleetctl list-unit-files | awk {'print $1'} | grep -v UNIT | xargs fleetctl destroy
+DELETE_DATA="sudo rm -rf /opt/couchbase/var/* /var/lib/cbfs/*"
+
+fleetctl list-machines | grep -v MACHINE | awk '{print $2}' | xargs -I{} ssh {} 'echo Delete /opt/couchbase/var and /var/lib/cbfs on `hostname` && $DELETE_DATA'
+
 
