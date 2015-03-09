@@ -7,8 +7,8 @@ EnvironmentFile=/etc/environment
 ExecStartPre=-/usr/bin/docker kill cbfs
 ExecStartPre=-/usr/bin/docker rm cbfs
 ExecStartPre=-/usr/bin/docker pull tleyden5iwx/cbfs
-ExecStartPre=/bin/bash -c 'echo Starting cbfs nodeid: $COREOS_PRIVATE_IPV4'
-ExecStart=/bin/bash -c 'COUCHBASE_SERVER_IP=$(/opt/bin/etcdctl-get-first /couchbase.com/couchbase-node-state) && docker run --name cbfs --env-file /etc/environment -v /var/lib/cbfs/data:/var/lib/cbfs/data --net=host tleyden5iwx/cbfs bash -c "refresh-cbfs feature/tleyden; cbfs -nodeID=${COREOS_PRIVATE_IPV4} -bucket=cbfs -couchbase=http://${COUCHBASE_SERVER_IP}:8091/ -root=/var/lib/cbfs/data -viewProxy"'
+ExecStartPre=/bin/bash -c 'COUCHBASE_SERVER_IP=$(/opt/bin/couchbase-server-ip) && echo Starting cbfs -nodeID=$COREOS_PRIVATE_IPV4 -couchbase=http://${COUCHBASE_SERVER_IP}:8091/'
+ExecStart=/bin/bash -c 'COUCHBASE_SERVER_IP=$(/opt/bin/couchbase-server-ip) && docker run --name cbfs --env-file /etc/environment -v /var/lib/cbfs/data:/var/lib/cbfs/data --net=host tleyden5iwx/cbfs bash -c "refresh-cbfs feature/tleyden; cbfs -nodeID=${COREOS_PRIVATE_IPV4} -bucket=cbfs -couchbase=http://${COUCHBASE_SERVER_IP}:8091/ -root=/var/lib/cbfs/data -viewProxy"'
 
 ExecStop=/usr/bin/docker stop cbfs
 
