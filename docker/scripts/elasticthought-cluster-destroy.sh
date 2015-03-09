@@ -5,4 +5,4 @@ sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper couch
 
 fleetctl list-machines | grep -v MACHINE | awk '{print $2}' | xargs -I{} ssh {} 'sudo rm -rf /opt/couchbase/var/ && sudo rm -rf /var/lib/cbfs/'
 
-
+etcdctl rmdir /couchbase.com/couchbase-node-state
