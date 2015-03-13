@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/couchbaselabs/go.assert"
-	"github.com/couchbaselabs/logg"
 )
 
 func TestJsonDecode(t *testing.T) {
@@ -56,7 +55,6 @@ func TestJsonEncode(t *testing.T) {
 	// now try to parse the json back into a struct
 	dataset2 := Dataset{}
 	err = json.Unmarshal(data, &dataset2)
-	logg.Log("Err: %v", err)
 	assert.True(t, err == nil)
 
 	// make assertions

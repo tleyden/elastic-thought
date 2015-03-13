@@ -24,7 +24,7 @@ func NewInProcessJobScheduler(c Configuration) *InProcessJobScheduler {
 func (j InProcessJobScheduler) ScheduleJob(jobDescriptor JobDescriptor) error {
 
 	// create job locally and fire off go-routine
-	logg.Log("in process job runner called with: %+v", jobDescriptor)
+	logg.LogTo("ELASTIC_THOUGHT", "in process job runner called with: %+v", jobDescriptor)
 
 	// wait until there aren't any outstanding jobs (we want to do this
 	// so that if we are processing a job already, we don't pick up new

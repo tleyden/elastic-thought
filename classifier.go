@@ -16,6 +16,11 @@ type Classifier struct {
 	ElasticThoughtDoc
 	SpecificationUrl string `json:"specification-url" binding:"required"`
 	TrainingJobID    string `json:"training-job-id" binding:"required"`
+	Scale            string `json:"scale" binding:"required"`
+	ImageWidth       string `json:"image_width" binding:"required"`
+	ImageHeight      string `json:"image_height" binding:"required"`
+	Color            bool   `json:"color" binding:"required"`
+	Gpu              bool   `json:"gpu" binding:"required"`
 
 	// had to make exported, due to https://github.com/gin-gonic/gin/pull/123
 	// waiting for this to get merged into master branch, since go get

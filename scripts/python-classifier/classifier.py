@@ -1,8 +1,8 @@
 
 
-'''
+"""
 Before running this, you will need to create an IMAGE_FILE in the current directory
-'''
+"""
 
 import numpy as np
 caffe_python = '/opt/caffe/python'
@@ -13,27 +13,54 @@ import caffe
 import glob 
 import json
 import os
+import getopt
+import sys
 
 MODEL_FILE = 'classifier.prototxt'
 PRETRAINED = 'caffe.model'
 
-# TODO: this needs to be passed in!  It can be calculated from prototxt file 
-# by taking the inverse of the scale parameter.
+use_gpu = False 
+color = False
+
+# This could be calculated from prototxt file by taking the inverse of the scale parameter.
 # See https://github.com/tleyden/caffe/blob/047d3dac8b25b0edf452e53aefd33cb47d8042d3/examples/alphabet_classification/alpha_train_text.prototxt#L13
-RAW_SCALE = 255  
+raw_scale = -1
+image_width = -1
+image_height = -1
 
-# TODO: calculate image_dims
-image_dims=(28, 28)
+options, remainder = getopt.getopt(sys.argv[1:], 's:w:h:cg', ['scale=', 
+                                                              'image_width=',
+                                                              'image_height=',
+                                                              'color',
+                                                              'gpu'])
 
-# TODO: this should be parameterized
-COLOR=False
+for opt, arg in options:
+    if opt in ('-s', '--scale'):
+        raw_scale = arg
+    elif opt in ('-w', '--image_width'):
+        image_width = arg
+    elif opt in ('-h', '--image_height'):
+        image_height = arg
+    elif opt in ('-c', '--color'):
+        color = True 
+    elif opt in ('-g', '--gpu'):
+        use_gpu = True  
 
-# TODO: this should be parameterized
-caffe.set_mode_cpu()
+
+if raw_scale == -1 or image_width == -1 or image_height == -1:
+    raise Exception("Missing required parameters")
+
+image_dims=(int(image_width), int(image_height))
+
+if use_gpu:
+    caffe.set_mode_gpu()
+else:
+    caffe.set_mode_cpu()
+
 
 net = caffe.Classifier(MODEL_FILE, 
                        PRETRAINED,
-                       raw_scale=RAW_SCALE,
+                       raw_scale=int(raw_scale),
                        image_dims=image_dims)
 
 
@@ -50,7 +77,7 @@ for image_filename in image_filenames:
         break
 
     # load each image and add to images array
-    images.append(caffe.io.load_image(image_filename, color=COLOR))
+    images.append(caffe.io.load_image(image_filename, color=color))
 
 if len(images) == 0:
     raise Exception("no images")

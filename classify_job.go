@@ -76,9 +76,15 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 		return
 	}
 
+	classifier, err := c.getClassifier()
+	if err != nil {
+		c.recordProcessingError(err)
+		return
+	}
+
 	// invoke caffe
 	saveStdoutCbfs := false
-	resultsMap, err := c.invokeCaffe(saveStdoutCbfs)
+	resultsMap, err := c.invokeCaffe(saveStdoutCbfs, *classifier)
 	if err != nil {
 		c.recordProcessingError(err)
 		return
@@ -123,19 +129,31 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 //
 // Example:
 //    {"b56b61d15ccff4a81a4":"9","daf9e2c49ddbee3d48":"14"}
-func (c ClassifyJob) invokeCaffe(saveStdoutCbfs bool) (map[string]string, error) {
+func (c ClassifyJob) invokeCaffe(saveStdoutCbfs bool, classifier Classifier) (map[string]string, error) {
 
-	// call "python classifier.py"
-	// build command args
-	cmdArgs := []string{"classifier.py"}
+	// build command args for calling "python classifier.py <args>"
+	cmdArgs := []string{
+		"classifier.py",
+		"--scale",
+		classifier.Scale,
+		"--image_width",
+		classifier.ImageWidth,
+		"--image-height",
+		classifier.ImageHeight,
+	}
+
+	if classifier.Color {
+		cmdArgs = append(cmdArgs, "--color")
+	}
+	if classifier.Gpu {
+		cmdArgs = append(cmdArgs, "--gpu")
+	}
+
 	python := "python"
 
 	// debugging
 	logg.LogTo("CLASSIFY_JOB", "Running %v with args %v", python, cmdArgs)
 	logg.LogTo("CLASSIFY_JOB", "Path %v", os.Getenv("PATH"))
-
-	// TEMP DEBUGGING -- remove this
-	exec.Command("ls", "-alh", "/usr/local/bin").Run()
 
 	// explicitly check if caffe binary found on the PATH
 	lookPathResult, err := exec.LookPath("python")

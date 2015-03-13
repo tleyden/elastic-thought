@@ -41,9 +41,16 @@ json.dump(result, f)
 	logg.LogTo("TEST", "temp dir: %v", tempDir)
 	classifyJob := NewClassifyJob(*configuration)
 
+	classifier := NewClassifier(*configuration)
+	classifier.Scale = "255"
+	classifier.ImageHeight = "28"
+	classifier.ImageWidth = "28"
+	classifier.Color = false
+	classifier.Gpu = false
+
 	// call invokeCaffe
 	saveStdoutCbfs := false
-	results, err := classifyJob.invokeCaffe(saveStdoutCbfs)
+	results, err := classifyJob.invokeCaffe(saveStdoutCbfs, *classifier)
 	logg.LogTo("TEST", "classify results: %v.  err: %v", results, err)
 	assert.True(t, err == nil)
 

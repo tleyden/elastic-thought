@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/couchbaselabs/go.assert"
-	"github.com/couchbaselabs/logg"
 	"github.com/tleyden/fakehttp"
 )
 
@@ -87,13 +86,11 @@ func TestSetSpecificationUrl(t *testing.T) {
 	for _, savedReq := range testServer.SavedRequests {
 
 		path := savedReq.Request.URL.Path
-		logg.Log("%v request to %v", savedReq.Request.Method, path)
 
 		if strings.HasSuffix(path, "db/classifier") {
 			var requestDictionary map[string]interface{}
 			err := json.Unmarshal(savedReq.Data, &requestDictionary)
 			assert.True(t, err == nil)
-			logg.Log("request body: %v", requestDictionary)
 			assert.Equals(t, requestDictionary["_id"], "classifier")
 			assert.Equals(t, requestDictionary["_rev"], "foo")
 			assert.Equals(t, requestDictionary["specification-url"], "whatever")
