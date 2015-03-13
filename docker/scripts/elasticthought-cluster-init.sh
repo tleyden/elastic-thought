@@ -105,6 +105,7 @@ echo "Create elastic-thought bucket with size: $ET_BUCKET_SIZE_MB"
 untilsuccessful sudo docker run tleyden5iwx/couchbase-server-$version /opt/couchbase/bin/couchbase-cli bucket-create -c $COUCHBASE_CLUSTER -u $CB_USERNAME -p $CB_PASSWORD --bucket=elastic-thought --bucket-ramsize=$ET_BUCKET_SIZE_MB
 
 # run sed on sync gateway config template
+# TODO: replace the sed stuff with sg-config-rewrite docker container invocation
 COUCHBASE_IP_PORT=$COUCHBASE_CLUSTER:8091
 sed -e "s/COUCHBASE_IP_PORT/${COUCHBASE_IP_PORT}/" elastic-thought/docker/templates/sync_gateway/sync_gw_config.json > /tmp/sync_gw_config.json
 echo "Generated sync gateway config"
