@@ -19,8 +19,8 @@ type Classifier struct {
 	Scale            string `json:"scale" binding:"required"`
 	ImageWidth       string `json:"image-width" binding:"required"`
 	ImageHeight      string `json:"image-height" binding:"required"`
-	Color            bool   `json:"color" binding:"required"`
-	Gpu              bool   `json:"gpu" binding:"required"`
+	Color            bool   `json:"color"`
+	Gpu              bool   `json:"gpu"`
 
 	// had to make exported, due to https://github.com/gin-gonic/gin/pull/123
 	// waiting for this to get merged into master branch, since go get
