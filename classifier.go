@@ -17,8 +17,8 @@ type Classifier struct {
 	SpecificationUrl string `json:"specification-url" binding:"required"`
 	TrainingJobID    string `json:"training-job-id" binding:"required"`
 	Scale            string `json:"scale" binding:"required"`
-	ImageWidth       string `json:"image_width" binding:"required"`
-	ImageHeight      string `json:"image_height" binding:"required"`
+	ImageWidth       string `json:"image-width" binding:"required"`
+	ImageHeight      string `json:"image-height" binding:"required"`
 	Color            bool   `json:"color" binding:"required"`
 	Gpu              bool   `json:"gpu" binding:"required"`
 

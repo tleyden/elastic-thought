@@ -29,17 +29,17 @@ image_width = -1
 image_height = -1
 
 options, remainder = getopt.getopt(sys.argv[1:], 's:w:h:cg', ['scale=', 
-                                                              'image_width=',
-                                                              'image_height=',
+                                                              'image-width=',
+                                                              'image-height=',
                                                               'color',
                                                               'gpu'])
 
 for opt, arg in options:
     if opt in ('-s', '--scale'):
         raw_scale = arg
-    elif opt in ('-w', '--image_width'):
+    elif opt in ('-w', '--image-width'):
         image_width = arg
-    elif opt in ('-h', '--image_height'):
+    elif opt in ('-h', '--image-height'):
         image_height = arg
     elif opt in ('-c', '--color'):
         color = True 

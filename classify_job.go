@@ -136,7 +136,7 @@ func (c ClassifyJob) invokeCaffe(saveStdoutCbfs bool, classifier Classifier) (ma
 		"classifier.py",
 		"--scale",
 		classifier.Scale,
-		"--image_width",
+		"--image-width",
 		classifier.ImageWidth,
 		"--image-height",
 		classifier.ImageHeight,
