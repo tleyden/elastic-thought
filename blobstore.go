@@ -12,6 +12,8 @@ import (
 type BlobStore interface {
 	Get(path string) (io.ReadCloser, error)
 	Put(srcname, dest string, r io.Reader, opts cbfsclient.PutOptions) error
+	Rm(fn string) error
+	OpenFile(path string) (*cbfsclient.FileHandle, error)
 }
 
 func NewBlobStore(uri string) (BlobStore, error) {

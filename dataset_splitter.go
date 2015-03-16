@@ -78,7 +78,7 @@ func (d DatasetSplitter) SplitDatafile() {
 	tarWriterTraining := tar.NewWriter(pwGzTrain)
 
 	// Create a cbfs client
-	cbfs, err := cbfsclient.New(d.Configuration.CbfsUrl)
+	cbfs, err := NewBlobStore(d.Configuration.CbfsUrl)
 	options := cbfsclient.PutOptions{
 		ContentType: "application/x-gzip",
 	}
@@ -171,7 +171,7 @@ func (d DatasetSplitter) SplitDatafile() {
 func (d DatasetSplitter) DownloadDatafiles() {
 
 	// Create a cbfs client
-	cbfs, err := cbfsclient.New(d.Configuration.CbfsUrl)
+	cbfs, err := NewBlobStore(d.Configuration.CbfsUrl)
 	options := cbfsclient.PutOptions{
 		ContentType: "application/x-gzip",
 	}

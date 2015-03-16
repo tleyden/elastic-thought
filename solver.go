@@ -226,7 +226,7 @@ func modifySolverSpec(source []byte) ([]byte, error) {
 
 // download contents of solver-spec-url into cbfs://<solver-id>/spec.prototxt
 // and update solver object's solver-spec-url with cbfs url
-func (s Solver) DownloadSpecToCbfs(db couch.Database, cbfs *cbfsclient.Client) (*Solver, error) {
+func (s Solver) DownloadSpecToCbfs(db couch.Database, cbfs BlobStore) (*Solver, error) {
 
 	// rewrite the solver specification
 	solverSpecBytes, err := s.getModifiedSolverSpec()
@@ -271,7 +271,7 @@ func (s Solver) DownloadSpecToCbfs(db couch.Database, cbfs *cbfsclient.Client) (
 	return solver, nil
 }
 
-func (s Solver) saveToCbfs(cbfs *cbfsclient.Client, destPath string, reader io.Reader) error {
+func (s Solver) saveToCbfs(cbfs BlobStore, destPath string, reader io.Reader) error {
 
 	// save to cbfs
 	options := cbfsclient.PutOptions{
@@ -355,7 +355,7 @@ func (s Solver) writeCbfsFile(config Configuration, destDirectory, sourceUrl str
 
 	// use cbfs client to open stream
 
-	cbfs, err := cbfsclient.New(config.CbfsUrl)
+	cbfs, err := NewBlobStore(config.CbfsUrl)
 	if err != nil {
 		return err
 	}
@@ -399,20 +399,26 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) ([
 	trainingArtifact := dataset.TrainingArtifactPath()
 	testArtifact := dataset.TestingArtifactPath()
 	trainingLabelIndex := []string{}
-	// TODO: testLabelIndex := []string{}
 
+	// create blob store client
+	blobStore, err := NewBlobStore(config.CbfsUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	// for both the training and testing datafile aka "artifact" (a gzip file stored in cbfs)
+	// do the following:
+	// - extract it to appropriate subdirectory in destDirectory
+	// - find the toc (list of all files in the datafile)
+	// - write the toc file
+	// - from the toc file of the training set, extract the labelindex
+	//
 	artificactPaths := []string{trainingArtifact, testArtifact}
 	for _, artificactPath := range artificactPaths {
 
-		// create cbfs client
-		cbfs, err := cbfsclient.New(config.CbfsUrl)
-		if err != nil {
-			return nil, err
-		}
-
 		// open stream to artifact in cbfs
 		logg.LogTo("TRAINING_JOB", "Cbfs get %v", artificactPath)
-		reader, err := cbfs.Get(artificactPath)
+		reader, err := blobStore.Get(artificactPath)
 		if err != nil {
 			return nil, err
 		}
@@ -443,16 +449,27 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) ([
 		destDirectoryToUse := path.Join(destDirectory, subdirectory)
 
 		toc, err := untarGzWithToc(teeReader, destDirectoryToUse)
+
+		/*		dataType := discoverInputLayerDataType(toc)
+				switch dataType {
+				IMAGE_DATA:
+
+				}
+		*/
+
+		// TODO: this doesn't work with leveldb!  see
+		// https://github.com/tleyden/elastic-thought/issues/4
+		// for leveldb, it needs to generate the labelindex in a
+		// different manner.  it needs to just call something to
+		// extract the labels from leveldb directly.  (in a separate db)
 		tocWithLabels, labelIndex := addLabelsToToc(toc)
+
 		tocWithSubdir := addParentDirToToc(tocWithLabels, subdirectory)
 
 		if artificactPath == trainingArtifact {
 			trainingLabelIndex = labelIndex
 		}
 
-		for _, tocEntry := range tocWithSubdir {
-			logg.LogTo("TRAINING_JOB", "tocEntry %v", tocEntry)
-		}
 		if err != nil {
 			return nil, err
 		}
@@ -530,12 +547,12 @@ each new directory found.
 Return the new toc with numeric labels, followed by the label index.
 
 */
-func addLabelsToToc(tableOfContents []string) ([]string, []string) {
+func addLabelsToToc(tableOfContents []string) (tocWithLabels []string, labels []string) {
 
 	currentDirectory := ""
 	labelIndex := 0
-	tocWithLabels := []string{}
-	labels := []string{}
+	tocWithLabels = []string{}
+	labels = []string{}
 
 	for _, tocEntry := range tableOfContents {
 

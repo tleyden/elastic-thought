@@ -8,7 +8,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
 	"github.com/gin-gonic/gin"
 	"github.com/tleyden/go-couch"
@@ -151,7 +150,7 @@ func (e EndpointContext) CreateSolverEndpoint(c *gin.Context) {
 	}
 
 	// Create a cbfs client
-	cbfs, err := cbfsclient.New(e.Configuration.CbfsUrl)
+	cbfs, err := NewBlobStore(e.Configuration.CbfsUrl)
 	if err != nil {
 		errMsg := fmt.Errorf("Error creating cbfs client: %v", err)
 		c.Fail(500, errMsg)
@@ -241,7 +240,7 @@ func (e EndpointContext) CreateClassifierEndpoint(c *gin.Context) {
 	}
 
 	// Create a cbfs client
-	cbfs, err := cbfsclient.New(e.Configuration.CbfsUrl)
+	cbfs, err := NewBlobStore(e.Configuration.CbfsUrl)
 	if err != nil {
 		errMsg := fmt.Errorf("Error creating cbfs client: %v", err)
 		c.Fail(500, errMsg)

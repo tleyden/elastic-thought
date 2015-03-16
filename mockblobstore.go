@@ -40,3 +40,11 @@ func (m *MockBlobStore) Get(path string) (io.ReadCloser, error) {
 func (m *MockBlobStore) Put(srcname, dest string, r io.Reader, opts cbfsclient.PutOptions) error {
 	return nil
 }
+
+func (m *MockBlobStore) Rm(fn string) error {
+	return nil
+}
+
+func (m *MockBlobStore) OpenFile(path string) (*cbfsclient.FileHandle, error) {
+	return nil, nil
+}

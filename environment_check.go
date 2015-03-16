@@ -26,7 +26,7 @@ func CbfsReadWriteFile(config Configuration, destPath, content string) error {
 
 	// get cbfs client
 	// Create a cbfs client
-	cbfs, err := cbfsclient.New(config.CbfsUrl)
+	cbfs, err := NewBlobStore(config.CbfsUrl)
 	if err != nil {
 		return err
 	}
