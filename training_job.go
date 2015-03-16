@@ -233,12 +233,12 @@ func (j TrainingJob) uploadCaffeModelToCbfs(caffeModelFilename string) error {
 
 	destPath := path.Join(j.Id, "trained.caffemodel")
 
-	cbfs, err := j.Configuration.NewCbfsClient()
+	cbfs, err := j.Configuration.NewBlobStoreClient()
 	if err != nil {
 		return err
 	}
 
-	if err := saveFileToCbfs(caffeModelFilename, destPath, "application/octet-stream", cbfs); err != nil {
+	if err := saveFileToBlobStore(caffeModelFilename, destPath, "application/octet-stream", cbfs); err != nil {
 		return err
 	}
 
@@ -335,12 +335,12 @@ func (j TrainingJob) saveCmdOutputToCbfs(sourcePath string) error {
 	base := path.Base(sourcePath)
 	destPath := fmt.Sprintf("%v/%v", j.Id, base)
 
-	cbfsclient, err := j.Configuration.NewCbfsClient()
+	cbfsclient, err := j.Configuration.NewBlobStoreClient()
 	if err != nil {
 		return err
 	}
 
-	if err := saveFileToCbfs(sourcePath, destPath, "text/plain", cbfsclient); err != nil {
+	if err := saveFileToBlobStore(sourcePath, destPath, "text/plain", cbfsclient); err != nil {
 		return err
 	}
 

@@ -161,7 +161,7 @@ func (e EndpointContext) CreateSolverEndpoint(c *gin.Context) {
 	// download contents of specification-url into cbfs://<solver-id>/spec.prototxt
 	// and update solver object's specification-url with cbfs url.
 	// ditto for specification-net-url
-	solver, err = solver.DownloadSpecToCbfs(db, cbfs)
+	solver, err = solver.DownloadSpecToBlobStore(db, cbfs)
 	if err != nil {
 		c.Fail(500, err)
 		return
@@ -250,7 +250,7 @@ func (e EndpointContext) CreateClassifierEndpoint(c *gin.Context) {
 	// download contents of spec-url into cbfs://<classifier-id>/classifier.prototxt
 	logg.LogTo("REST", "Save classifier.prototxt %v to cbfs", classifier.SpecificationUrl)
 	destPath := path.Join(classifier.Id, "classifier.prototxt")
-	if err := saveUrlToCbfs(classifier.SpecificationUrl, destPath, cbfs); err != nil {
+	if err := saveUrlToBlobStore(classifier.SpecificationUrl, destPath, cbfs); err != nil {
 		c.Fail(500, err)
 		return
 
@@ -316,13 +316,13 @@ func (e EndpointContext) CreateClassificationJobEndpoint(c *gin.Context) {
 		// save image url to cbfs
 		dest := path.Join(classifyJob.Id, hashHexString)
 
-		cbfsclient, err := e.Configuration.NewCbfsClient()
+		cbfsclient, err := e.Configuration.NewBlobStoreClient()
 		if err != nil {
 			c.Fail(500, err)
 			return
 		}
 
-		if err := saveUrlToCbfs(url, dest, cbfsclient); err != nil {
+		if err := saveUrlToBlobStore(url, dest, cbfsclient); err != nil {
 			c.Fail(500, err)
 			return
 		}

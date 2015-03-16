@@ -126,7 +126,7 @@ func (d Datafile) HasValidId() bool {
 }
 
 // Copy the contents of Datafile.Url to CBFS and return the cbfs dest path
-func (d Datafile) CopyToCBFS(db couch.Database, blobStore BlobStore) (string, error) {
+func (d Datafile) CopyToBlobStore(db couch.Database, blobStore BlobStore) (string, error) {
 
 	if !d.HasValidId() {
 		errMsg := fmt.Errorf("Datafile: %+v must have an id", d)

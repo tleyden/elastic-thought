@@ -54,6 +54,6 @@ func (c Configuration) DbConnection() couch.Database {
 }
 
 // Create a new cbfs client based on url stored in config
-func (c Configuration) NewCbfsClient() (BlobStore, error) {
+func (c Configuration) NewBlobStoreClient() (BlobStore, error) {
 	return NewBlobStore(c.CbfsUrl)
 }

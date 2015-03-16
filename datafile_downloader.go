@@ -33,7 +33,7 @@ func (d DatafileDownloader) Run(wg *sync.WaitGroup) {
 	}
 
 	// create a new cbfs client
-	cbfs, err := d.Configuration.NewCbfsClient()
+	cbfs, err := d.Configuration.NewBlobStoreClient()
 	if err != nil {
 		errMsg := fmt.Errorf("Error creating cbfs client: %v", err)
 		d.recordProcessingError(errMsg)
@@ -42,7 +42,7 @@ func (d DatafileDownloader) Run(wg *sync.WaitGroup) {
 
 	// copy url contents to cbfs
 	logg.LogTo("DATAFILE_DOWNLOADER", "Put to CBFS: %+v %v %v", d, db, cbfs)
-	cbfsDestPath, err := d.Datafile.CopyToCBFS(db, cbfs)
+	cbfsDestPath, err := d.Datafile.CopyToBlobStore(db, cbfs)
 	if err != nil {
 		d.recordProcessingError(err)
 		return

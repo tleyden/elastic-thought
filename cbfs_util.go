@@ -13,7 +13,7 @@ import (
 	"github.com/couchbaselabs/logg"
 )
 
-func saveFileToCbfs(sourcePath, destPath, contentType string, blobStore BlobStore) error {
+func saveFileToBlobStore(sourcePath, destPath, contentType string, blobStore BlobStore) error {
 
 	options := cbfsclient.PutOptions{
 		ContentType: contentType,
@@ -37,7 +37,7 @@ func saveFileToCbfs(sourcePath, destPath, contentType string, blobStore BlobStor
 }
 
 // Save the contents of sourceUrl to cbfs at destPath
-func saveUrlToCbfs(sourceUrl, destPath string, blobStore BlobStore) error {
+func saveUrlToBlobStore(sourceUrl, destPath string, blobStore BlobStore) error {
 
 	// open stream to source url
 	resp, err := http.Get(sourceUrl)
@@ -65,7 +65,7 @@ func saveUrlToCbfs(sourceUrl, destPath string, blobStore BlobStore) error {
 }
 
 // Get the content from cbfs from given sourcepath
-func getContentFromCbfs(blobStore BlobStore, sourcePath string) ([]byte, error) {
+func getContentFromBlobStore(blobStore BlobStore, sourcePath string) ([]byte, error) {
 
 	// read contents from blobStore
 	reader, err := blobStore.Get(sourcePath)
@@ -83,7 +83,7 @@ func getContentFromCbfs(blobStore BlobStore, sourcePath string) ([]byte, error) 
 }
 
 // Download the content at sourcePath (cbfs://foo/bar.txt) to destPath (/path/to/bar.txt)
-func downloadFromCbfs(blobStore BlobStore, sourceUri, destPath string) (err error) {
+func downloadFromBlobStore(blobStore BlobStore, sourceUri, destPath string) (err error) {
 
 	if !strings.HasPrefix(sourceUri, CBFS_URI_PREFIX) {
 		return fmt.Errorf("Invalid TrainedModelUrl: %v", sourceUri)

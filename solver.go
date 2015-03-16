@@ -70,13 +70,13 @@ func (s Solver) getSolverPrototxtContent() ([]byte, error) {
 		return nil, fmt.Errorf("Error getting cbfs path of solver prototxt. Err: %v", err)
 	}
 
-	// create a new cbfs client
-	cbfs, err := s.Configuration.NewCbfsClient()
+	// create a new blob store client
+	blobStore, err := s.Configuration.NewBlobStoreClient()
 	if err != nil {
-		return nil, fmt.Errorf("Error creating cbfs client: %v", err)
+		return nil, fmt.Errorf("Error creating blob store client: %v", err)
 	}
 
-	return getContentFromCbfs(cbfs, sourcePath)
+	return getContentFromBlobStore(blobStore, sourcePath)
 
 }
 
@@ -225,7 +225,7 @@ func modifySolverSpec(source []byte) ([]byte, error) {
 
 // download contents of solver-spec-url into cbfs://<solver-id>/spec.prototxt
 // and update solver object's solver-spec-url with cbfs url
-func (s Solver) DownloadSpecToCbfs(db couch.Database, blobStore BlobStore) (*Solver, error) {
+func (s Solver) DownloadSpecToBlobStore(db couch.Database, blobStore BlobStore) (*Solver, error) {
 
 	// rewrite the solver specification
 	solverSpecBytes, err := s.getModifiedSolverSpec()
@@ -236,7 +236,7 @@ func (s Solver) DownloadSpecToCbfs(db couch.Database, blobStore BlobStore) (*Sol
 	// save rewritten solver to blobStore
 	destPath := fmt.Sprintf("%v/solver.prototxt", s.Id)
 	reader := bytes.NewReader(solverSpecBytes)
-	if err := s.saveToCbfs(blobStore, destPath, reader); err != nil {
+	if err := s.saveToBlobStore(blobStore, destPath, reader); err != nil {
 		return nil, err
 	}
 
@@ -254,7 +254,7 @@ func (s Solver) DownloadSpecToCbfs(db couch.Database, blobStore BlobStore) (*Sol
 	// save rewritten solver to blobStore
 	destPath = fmt.Sprintf("%v/solver-net.prototxt", s.Id)
 	reader = bytes.NewReader(solverSpecNetBytes)
-	if err := s.saveToCbfs(blobStore, destPath, reader); err != nil {
+	if err := s.saveToBlobStore(blobStore, destPath, reader); err != nil {
 		return nil, err
 	}
 
@@ -270,7 +270,7 @@ func (s Solver) DownloadSpecToCbfs(db couch.Database, blobStore BlobStore) (*Sol
 	return solver, nil
 }
 
-func (s Solver) saveToCbfs(blobStore BlobStore, destPath string, reader io.Reader) error {
+func (s Solver) saveToBlobStore(blobStore BlobStore, destPath string, reader io.Reader) error {
 
 	// save to blobStore
 	options := cbfsclient.PutOptions{
@@ -314,7 +314,7 @@ func (s Solver) writeSpecToFile(config Configuration, destDirectory string) erro
 	if err != nil {
 		return err
 	}
-	if err := s.writeCbfsFile(config, destDirectory, specUrlPath); err != nil {
+	if err := s.writeBlobStoreFile(config, destDirectory, specUrlPath); err != nil {
 		return err
 	}
 
@@ -323,7 +323,7 @@ func (s Solver) writeSpecToFile(config Configuration, destDirectory string) erro
 	if err != nil {
 		return err
 	}
-	if err := s.writeCbfsFile(config, destDirectory, specNetUrlPath); err != nil {
+	if err := s.writeBlobStoreFile(config, destDirectory, specNetUrlPath); err != nil {
 		return err
 	}
 
@@ -331,7 +331,7 @@ func (s Solver) writeSpecToFile(config Configuration, destDirectory string) erro
 }
 
 // Get a file from cbfs and write it locally
-func (s Solver) writeCbfsFile(config Configuration, destDirectory, sourceUrl string) error {
+func (s Solver) writeBlobStoreFile(config Configuration, destDirectory, sourceUrl string) error {
 
 	// get filename, eg, if path is foo/spec.txt, get spec.txt
 	_, sourceFilename := filepath.Split(sourceUrl)

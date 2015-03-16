@@ -226,12 +226,12 @@ func (c ClassifyJob) saveCmdOutputToCbfs(sourcePath string) error {
 	base := path.Base(sourcePath)
 	destPath := fmt.Sprintf("%v/%v", c.Id, base)
 
-	cbfsclient, err := c.Configuration.NewCbfsClient()
+	cbfsclient, err := c.Configuration.NewBlobStoreClient()
 	if err != nil {
 		return err
 	}
 
-	if err := saveFileToCbfs(sourcePath, destPath, "text/plain", cbfsclient); err != nil {
+	if err := saveFileToBlobStore(sourcePath, destPath, "text/plain", cbfsclient); err != nil {
 		return err
 	}
 
@@ -351,12 +351,12 @@ func (c ClassifyJob) downloadCaffeModel() error {
 	trainedModelUrl := trainingJob.TrainedModelUrl
 
 	// download from cbfs to local file system
-	cbfs, err := c.Configuration.NewCbfsClient()
+	cbfs, err := c.Configuration.NewBlobStoreClient()
 	if err != nil {
 		return err
 	}
 	destPath := path.Join(c.getWorkDirectory(), "caffe.model")
-	if err := downloadFromCbfs(cbfs, trainedModelUrl, destPath); err != nil {
+	if err := downloadFromBlobStore(cbfs, trainedModelUrl, destPath); err != nil {
 		return err
 	}
 
@@ -371,12 +371,12 @@ func (c ClassifyJob) downloadPrototxt() error {
 		return err
 	}
 
-	cbfs, err := c.Configuration.NewCbfsClient()
+	cbfs, err := c.Configuration.NewBlobStoreClient()
 	if err != nil {
 		return err
 	}
 	destPath := path.Join(c.getWorkDirectory(), "classifier.prototxt")
-	if err := downloadFromCbfs(cbfs, classifier.SpecificationUrl, destPath); err != nil {
+	if err := downloadFromBlobStore(cbfs, classifier.SpecificationUrl, destPath); err != nil {
 		return err
 	}
 
@@ -389,7 +389,7 @@ func (c ClassifyJob) downloadImagesToClassify() error {
 	// (if multiple images specified, all bust last will be clobbered)
 	// TODO: fix this and download all images
 
-	cbfs, err := c.Configuration.NewCbfsClient()
+	cbfs, err := c.Configuration.NewBlobStoreClient()
 	if err != nil {
 		return err
 	}
@@ -400,7 +400,7 @@ func (c ClassifyJob) downloadImagesToClassify() error {
 		// url will be cbfs://<classify_job_id>/<imageurl_sha1_hash>
 		_, imageSha1Hash := path.Split(imageUrl)
 		destPath := path.Join(c.getWorkImagesDirectory(), imageSha1Hash)
-		if err := downloadFromCbfs(cbfs, imageUrl, destPath); err != nil {
+		if err := downloadFromBlobStore(cbfs, imageUrl, destPath); err != nil {
 			return err
 		}
 		i += 1
