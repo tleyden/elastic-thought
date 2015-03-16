@@ -13,7 +13,7 @@ import (
 	"github.com/couchbaselabs/logg"
 )
 
-func saveFileToCbfs(sourcePath, destPath, contentType string, cbfs BlobStore) error {
+func saveFileToCbfs(sourcePath, destPath, contentType string, blobStore BlobStore) error {
 
 	options := cbfsclient.PutOptions{
 		ContentType: contentType,
@@ -26,7 +26,7 @@ func saveFileToCbfs(sourcePath, destPath, contentType string, cbfs BlobStore) er
 
 	r := bufio.NewReader(f)
 
-	if err := cbfs.Put("", destPath, r, options); err != nil {
+	if err := blobStore.Put("", destPath, r, options); err != nil {
 		return fmt.Errorf("Error writing %v to cbfs: %v", destPath, err)
 	}
 
@@ -37,7 +37,7 @@ func saveFileToCbfs(sourcePath, destPath, contentType string, cbfs BlobStore) er
 }
 
 // Save the contents of sourceUrl to cbfs at destPath
-func saveUrlToCbfs(sourceUrl, destPath string, cbfs BlobStore) error {
+func saveUrlToCbfs(sourceUrl, destPath string, blobStore BlobStore) error {
 
 	// open stream to source url
 	resp, err := http.Get(sourceUrl)
@@ -54,21 +54,21 @@ func saveUrlToCbfs(sourceUrl, destPath string, cbfs BlobStore) error {
 		ContentType: resp.Header.Get("Content-Type"),
 	}
 
-	if err := cbfs.Put("", destPath, resp.Body, options); err != nil {
-		return fmt.Errorf("Error writing %v to cbfs: %v", destPath, err)
+	if err := blobStore.Put("", destPath, resp.Body, options); err != nil {
+		return fmt.Errorf("Error writing %v to blobStore: %v", destPath, err)
 	}
 
-	logg.LogTo("CBFS", "Wrote %v to cbfs: %v", sourceUrl, destPath)
+	logg.LogTo("CBFS", "Wrote %v to blobStore: %v", sourceUrl, destPath)
 
 	return nil
 
 }
 
 // Get the content from cbfs from given sourcepath
-func getContentFromCbfs(cbfs BlobStore, sourcePath string) ([]byte, error) {
+func getContentFromCbfs(blobStore BlobStore, sourcePath string) ([]byte, error) {
 
-	// read contents from cbfs
-	reader, err := cbfs.Get(sourcePath)
+	// read contents from blobStore
+	reader, err := blobStore.Get(sourcePath)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func getContentFromCbfs(cbfs BlobStore, sourcePath string) ([]byte, error) {
 }
 
 // Download the content at sourcePath (cbfs://foo/bar.txt) to destPath (/path/to/bar.txt)
-func downloadFromCbfs(cbfs BlobStore, sourceUri, destPath string) (err error) {
+func downloadFromCbfs(blobStore BlobStore, sourceUri, destPath string) (err error) {
 
 	if !strings.HasPrefix(sourceUri, CBFS_URI_PREFIX) {
 		return fmt.Errorf("Invalid TrainedModelUrl: %v", sourceUri)
@@ -104,14 +104,14 @@ func downloadFromCbfs(cbfs BlobStore, sourceUri, destPath string) (err error) {
 	// chop off cbfs:// to get a source path on cbfs
 	sourcePath := strings.Replace(sourceUri, CBFS_URI_PREFIX, "", -1)
 
-	// read contents from cbfs
-	reader, err := cbfs.Get(sourcePath)
+	// read contents from blobStore
+	reader, err := blobStore.Get(sourcePath)
 	if err != nil {
 		return err
 	}
 	defer reader.Close()
 
-	// copy cbfs -> dest
+	// copy blobStore -> dest
 	_, err = io.Copy(out, reader)
 
 	return

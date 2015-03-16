@@ -126,7 +126,7 @@ func (d Datafile) HasValidId() bool {
 }
 
 // Copy the contents of Datafile.Url to CBFS and return the cbfs dest path
-func (d Datafile) CopyToCBFS(db couch.Database, cbfs BlobStore) (string, error) {
+func (d Datafile) CopyToCBFS(db couch.Database, blobStore BlobStore) (string, error) {
 
 	if !d.HasValidId() {
 		errMsg := fmt.Errorf("Datafile: %+v must have an id", d)
@@ -142,7 +142,7 @@ func (d Datafile) CopyToCBFS(db couch.Database, cbfs BlobStore) (string, error) 
 
 	logg.LogTo("MODEL", "datafile url: |%v|", d.Url)
 
-	// figure out dest path to save to on cbfs
+	// figure out dest path to save to on blobStore
 	u, err := url.Parse(d.Url)
 	if err != nil {
 		errMsg := fmt.Errorf("Error parsing: %v. Err %v", d.Url, err)
@@ -162,17 +162,17 @@ func (d Datafile) CopyToCBFS(db couch.Database, cbfs BlobStore) (string, error) 
 	}
 	defer resp.Body.Close()
 
-	// write to cbfs
+	// write to blobStore
 	options := cbfsclient.PutOptions{
 		ContentType: resp.Header.Get("Content-Type"),
 	}
-	if err := cbfs.Put("", destPath, resp.Body, options); err != nil {
-		errMsg := fmt.Errorf("Error writing %v to cbfs: %v", destPath, err)
+	if err := blobStore.Put("", destPath, resp.Body, options); err != nil {
+		errMsg := fmt.Errorf("Error writing %v to blobStore: %v", destPath, err)
 		logg.LogError(errMsg)
 		return "", errMsg
 	}
 
-	logg.LogTo("MODEL", "copied datafile url %v to cbfs: %v", d.Url, destPath)
+	logg.LogTo("MODEL", "copied datafile url %v to blobStore: %v", d.Url, destPath)
 
 	return destPath, nil
 

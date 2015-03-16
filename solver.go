@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -226,7 +225,7 @@ func modifySolverSpec(source []byte) ([]byte, error) {
 
 // download contents of solver-spec-url into cbfs://<solver-id>/spec.prototxt
 // and update solver object's solver-spec-url with cbfs url
-func (s Solver) DownloadSpecToCbfs(db couch.Database, cbfs BlobStore) (*Solver, error) {
+func (s Solver) DownloadSpecToCbfs(db couch.Database, blobStore BlobStore) (*Solver, error) {
 
 	// rewrite the solver specification
 	solverSpecBytes, err := s.getModifiedSolverSpec()
@@ -234,14 +233,14 @@ func (s Solver) DownloadSpecToCbfs(db couch.Database, cbfs BlobStore) (*Solver, 
 		return nil, err
 	}
 
-	// save rewritten solver to cbfs
+	// save rewritten solver to blobStore
 	destPath := fmt.Sprintf("%v/solver.prototxt", s.Id)
 	reader := bytes.NewReader(solverSpecBytes)
-	if err := s.saveToCbfs(cbfs, destPath, reader); err != nil {
+	if err := s.saveToCbfs(blobStore, destPath, reader); err != nil {
 		return nil, err
 	}
 
-	// update solver with cbfs url
+	// update solver with blobStore url
 	s.SpecificationUrl = fmt.Sprintf("%v%v", CBFS_URI_PREFIX, destPath)
 
 	// TODO: s.MaxIterations =
@@ -252,14 +251,14 @@ func (s Solver) DownloadSpecToCbfs(db couch.Database, cbfs BlobStore) (*Solver, 
 		return nil, err
 	}
 
-	// save rewritten solver to cbfs
+	// save rewritten solver to blobStore
 	destPath = fmt.Sprintf("%v/solver-net.prototxt", s.Id)
 	reader = bytes.NewReader(solverSpecNetBytes)
-	if err := s.saveToCbfs(cbfs, destPath, reader); err != nil {
+	if err := s.saveToCbfs(blobStore, destPath, reader); err != nil {
 		return nil, err
 	}
 
-	// update solver-net with cbfs url
+	// update solver-net with blobStore url
 	s.SpecificationNetUrl = fmt.Sprintf("%v%v", CBFS_URI_PREFIX, destPath)
 
 	// save
@@ -271,34 +270,18 @@ func (s Solver) DownloadSpecToCbfs(db couch.Database, cbfs BlobStore) (*Solver, 
 	return solver, nil
 }
 
-func (s Solver) saveToCbfs(cbfs BlobStore, destPath string, reader io.Reader) error {
+func (s Solver) saveToCbfs(blobStore BlobStore, destPath string, reader io.Reader) error {
 
-	// save to cbfs
+	// save to blobStore
 	options := cbfsclient.PutOptions{
 		ContentType: "text/plain",
 	}
 
-	if err := cbfs.Put("", destPath, reader, options); err != nil {
-		return fmt.Errorf("Error writing %v to cbfs: %v", destPath, err)
+	if err := blobStore.Put("", destPath, reader, options); err != nil {
+		return fmt.Errorf("Error writing %v to blobStore: %v", destPath, err)
 	}
-	logg.LogTo("REST", "Wrote %v to cbfs", destPath)
+	logg.LogTo("REST", "Wrote %v to blobStore", destPath)
 	return nil
-
-}
-
-func (s Solver) saveUrlToCbfs(cbfs *cbfsclient.Client, destPath, sourceUrl string) error {
-
-	// open stream to source url
-	resp, err := http.Get(sourceUrl)
-	if err != nil {
-		return fmt.Errorf("Error doing GET on: %v.  %v", sourceUrl, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("%v response to GET on: %v", resp.StatusCode, sourceUrl)
-	}
-	return s.saveToCbfs(cbfs, destPath, resp.Body)
 
 }
 
