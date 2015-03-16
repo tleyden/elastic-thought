@@ -374,14 +374,14 @@ func (s Solver) writeBlobStoreFile(config Configuration, destDirectory, sourceUr
 //
 // Returns the label index (each label indexed by its numeric label id), and
 // an error or nil
-func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) ([]string, error) {
+func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) (trainingLabelIndex []string, err error) {
 
 	// find cbfs paths to artificacts
 	dataset := NewDataset(config)
 	dataset.Id = s.DatasetId
 	trainingArtifact := dataset.TrainingArtifactPath()
 	testArtifact := dataset.TestingArtifactPath()
-	trainingLabelIndex := []string{}
+	trainingLabelIndex = []string{}
 
 	// create blob store client
 	blobStore, err := NewBlobStore(config.CbfsUrl)

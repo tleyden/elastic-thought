@@ -6,6 +6,16 @@ import (
 	"github.com/couchbaselabs/cbfs/client"
 )
 
+var (
+	DefaultMockBlobStore *MockBlobStore
+)
+
+func init() {
+	DefaultMockBlobStore = &MockBlobStore{
+		GetResponses: map[string]ResponseQueue{},
+	}
+}
+
 type MockBlobStore struct {
 
 	// Queued responses for blob Get requests.  The key is a
@@ -16,10 +26,13 @@ type MockBlobStore struct {
 type ResponseQueue []io.Reader
 
 func NewMockBlobStore() *MockBlobStore {
-	mbs := &MockBlobStore{
-		GetResponses: map[string]ResponseQueue{},
+	if DefaultMockBlobStore == nil {
+		DefaultMockBlobStore = &MockBlobStore{
+			GetResponses: map[string]ResponseQueue{},
+		}
+
 	}
-	return mbs
+	return DefaultMockBlobStore
 }
 
 // Queue up a response to a Get request

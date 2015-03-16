@@ -1,6 +1,8 @@
 package elasticthought
 
 import (
+	"bytes"
+	"log"
 	"strings"
 	"testing"
 
@@ -189,8 +191,29 @@ func TestNetParameter(t *testing.T) {
 
 	marshalled := proto.MarshalTextString(netParam)
 
-	// TODO: why is it using < and > instead of { and } ?
-
 	logg.LogTo("TEST", "text marshalled: %v", marshalled)
+
+}
+
+func TestSaveTrainTestDataImageData(t *testing.T) {
+
+	configuration := NewDefaultConfiguration()
+	solver := NewSolver(*configuration)
+	solver.DatasetId = "123"
+
+	// TODO: use go bindata to pass in an actual gzip file
+	// and then make assertions about the labels
+	DefaultMockBlobStore.QueueGetResponse("*", bytes.NewBuffer([]byte("hello")))
+
+	destDirectory := "/tmp"
+	labelIndex, err := solver.SaveTrainTestData(*configuration, destDirectory)
+
+	assert.True(t, err != nil)
+	log.Printf("LabelIndex: %v", labelIndex)
+
+}
+
+// Test solver.SaveTrainTestData with LevelDb data
+func TestSaveTrainTestDataLevelDb(t *testing.T) {
 
 }
