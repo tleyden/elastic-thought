@@ -7,8 +7,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
-	"github.com/tleyden/cbfs/client"
 )
 
 func EnvironmentSanityCheck(config Configuration) error {

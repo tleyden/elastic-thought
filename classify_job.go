@@ -98,7 +98,7 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 	}
 
 	// modify results to map numeric labels with actual labels
-	logg.LogTo("CLASSIFY_JOB", "raw results: %+v", resultsMap)
+	logg.LogTo("CLASSIFY_JOB", "raw results: %+v.", resultsMap)
 	resultsMapLabelled, err := translateLabels(resultsMap, trainingJob.Labels)
 	if err != nil {
 		c.recordProcessingError(err)

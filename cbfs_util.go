@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
-	"github.com/tleyden/cbfs/client"
 )
 
 func saveFileToCbfs(sourcePath, destPath, contentType string, cbfs *cbfsclient.Client) error {

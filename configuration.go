@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
-	"github.com/tleyden/cbfs/client"
 	"github.com/tleyden/go-couch"
 )
 
