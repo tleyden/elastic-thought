@@ -199,15 +199,26 @@ func TestNetParameter(t *testing.T) {
 }
 
 func TestSaveTrainTestDataImageData(t *testing.T) {
+	assetName := "data-test/alphabet.tar.gz"
+	testSaveTrainTestData(t, assetName)
+
+}
+
+// Test solver.SaveTrainTestData with LevelDb data
+func TestSaveTrainTestDataLevelDb(t *testing.T) {
+	assetName := "data-test/mnist_train_leveldb.tar.gz"
+	testSaveTrainTestData(t, assetName)
+
+}
+
+func testSaveTrainTestData(t *testing.T, assetName string) {
 
 	configuration := NewDefaultConfiguration()
 	configuration.CbfsUrl = "mock-blob-store"
 	solver := NewSolver(*configuration)
 	solver.DatasetId = "123"
 
-	// TODO: use go bindata to pass in an actual gzip file
-	// and then make assertions about the labels
-	assetName := "data-test/alphabet.tar.gz"
+	// get the data corresponding to asset name
 	alphabetTarGz, err := Asset(assetName)
 	assert.True(t, err == nil)
 
@@ -242,11 +253,6 @@ func TestSaveTrainTestDataImageData(t *testing.T) {
 
 	assert.Equals(t, destTocLines[0], "training-data/0/Arial-5-0.png 0\n")
 	assert.Equals(t, destTocLines[len(destTocLines)-1], "training-data/Z/Verdana-5-0.png 35\n")
-
-}
-
-// Test solver.SaveTrainTestData with LevelDb data
-func TestSaveTrainTestDataLevelDb(t *testing.T) {
 
 }
 
