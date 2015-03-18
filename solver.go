@@ -432,6 +432,9 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) (t
 		destDirectoryToUse := path.Join(destDirectory, subdirectory)
 
 		toc, err := untarGzWithToc(teeReader, destDirectoryToUse)
+		if err != nil {
+			return nil, err
+		}
 
 		/*		dataType := discoverInputLayerDataType(toc)
 				switch dataType {
@@ -446,15 +449,10 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) (t
 		// different manner.  it needs to just call something to
 		// extract the labels from leveldb directly.  (in a separate db)
 		tocWithLabels, labelIndex := addLabelsToToc(toc)
-
 		tocWithSubdir := addParentDirToToc(tocWithLabels, subdirectory)
 
 		if artificactPath == trainingArtifact {
 			trainingLabelIndex = labelIndex
-		}
-
-		if err != nil {
-			return nil, err
 		}
 
 		writeTocToFile(tocWithSubdir, destTocFile)
@@ -540,7 +538,6 @@ func addLabelsToToc(tableOfContents []string) (tocWithLabels []string, labels []
 	for _, tocEntry := range tableOfContents {
 
 		dir := path.Dir(tocEntry)
-		logg.LogTo("SOLVER", dir)
 
 		if currentDirectory == "" {
 			// we're on the first directory

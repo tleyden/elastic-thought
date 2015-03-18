@@ -1,7 +1,9 @@
 package elasticthought
 
 import (
+	"fmt"
 	"io"
+	"strings"
 
 	"github.com/couchbaselabs/cbfs/client"
 )
@@ -46,8 +48,27 @@ func (m *MockBlobStore) QueueGetResponse(pathRegex string, response io.Reader) {
 }
 
 func (m *MockBlobStore) Get(path string) (io.ReadCloser, error) {
-	// TODO:
-	return nil, nil
+	matchingKey, queue := m.responseQueueForPath(path)
+	if len(queue) == 0 {
+		return nil, fmt.Errorf("No more items in mock blob store for %v", path)
+	}
+	firstItem := queue[0]
+	m.GetResponses[matchingKey] = queue[1:]
+
+	return nopCloser{firstItem}, nil
+}
+
+func (m *MockBlobStore) responseQueueForPath(path string) (string, ResponseQueue) {
+	// loop over all keys in GetResponses map until we find a match
+	for k, v := range m.GetResponses {
+		if path == "*" {
+			return k, v
+		}
+		if strings.Contains(k, path) { // TODO: replace w/ regex
+			return k, v
+		}
+	}
+	return "", nil
 }
 
 func (m *MockBlobStore) Put(srcname, dest string, r io.Reader, opts cbfsclient.PutOptions) error {
@@ -60,4 +81,12 @@ func (m *MockBlobStore) Rm(fn string) error {
 
 func (m *MockBlobStore) OpenFile(path string) (*cbfsclient.FileHandle, error) {
 	return nil, nil
+}
+
+type nopCloser struct {
+	io.Reader
+}
+
+func (nopCloser) Close() error {
+	return nil
 }

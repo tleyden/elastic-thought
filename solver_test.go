@@ -1,8 +1,11 @@
 package elasticthought
 
 import (
+	"bufio"
 	"bytes"
 	"log"
+	"os"
+	"path"
 	"strings"
 	"testing"
 
@@ -198,22 +201,68 @@ func TestNetParameter(t *testing.T) {
 func TestSaveTrainTestDataImageData(t *testing.T) {
 
 	configuration := NewDefaultConfiguration()
+	configuration.CbfsUrl = "mock-blob-store"
 	solver := NewSolver(*configuration)
 	solver.DatasetId = "123"
 
 	// TODO: use go bindata to pass in an actual gzip file
 	// and then make assertions about the labels
-	DefaultMockBlobStore.QueueGetResponse("*", bytes.NewBuffer([]byte("hello")))
+	assetName := "data-test/alphabet.tar.gz"
+	alphabetTarGz, err := Asset(assetName)
+	assert.True(t, err == nil)
 
-	destDirectory := "/tmp"
+	DefaultMockBlobStore.QueueGetResponse(
+		"123/training.tar.gz",
+		bytes.NewBuffer(alphabetTarGz),
+	)
+
+	DefaultMockBlobStore.QueueGetResponse(
+		"123/testing.tar.gz",
+		bytes.NewBuffer(alphabetTarGz),
+	)
+
+	destDirectory := "/tmp/TestSaveTrainTestDataImageData"
+	Mkdir(destDirectory)
+	defer func() {
+		os.RemoveAll(destDirectory)
+	}()
+
 	labelIndex, err := solver.SaveTrainTestData(*configuration, destDirectory)
 
-	assert.True(t, err != nil)
+	assert.True(t, err == nil)
 	log.Printf("LabelIndex: %v", labelIndex)
+	assert.Equals(t, len(labelIndex), 26+10)
+	assert.Equals(t, labelIndex[0], "0")
+	assert.Equals(t, labelIndex[35], "Z")
+
+	destTocFile := path.Join(destDirectory, TRAINING_INDEX)
+	log.Printf("destToc: %v", destTocFile)
+	destTocLines, err := readFile(destTocFile)
+	assert.True(t, err == nil)
+
+	assert.Equals(t, destTocLines[0], "training-data/0/Arial-5-0.png 0\n")
+	assert.Equals(t, destTocLines[len(destTocLines)-1], "training-data/Z/Verdana-5-0.png 35\n")
 
 }
 
 // Test solver.SaveTrainTestData with LevelDb data
 func TestSaveTrainTestDataLevelDb(t *testing.T) {
 
+}
+
+func readFile(filename string) ([]string, error) {
+	file, err := os.Open(filename) // For read access.
+	if err != nil {
+		return nil, err
+	}
+	r := bufio.NewReader(file)
+	result := []string{}
+	for {
+		line, err := r.ReadString('\n')
+		if err != nil {
+			break
+		}
+		result = append(result, line)
+	}
+	return result, nil
 }
