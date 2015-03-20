@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
 	"github.com/golang/protobuf/proto"
+
 	"github.com/tleyden/elastic-thought/caffe"
 	"github.com/tleyden/go-couch"
 )
@@ -28,7 +30,17 @@ type Solver struct {
 	// waiting for this to get merged into master branch, since go get
 	// pulls from master branch.
 	Configuration Configuration
+
+	// distinguish between IMAGE_DATA, LEVELDB, LMDB, etc
+	InputDataType InputDataType
 }
+
+type InputDataType int
+
+const (
+	IMAGE_DATA = InputDataType(iota)
+	LEVELDB
+)
 
 // Create a new solver.  If you don't use this, you must set the
 // embedded ElasticThoughtDoc Type field.
@@ -435,27 +447,64 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) (t
 		if err != nil {
 			return nil, err
 		}
+		log.Printf("toc: %v", toc)
 
-		/*		dataType := discoverInputLayerDataType(toc)
-				switch dataType {
-				IMAGE_DATA:
+		switch s.InputDataType {
+		case IMAGE_DATA:
+			tocWithLabels, labelIndex := addLabelsToToc(toc)
+			tocWithSubdir := addParentDirToToc(tocWithLabels, subdirectory)
+
+			if artificactPath == trainingArtifact {
+				trainingLabelIndex = labelIndex
+			}
+
+			writeTocToFile(tocWithSubdir, destTocFile)
+
+		case LEVELDB:
+
+			// it seems like there is actually no need to do anything
+			// when its leveldb, because we don't need either:
+			// - the toc
+			// - the label mapping
+
+			/*
+				// TODO: this doesn't work with leveldb!  see
+				// https://github.com/tleyden/elastic-thought/issues/4
+				// for leveldb, it needs to generate the labelindex in a
+				// different manner.  it needs to just call something to
+				// extract the labels from leveldb directly.  (in a separate db)
+				log.Printf("Process leveldb: %v", destDirectoryToUse)
+
+				options := &opt.Options{
+					ErrorIfMissing: true,
+				}
+				db, err := leveldb.OpenFile(destDirectoryToUse, options)
+				if err != nil {
+					return nil, err
+				}
+				defer db.Close()
+				log.Printf("Opened leveldb: %v", db)
+				iter := db.NewIterator(nil, nil)
+				defer iter.Release()
+				for iter.Next() {
+					// Remember that the contents of the returned slice should not be modified, and
+					// only valid until the next call to Next.
+					key := iter.Key()
+					// value := iter.Value()
+					log.Printf("key: %v", string(key))
+
+					// value: read in protobuf binary into Datum
+					datum := &caffe.Datum{}
+					err = proto.Unmarshal(iter.Value(), datum)
+					if err != nil {
+						return nil, err
+					}
+					log.Printf("datum.label: %v", *datum.Label)
 
 				}
-		*/
+			*/
 
-		// TODO: this doesn't work with leveldb!  see
-		// https://github.com/tleyden/elastic-thought/issues/4
-		// for leveldb, it needs to generate the labelindex in a
-		// different manner.  it needs to just call something to
-		// extract the labels from leveldb directly.  (in a separate db)
-		tocWithLabels, labelIndex := addLabelsToToc(toc)
-		tocWithSubdir := addParentDirToToc(tocWithLabels, subdirectory)
-
-		if artificactPath == trainingArtifact {
-			trainingLabelIndex = labelIndex
 		}
-
-		writeTocToFile(tocWithSubdir, destTocFile)
 
 	}
 

@@ -200,23 +200,24 @@ func TestNetParameter(t *testing.T) {
 
 func TestSaveTrainTestDataImageData(t *testing.T) {
 	assetName := "data-test/alphabet.tar.gz"
-	testSaveTrainTestData(t, assetName)
+	testSaveTrainTestData(t, assetName, IMAGE_DATA)
 
 }
 
 // Test solver.SaveTrainTestData with LevelDb data
 func TestSaveTrainTestDataLevelDb(t *testing.T) {
 	assetName := "data-test/mnist_train_leveldb.tar.gz"
-	testSaveTrainTestData(t, assetName)
+	testSaveTrainTestData(t, assetName, LEVELDB)
 
 }
 
-func testSaveTrainTestData(t *testing.T, assetName string) {
+func testSaveTrainTestData(t *testing.T, assetName string, dataType InputDataType) {
 
 	configuration := NewDefaultConfiguration()
 	configuration.CbfsUrl = "mock-blob-store"
 	solver := NewSolver(*configuration)
 	solver.DatasetId = "123"
+	solver.InputDataType = dataType
 
 	// get the data corresponding to asset name
 	alphabetTarGz, err := Asset(assetName)
@@ -241,18 +242,25 @@ func testSaveTrainTestData(t *testing.T, assetName string) {
 	labelIndex, err := solver.SaveTrainTestData(*configuration, destDirectory)
 
 	assert.True(t, err == nil)
-	log.Printf("LabelIndex: %v", labelIndex)
-	assert.Equals(t, len(labelIndex), 26+10)
-	assert.Equals(t, labelIndex[0], "0")
-	assert.Equals(t, labelIndex[35], "Z")
 
-	destTocFile := path.Join(destDirectory, TRAINING_INDEX)
-	log.Printf("destToc: %v", destTocFile)
-	destTocLines, err := readFile(destTocFile)
-	assert.True(t, err == nil)
+	switch dataType {
+	case IMAGE_DATA:
+		log.Printf("LabelIndex: %v", labelIndex)
+		assert.Equals(t, len(labelIndex), 26+10)
+		assert.Equals(t, labelIndex[0], "0")
+		assert.Equals(t, labelIndex[35], "Z")
 
-	assert.Equals(t, destTocLines[0], "training-data/0/Arial-5-0.png 0\n")
-	assert.Equals(t, destTocLines[len(destTocLines)-1], "training-data/Z/Verdana-5-0.png 35\n")
+		destTocFile := path.Join(destDirectory, TRAINING_INDEX)
+		log.Printf("destToc: %v", destTocFile)
+		destTocLines, err := readFile(destTocFile)
+		assert.True(t, err == nil)
+
+		assert.Equals(t, destTocLines[0], "training-data/0/Arial-5-0.png 0\n")
+		assert.Equals(t, destTocLines[len(destTocLines)-1], "training-data/Z/Verdana-5-0.png 35\n")
+
+	case LEVELDB:
+		// no toc written, empty label index
+	}
 
 }
 
