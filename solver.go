@@ -31,15 +31,17 @@ type Solver struct {
 	// pulls from master branch.
 	Configuration Configuration
 
-	// distinguish between IMAGE_DATA, LEVELDB, LMDB, etc
-	InputDataType InputDataType
+	// distinguish between IMAGE_DATA, LEVELDB, LMDB, etc.
+	// this assumes that test and training input layers are
+	// of the same layer type.
+	LayerType LayerType
 }
 
-type InputDataType int
+type LayerType int32
 
 const (
-	IMAGE_DATA = InputDataType(iota)
-	LEVELDB
+	IMAGE_DATA = LayerType(caffe.V1LayerParameter_IMAGE_DATA)
+	DATA       = LayerType(caffe.V1LayerParameter_DATA)
 )
 
 // Create a new solver.  If you don't use this, you must set the
@@ -92,6 +94,25 @@ func (s Solver) getSolverPrototxtContent() ([]byte, error) {
 
 }
 
+// read solver prototxt from cbfs
+func (s Solver) getSolverNetPrototxtContent() ([]byte, error) {
+
+	// get the relative url path in cbfs (chop off leading cbfs://)
+	sourcePath, err := s.SpecificationNetUrlPath()
+	if err != nil {
+		return nil, fmt.Errorf("Error getting cbfs path of solver prototxt. Err: %v", err)
+	}
+
+	// create a new blob store client
+	blobStore, err := s.Configuration.NewBlobStoreClient()
+	if err != nil {
+		return nil, fmt.Errorf("Error creating blob store client: %v", err)
+	}
+
+	return getContentFromBlobStore(blobStore, sourcePath)
+
+}
+
 func (s Solver) getSolverParameter() (*caffe.SolverParameter, error) {
 
 	specContents, err := s.getSolverPrototxtContent()
@@ -107,6 +128,24 @@ func (s Solver) getSolverParameter() (*caffe.SolverParameter, error) {
 	}
 
 	return solverParam, nil
+
+}
+
+func (s Solver) getSolverNetParameter() (*caffe.NetParameter, error) {
+
+	specContents, err := s.getSolverNetPrototxtContent()
+	if err != nil {
+		return nil, fmt.Errorf("Error getting solver prototxt content.  Err: %v", err)
+	}
+
+	// read into object with protobuf (must have already generated go protobuf code)
+	netParam := &caffe.NetParameter{}
+
+	if err := proto.UnmarshalText(string(specContents), netParam); err != nil {
+		return nil, err
+	}
+
+	return netParam, nil
 
 }
 
@@ -128,6 +167,28 @@ func (s Solver) getModifiedSolverSpec() ([]byte, error) {
 	}
 
 	return modified, nil
+
+}
+
+func modifySolverSpec(source []byte) ([]byte, error) {
+
+	// read into object with protobuf (must have already generated go protobuf code)
+	solverParam := &caffe.SolverParameter{}
+
+	if err := proto.UnmarshalText(string(source), solverParam); err != nil {
+		return nil, err
+	}
+
+	// modify object fields
+	solverParam.Net = proto.String("solver-net.prototxt")
+	solverParam.SnapshotPrefix = proto.String("snapshot")
+
+	buf := new(bytes.Buffer)
+	if err := proto.MarshalText(buf, solverParam); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 
 }
 
@@ -213,28 +274,6 @@ func isTestingPhase(layer *caffe.V1LayerParameter) bool {
 	return false
 }
 
-func modifySolverSpec(source []byte) ([]byte, error) {
-
-	// read into object with protobuf (must have already generated go protobuf code)
-	solverParam := &caffe.SolverParameter{}
-
-	if err := proto.UnmarshalText(string(source), solverParam); err != nil {
-		return nil, err
-	}
-
-	// modify object fields
-	solverParam.Net = proto.String("solver-net.prototxt")
-	solverParam.SnapshotPrefix = proto.String("snapshot")
-
-	buf := new(bytes.Buffer)
-	if err := proto.MarshalText(buf, solverParam); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-
-}
-
 // download contents of solver-spec-url into cbfs://<solver-id>/spec.prototxt
 // and update solver object's solver-spec-url with cbfs url
 func (s Solver) DownloadSpecToBlobStore(db couch.Database, blobStore BlobStore) (*Solver, error) {
@@ -255,8 +294,6 @@ func (s Solver) DownloadSpecToBlobStore(db couch.Database, blobStore BlobStore) 
 	// update solver with blobStore url
 	s.SpecificationUrl = fmt.Sprintf("%v%v", CBFS_URI_PREFIX, destPath)
 
-	// TODO: s.MaxIterations =
-
 	// rewrite the solver net specification
 	solverSpecNetBytes, err := s.getModifiedSolverNetSpec()
 	if err != nil {
@@ -273,6 +310,13 @@ func (s Solver) DownloadSpecToBlobStore(db couch.Database, blobStore BlobStore) 
 	// update solver-net with blobStore url
 	s.SpecificationNetUrl = fmt.Sprintf("%v%v", CBFS_URI_PREFIX, destPath)
 
+	// find out whether this is IMAGE_DATA or DATA (leveldb, etc)
+	netParam, err := s.getSolverNetParameter()
+	if err != nil {
+		return nil, err
+	}
+	s.LayerType = extractTrainingLayerType(netParam)
+
 	// save
 	solver, err := s.Save(db)
 	if err != nil {
@@ -280,6 +324,18 @@ func (s Solver) DownloadSpecToBlobStore(db couch.Database, blobStore BlobStore) 
 	}
 
 	return solver, nil
+}
+
+func extractTrainingLayerType(netParam *caffe.NetParameter) LayerType {
+
+	// return the layer type of the first layer we see in the net
+	// (must be IMAGE_DATA or DATA)
+	for _, layerParam := range netParam.Layers {
+		return LayerType(*layerParam.Type)
+	}
+
+	panic("could not extract training layer type")
+
 }
 
 func (s Solver) saveToBlobStore(blobStore BlobStore, destPath string, reader io.Reader) error {
@@ -449,7 +505,7 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) (t
 		}
 		log.Printf("toc: %v", toc)
 
-		switch s.InputDataType {
+		switch s.LayerType {
 		case IMAGE_DATA:
 			tocWithLabels, labelIndex := addLabelsToToc(toc)
 			tocWithSubdir := addParentDirToToc(tocWithLabels, subdirectory)
@@ -460,7 +516,7 @@ func (s Solver) SaveTrainTestData(config Configuration, destDirectory string) (t
 
 			writeTocToFile(tocWithSubdir, destTocFile)
 
-		case LEVELDB:
+		case DATA:
 
 			// it seems like there is actually no need to do anything
 			// when its leveldb, because we don't need either:

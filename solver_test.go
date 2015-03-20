@@ -207,17 +207,17 @@ func TestSaveTrainTestDataImageData(t *testing.T) {
 // Test solver.SaveTrainTestData with LevelDb data
 func TestSaveTrainTestDataLevelDb(t *testing.T) {
 	assetName := "data-test/mnist_train_leveldb.tar.gz"
-	testSaveTrainTestData(t, assetName, LEVELDB)
+	testSaveTrainTestData(t, assetName, DATA)
 
 }
 
-func testSaveTrainTestData(t *testing.T, assetName string, dataType InputDataType) {
+func testSaveTrainTestData(t *testing.T, assetName string, layerType LayerType) {
 
 	configuration := NewDefaultConfiguration()
 	configuration.CbfsUrl = "mock-blob-store"
 	solver := NewSolver(*configuration)
 	solver.DatasetId = "123"
-	solver.InputDataType = dataType
+	solver.LayerType = layerType
 
 	// get the data corresponding to asset name
 	alphabetTarGz, err := Asset(assetName)
@@ -243,7 +243,7 @@ func testSaveTrainTestData(t *testing.T, assetName string, dataType InputDataTyp
 
 	assert.True(t, err == nil)
 
-	switch dataType {
+	switch layerType {
 	case IMAGE_DATA:
 		log.Printf("LabelIndex: %v", labelIndex)
 		assert.Equals(t, len(labelIndex), 26+10)
@@ -258,7 +258,7 @@ func testSaveTrainTestData(t *testing.T, assetName string, dataType InputDataTyp
 		assert.Equals(t, destTocLines[0], "training-data/0/Arial-5-0.png 0\n")
 		assert.Equals(t, destTocLines[len(destTocLines)-1], "training-data/Z/Verdana-5-0.png 35\n")
 
-	case LEVELDB:
+	case DATA:
 		// no toc written, empty label index
 	}
 
