@@ -197,3 +197,11 @@ func (c Classifier) getClassifierPrototxt() ([]byte, error) {
 	return bytes, nil
 
 }
+
+func (c Classifier) getTrainingJob() (*TrainingJob, error) {
+
+	trainingJob := NewTrainingJob(c.Configuration)
+	err := trainingJob.Find(c.TrainingJobID)
+	return trainingJob, err
+
+}

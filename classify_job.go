@@ -97,17 +97,30 @@ func (c *ClassifyJob) Run(wg *sync.WaitGroup) {
 		return
 	}
 
-	// modify results to map numeric labels with actual labels
-	logg.LogTo("CLASSIFY_JOB", "raw results: %+v.", resultsMap)
-	resultsMapLabelled, err := translateLabels(resultsMap, trainingJob.Labels)
+	// get the solver
+	solver, err := c.getSolver()
 	if err != nil {
 		c.recordProcessingError(err)
 		return
 	}
 
+	switch solver.LayerType {
+	case IMAGE_DATA:
+		// modify results to map numeric labels with actual labels
+		logg.LogTo("CLASSIFY_JOB", "raw results: %+v.", resultsMap)
+		resultsMap, err = translateLabels(resultsMap, trainingJob.Labels)
+		if err != nil {
+			c.recordProcessingError(err)
+			return
+		}
+
+	case DATA:
+		// no label translation needed
+	}
+
 	// update classifyjob with results
-	logg.LogTo("CLASSIFY_JOB", "resultsMap: %+v", resultsMapLabelled)
-	_, err = c.SetResults(resultsMapLabelled)
+	logg.LogTo("CLASSIFY_JOB", "resultsMap: %+v", resultsMap)
+	_, err = c.SetResults(resultsMap)
 	if err != nil {
 		c.recordProcessingError(err)
 		return
@@ -270,9 +283,17 @@ func (c ClassifyJob) getTrainingJob() (*TrainingJob, error) {
 		return nil, err
 	}
 
-	trainingJob := NewTrainingJob(c.Configuration)
-	err = trainingJob.Find(classifier.TrainingJobID)
-	return trainingJob, err
+	return classifier.getTrainingJob()
+
+}
+
+func (c ClassifyJob) getSolver() (*Solver, error) {
+
+	trainingJob, err := c.getTrainingJob()
+	if err != nil {
+		return nil, err
+	}
+	return trainingJob.getSolver()
 
 }
 
