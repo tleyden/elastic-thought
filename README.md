@@ -43,8 +43,8 @@ Although not shown, all components would be running inside of [Docker](https://w
 *Current Status: everything under heavy construction, not ready for public consumption yet*
 
 1. **[done]** Working end-to-end with IMAGE_DATA caffe layer using a single test set with a single training set, and ability to query trained set.
-1. **[in progress]** ---> Support LEVELDB / LMDB data formats, to run mnist example.
-1. Support the majority of caffe use cases
+1. **[done]** Support LEVELDB / LMDB data formats, to run mnist example.
+1. **[in progress]** Support the majority of caffe use cases
 1. Package everything up to make it easy to deploy  <-- initial release
 1. Ability to auto-scale worker instances up and down based on how many jobs are in the message queue.
 1. Attempt to add support for other deep learning frameworks: pylearn2, cuda-convnet, etc.
@@ -64,16 +64,8 @@ Although not shown, all components would be running inside of [Docker](https://w
 * [REST API](http://docs.elasticthought.apiary.io/)
 * [Godocs](http://godoc.org/github.com/tleyden/elastic-thought)
 
-## Grid Computing
 
-ElasticThought is not trying to be a grid computing (aka distributed computation) solution.  
-
-For that, check out:
-
-* [ParameterServer](http://parameterserver.org/)
-* [Caffe Issue 876](https://github.com/BVLC/caffe/issues/876)
-
-## Kick things off: Aws
+## Installing elastic-thought on AWS
 
 ### Launch EC2 instances via CloudFormation script
 
@@ -122,7 +114,7 @@ sync_gw_node@3.service				0f5e2e11.../10.168.212.210	active	running
 
 At this point you should be able to access the [REST API](http://docs.elasticthought.apiary.io/) on the public ip any of the three Sync Gateway machines.
 
-## Kick things off: Vagrant
+## Installing elastic-thought on Vagrant
 
 ### Update Vagrant
 
@@ -142,28 +134,56 @@ See https://coreos.com/docs/running-coreos/platforms/vagrant/
 Open the user-data file, and add:
 
 ```
-write_files:
-  - path: /etc/systemd/system/docker.service.d/increase-ulimit.conf
-    owner: core:core
-    permissions: 0644
-    content: |
-      [Service]
-      LimitMEMLOCK=infinity
-  - path: /var/lib/couchbase/data/.README
-    owner: core:core
-    permissions: 0644
-    content: |
-      Couchbase Data files are stored here
-  - path: /var/lib/couchbase/index/.README
-    owner: core:core
-    permissions: 0644
-    content: |
-      Couchbase Index files are stored here
-  - path: /var/lib/cbfs/data/.README
-    owner: core:core
-    permissions: 0644
-    content: |
-      CBFS files are stored here
+- path: /etc/systemd/system/docker.service.d/increase-ulimit.conf
+  owner: core:core
+  permissions: 420
+  content: |
+    [Service]
+    LimitMEMLOCK=infinity
+- path: /etc/systemd/system/fleet.socket.d/30-ListenStream.conf
+  owner: core:core
+  permissions: 420
+  content: |
+    [Socket]
+    ListenStream=127.0.0.1:49153
+- path: /var/lib/couchbase/data/.README
+  owner: core:core
+  permissions: 420
+  content: |
+    Couchbase Data files are stored here
+- path: /var/lib/couchbase/index/.README
+  owner: core:core
+  permissions: 420
+  content: |
+    Couchbase Index files are stored here
+- path: /var/lib/cbfs/data/.README
+  owner: core:core
+  permissions: 420
+  content: |
+    CBFS files are stored here
+- path: /opt/bin/etcdctl-get-first
+  owner: core:core
+  permissions: 484
+  content: |
+    etcdctl ls $1 | head -n1 | awk -F/ '{print $4}'
+- path: /opt/bin/couchbase-server-ip
+  owner: core:core
+  permissions: 484
+  content: |
+    MAX_ATTEMPTS=50
+    SLEEP_SECS=10
+    num_attempts=0
+    COUCHBASE_SERVER_IP=$(/opt/bin/etcdctl-get-first /couchbase.com/couchbase-node-state)
+    while [ -z "$COUCHBASE_SERVER_IP" ]; do
+      sleep $SLEEP_SECS
+      num_attempts=$((num_attempts+1))
+      if [[ "$num_attempts" -gt "$MAX_ATTEMPTS" ]]; then
+        echo "Failed to get couchbase ip after $MAX_ATTEMPTS attempts"
+        exit 1
+      fi
+      COUCHBASE_SERVER_IP=$(/opt/bin/etcdctl-get-first /couchbase.com/couchbase-node-state)
+    done
+    echo $COUCHBASE_SERVER_IP
 ```
 
 ### Increase RAM size of VM's
@@ -197,6 +217,16 @@ Not sure how crucial this is, but I'll mention it just in case.  After the CoreO
 $ sudo bash
 # echo never > /sys/kernel/mm/transparent_hugepage/enabled && echo never > /sys/kernel/mm/transparent_hugepage/defrag
 ```
+
+## Grid Computing
+
+ElasticThought is not trying to be a grid computing (aka distributed computation) solution.  
+
+For that, check out:
+
+* [ParameterServer](http://parameterserver.org/)
+* [Caffe Issue 876](https://github.com/BVLC/caffe/issues/876)
+
 
 ## License
 
