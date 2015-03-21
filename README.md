@@ -186,6 +186,10 @@ Open the user-data file, and add:
     echo $COUCHBASE_SERVER_IP
 ```
 
+### Set the CoreOS update channel to Alpha
+
+elastic-thought currently requires the **alpha** channel of CoreOS.  You will need to update config.rb accordingly.
+
 ### Increase RAM size of VM's
 
 Couchbase Server wants a lot of RAM.  Bump up the vm memory size to 2GB.
