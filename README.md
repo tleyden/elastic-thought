@@ -75,6 +75,16 @@ Although not shown, all components would be running inside of [Docker](https://w
 * Choose 3 node cluster with m3.medium or g2.2xlarge (GPU case) instance type
 * All other values should be default
 
+### Verify CoreOS cluster
+
+Run:
+
+```
+$ fleetctl list-machines
+```
+
+Which should show all the CoreOS machines in your cluster.  (this uses etcd under the hood, so will also validate that etcd is setup correctly).
+
 ### Kick off ElasticThought
 
 Ssh into one of the machines (doesn't matter which): `ssh -A core@ec2-54-160-96-153.compute-1.amazonaws.com`
@@ -213,23 +223,14 @@ if i == 1
 end
 ```
 
-### Disable Transparent Huge Pages (optional)
+### Continue steps above 
 
-Not sure how crucial this is, but I'll mention it just in case.  After the CoreOS machines startup, ssh into each one:
+Scroll up to the **Installing elastic-thought on AWS** section and start with **Verify CoreOS cluster**
 
-```
-$ sudo bash
-# echo never > /sys/kernel/mm/transparent_hugepage/enabled && echo never > /sys/kernel/mm/transparent_hugepage/defrag
-```
+## FAQ
 
-## Grid Computing
+* Is this useful for grid computing / distributed computation?  **Ans**:  No, this is not trying to be a grid computing (aka distributed computation) solution.  You may want to check out [Caffe Issue 876](https://github.com/BVLC/caffe/issues/876) or [ParameterServer](http://parameterserver.org/)
 
-ElasticThought is not trying to be a grid computing (aka distributed computation) solution.  
-
-For that, check out:
-
-* [ParameterServer](http://parameterserver.org/)
-* [Caffe Issue 876](https://github.com/BVLC/caffe/issues/876)
 
 
 ## License
