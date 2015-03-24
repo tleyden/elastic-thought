@@ -101,25 +101,25 @@ It should look like this:
 
 ```
 UNIT						MACHINE				ACTIVE	SUB
-cbfs_announce@1.service				2340c553.../10.225.17.229	active	running
-cbfs_announce@2.service				fbd4562e.../10.182.197.145	active	running
-cbfs_announce@3.service				0f5e2e11.../10.168.212.210	active	running
-cbfs_node@1.service				2340c553.../10.225.17.229	active	running
-cbfs_node@2.service				fbd4562e.../10.182.197.145	active	running
-cbfs_node@3.service				0f5e2e11.../10.168.212.210	active	running
-couchbase_bootstrap_node.service		0f5e2e11.../10.168.212.210	active	running
-couchbase_bootstrap_node_announce.service	0f5e2e11.../10.168.212.210	active	running
-couchbase_node.1.service			2340c553.../10.225.17.229	active	running
-couchbase_node.2.service			fbd4562e.../10.182.197.145	active	running
-elastic_thought_gpu@1.service			2340c553.../10.225.17.229	active	running
-elastic_thought_gpu@2.service			fbd4562e.../10.182.197.145	active	running
-elastic_thought_gpu@3.service			0f5e2e11.../10.168.212.210	active	running
-sync_gw_announce@1.service			2340c553.../10.225.17.229	active	running
-sync_gw_announce@2.service			fbd4562e.../10.182.197.145	active	running
-sync_gw_announce@3.service			0f5e2e11.../10.168.212.210	active	running
-sync_gw_node@1.service				2340c553.../10.225.17.229	active	running
-sync_gw_node@2.service				fbd4562e.../10.182.197.145	active	running
-sync_gw_node@3.service				0f5e2e11.../10.168.212.210	active	running
+cbfs_announce@1.service                         2340c553.../10.225.17.229       active	running
+cbfs_announce@2.service                         fbd4562e.../10.182.197.145      active	running
+cbfs_announce@3.service                         0f5e2e11.../10.168.212.210      active	running
+cbfs_node@1.service                             2340c553.../10.225.17.229       active	running
+cbfs_node@2.service                             fbd4562e.../10.182.197.145      active	running
+cbfs_node@3.service                             0f5e2e11.../10.168.212.210      active	running
+couchbase_bootstrap_node.service                0f5e2e11.../10.168.212.210      active	running
+couchbase_bootstrap_node_announce.service       0f5e2e11.../10.168.212.210      active	running
+couchbase_node.1.service                        2340c553.../10.225.17.229       active	running
+couchbase_node.2.service                        fbd4562e.../10.182.197.145      active	running
+elastic_thought_gpu@1.service                   2340c553.../10.225.17.229       active	running
+elastic_thought_gpu@2.service                   fbd4562e.../10.182.197.145      active	running
+elastic_thought_gpu@3.service                   0f5e2e11.../10.168.212.210      active	running
+sync_gw_announce@1.service                      2340c553.../10.225.17.229       active	running
+sync_gw_announce@2.service                      fbd4562e.../10.182.197.145      active	running
+sync_gw_announce@3.service                      0f5e2e11.../10.168.212.210      active	running
+sync_gw_node@1.service                          2340c553.../10.225.17.229       active	running
+sync_gw_node@2.service                          fbd4562e.../10.182.197.145      active	running
+sync_gw_node@3.service                          0f5e2e11.../10.168.212.210      active	running
 ```
 
 At this point you should be able to access the [REST API](http://docs.elasticthought.apiary.io/) on the public ip any of the three Sync Gateway machines.
