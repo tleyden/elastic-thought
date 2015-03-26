@@ -36,7 +36,7 @@ If running on AWS, each [CoreOS](https://coreos.com/) instance would be running 
 
 Although not shown, all components would be running inside of [Docker](https://www.docker.com/) containers.
 
-[CoreOS Fleet](https://coreos.com/docs/launching-containers/launching/launching-containers-fleet/) would be leveraged to auto-restart any failed components, including Caffe workers.
+It would be possible to start more nodes which only had Caffe GPU workers running.
 
 ## Roadmap
 
@@ -66,6 +66,8 @@ Although not shown, all components would be running inside of [Docker](https://w
 
 
 ## Installing elastic-thought on AWS
+
+It should be possible to install elastic-thought anywhere that CoreOS is supported.  Currently, there are instructions for AWS and Vagrant (below).
 
 ### Launch EC2 instances via CloudFormation script
 
