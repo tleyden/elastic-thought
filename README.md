@@ -135,93 +135,94 @@ $ vagrant -v
 1.7.1
 ```
 
-### Install CoreOS
+### Install CoreOS on Vagrant
 
-See https://coreos.com/docs/running-coreos/platforms/vagrant/
-
-### Update cloud-config
-
-Open the user-data file, and add:
+Clone the coreos/vagrant fork that has been customized for running ElasticThought.
 
 ```
-- path: /etc/systemd/system/docker.service.d/increase-ulimit.conf
-  owner: core:core
-  permissions: 420
-  content: |
-    [Service]
-    LimitMEMLOCK=infinity
-- path: /etc/systemd/system/fleet.socket.d/30-ListenStream.conf
-  owner: core:core
-  permissions: 420
-  content: |
-    [Socket]
-    ListenStream=127.0.0.1:49153
-- path: /var/lib/couchbase/data/.README
-  owner: core:core
-  permissions: 420
-  content: |
-    Couchbase Data files are stored here
-- path: /var/lib/couchbase/index/.README
-  owner: core:core
-  permissions: 420
-  content: |
-    Couchbase Index files are stored here
-- path: /var/lib/cbfs/data/.README
-  owner: core:core
-  permissions: 420
-  content: |
-    CBFS files are stored here
-- path: /opt/bin/etcdctl-get-first
-  owner: core:core
-  permissions: 484
-  content: |
-    etcdctl ls $1 | head -n1 | awk -F/ '{print $4}'
-- path: /opt/bin/couchbase-server-ip
-  owner: core:core
-  permissions: 484
-  content: |
-    MAX_ATTEMPTS=50
-    SLEEP_SECS=10
-    num_attempts=0
-    COUCHBASE_SERVER_IP=$(/opt/bin/etcdctl-get-first /couchbase.com/couchbase-node-state)
-    while [ -z "$COUCHBASE_SERVER_IP" ]; do
-      sleep $SLEEP_SECS
-      num_attempts=$((num_attempts+1))
-      if [[ "$num_attempts" -gt "$MAX_ATTEMPTS" ]]; then
-        echo "Failed to get couchbase ip after $MAX_ATTEMPTS attempts"
-        exit 1
-      fi
-      COUCHBASE_SERVER_IP=$(/opt/bin/etcdctl-get-first /couchbase.com/couchbase-node-state)
-    done
-    echo $COUCHBASE_SERVER_IP
+$ cd ~/Vagrant 
+$ git clone git@github.com:tleyden/coreos-vagrant.git
+$ cd coreos-vagrant
+$ cp config.rb.sample config.rb
+$ cp user-data.sample user-data
 ```
 
-### Set the CoreOS update channel to Alpha
+By default this will run a **two node** cluster, if you want to change this, update the `$num_instances` variable in the `config.rb` file.
 
-elastic-thought currently requires the **alpha** channel of CoreOS.  You will need to update config.rb accordingly.
-
-### Increase RAM size of VM's
-
-Couchbase Server wants a lot of RAM.  Bump up the vm memory size to 2GB.
-
-Edit your Vagrantfile:
+### Run CoreOS
 
 ```
-$vb_memory = 2048
+$ vagrant up
 ```
 
-### Setup port forwarding for Couchbase UI (optional)
-
-This is only needed if you want to be able to connect to the Couchbase web UI from a browser on your host OS (ie, OSX)
-
-Add the following snippet to your Vagrant file:
+Ssh in:
 
 ```
-if i == 1
-  # create a port forward mapping to view couchbase web ui 
-  config.vm.network "forwarded_port", guest: 8091, host: 5091
-end
+$ vagrant ssh core-01 -- -A
 ```
+
+If you see:
+
+```
+Failed Units: 1
+  user-cloudinit@var-lib-coreos\x2dvagrant-vagrantfile\x2duser\x2ddata.service
+```
+
+Jump to **Workaround CoreOS + Vagrant issues** below.
+
+Verify things started up correctly:
+
+```
+core@core-01 ~ $ fleectctl list-machines
+```
+
+If you get errors like:
+
+```
+2015/03/26 16:58:50 INFO client.go:291: Failed getting response from http://127.0.0.1:4001/: dial tcp 127.0.0.1:4001: connection refused
+2015/03/26 16:58:50 ERROR client.go:213: Unable to get result for {Get /_coreos.com/fleet/machines}, retrying in 100ms
+```
+
+Jump to **Workaround CoreOS + Vagrant issues** below.
+
+### Workaround CoreOS + Vagrant issues:
+
+First exit out of CoreOS:
+
+```
+core@core-01 ~ $ exit
+```
+
+On your OSX workstation, try the following workaround:
+
+```
+$ sed -i '' 's/420/0644/' user-data
+$ sed -i '' 's/484/0744/' user-data
+$ vagrant reload --provision
+```
+
+Ssh back in:
+
+```
+$ vagrant ssh core-01 -- -A
+```
+
+Verify it worked:
+
+```
+core@core-01 ~ $ fleectctl list-machines
+```
+
+You should see:
+
+```
+MACHINE		IP		METADATA
+ce0fec18...	172.17.8.102	-
+d6402b24...	172.17.8.101	-
+```
+
+I filed [CoreOS cloudinit issue 328](https://github.com/coreos/coreos-cloudinit/issues/328) to figure out why this error is happening (possibly related issues: [CoreOS cloudinit issue 261](https://github.com/coreos/coreos-cloudinit/issues/261) or [CoreOS cloudinit issue 190](https://github.com/coreos/bugs/issues/190))
+
 
 ### Continue steps above 
 
@@ -230,9 +231,7 @@ Scroll up to the **Installing elastic-thought on AWS** section and start with **
 ## FAQ
 
 * Is this useful for grid computing / distributed computation?  **Ans**:  No, this is not trying to be a grid computing (aka distributed computation) solution.  You may want to check out [Caffe Issue 876](https://github.com/BVLC/caffe/issues/876) or [ParameterServer](http://parameterserver.org/)
-
-
-
+  
 ## License
 
 Apache 2
