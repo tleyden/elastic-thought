@@ -1,3 +1,5 @@
+[![Build Status](https://drone.io/github.com/tleyden/elastic-thought/status.png)](https://drone.io/github.com/tleyden/elastic-thought/latest) [![GoDoc](https://godoc.org/github.com/tleyden/elastic-thought?status.png)](https://godoc.org/github.com/tleyden/elastic-thought)
+
 [![Join the chat at https://gitter.im/tleyden/elastic-thought](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/tleyden/elastic-thought?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Scalable REST API wrapper for the [Caffe](http://caffe.berkeleyvision.org) deep learning framework. 
