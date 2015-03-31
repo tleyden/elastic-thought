@@ -30,7 +30,7 @@ ElasticThought gives you the ability to:
 
 Here is what a typical cluster might look like:
 
-![ElasticThought Deployment](http://tleyden-misc.s3.amazonaws.com/blog_images/elasticthought-stack.pnd) 
+![ElasticThought Deployment](http://tleyden-misc.s3.amazonaws.com/blog_images/elasticthought-stack.png) 
 
 If running on AWS, each [CoreOS](https://coreos.com/) instance would be running on its own EC2 instance.
 
