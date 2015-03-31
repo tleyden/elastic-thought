@@ -204,13 +204,6 @@ func TestSaveTrainTestDataImageData(t *testing.T) {
 
 }
 
-// Test solver.SaveTrainTestData with LevelDb data
-func TestSaveTrainTestDataLevelDb(t *testing.T) {
-	assetName := "data-test/mnist_train_leveldb.tar.gz"
-	testSaveTrainTestData(t, assetName, DATA)
-
-}
-
 func testSaveTrainTestData(t *testing.T, assetName string, layerType LayerType) {
 
 	configuration := NewDefaultConfiguration()
