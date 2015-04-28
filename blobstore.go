@@ -3,7 +3,8 @@ package elasticthought
 import (
 	"fmt"
 	"io"
-	"strings"
+	"log"
+	"net/url"
 	"time"
 
 	"github.com/couchbaselabs/cbfs/client"
@@ -30,20 +31,29 @@ type BlobPutOptions struct {
 	cbfsclient.PutOptions
 }
 
-func NewBlobStore(uri string) (BlobStore, error) {
-	if strings.HasSuffix(uri, "8484") {
-		cbfsBlobStore, err := NewCbfsBlobStore(uri)
-		if err != nil {
-			return nil, err
-		}
-		return cbfsBlobStore, nil
-	} else if strings.Contains(uri, "mock-blob-store") {
+func NewBlobStore(rawurl string) (BlobStore, error) {
+
+	// Three types of blob stores are supported:
+	// http://ip:port  (cbfs)
+	// mock://mock (mock)
+	// file:///path/to/dir (local filesystem)
+
+	url, err := url.Parse(rawurl)
+	log.Printf("url: %v, scheme: %v, path: %v, err: %v", url, url.Scheme, url.Path, err)
+
+	switch url.Scheme {
+	case "http":
+		return NewCbfsBlobStore(rawurl)
+	case "mock":
 		return NewMockBlobStore(), nil
-	} else {
+	case "file":
+		return NewFileSystemBlobStore(url.Path)
+	default:
 		msg := "Unrecognized blob store URI: %v.  If you are trying " +
 			"to use cbfs, make sure it ends with port 8484. " +
 			"or fix this code"
 		return nil, fmt.Errorf(msg)
+
 	}
 
 }
