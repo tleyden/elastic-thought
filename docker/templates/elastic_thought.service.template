@@ -9,7 +9,7 @@ ExecStartPre=-/usr/bin/docker pull tleyden5iwx/elastic-thought-{{ .ProcessorType
 {{ if .GPU }}
 ExecStartPre=/usr/bin/bash -c '/usr/bin/wget https://raw.githubusercontent.com/tleyden/elastic-thought/master/docker/scripts/init_nvidia.sh && /usr/bin/chmod +x init_nvidia.sh && ./init_nvidia.sh'
 {{ end }}
-ExecStart=/usr/bin/docker run --name elastic_thought_{{ .ProcessorType }} {{ .Devices }} --net=host tleyden5iwx/elastic-thought-{{ .ProcessorType }}-develop bash -c 'refresh-elastic-thought-refresher; refresh-elastic-thought; httpd'
+ExecStart=/usr/bin/docker run --name elastic_thought_{{ .ProcessorType }} {{ .Devices }} --net=host tleyden5iwx/elastic-thought-{{ .ProcessorType }}-develop bash -c 'refresh-elastic-thought; httpd'
 ExecStop=/usr/bin/docker stop elastic_thought_{{ .ProcessorType }}
 
 [X-Fleet]

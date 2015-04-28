@@ -25,7 +25,6 @@ RUN wget http://golang.org/dl/go1.4.2.linux-amd64.tar.gz && \
 
 # Add refresh script
 ADD scripts/refresh-elastic-thought /usr/local/bin/
-ADD scripts/refresh-elastic-thought-refresher /usr/local/bin/
 
 # Go get ElasticThought
 RUN go get -u -v -t github.com/tleyden/elastic-thought/...&& \

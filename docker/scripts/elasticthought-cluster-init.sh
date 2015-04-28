@@ -135,7 +135,7 @@ fleetctl list-units
 
 # run elastic-thought environment sanity check
 echo "Kick off elastic thought environment check"
-untilsuccessful sudo docker run --net=host tleyden5iwx/elastic-thought-$processor-develop bash -c "refresh-elastic-thought-refresher; refresh-elastic-thought; envcheck ${numnodes}"
+untilsuccessful sudo docker run --net=host tleyden5iwx/elastic-thought-$processor-develop bash -c "refresh-elastic-thought; envcheck ${numnodes}"
 
 # kick off elastic-thought httpd daemons
 echo "Kick off elastic thought httpd daemons"
