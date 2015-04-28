@@ -160,11 +160,10 @@ Here's what will be created:
 
 ```
 $ vagrant ssh core-01
-$ docker run --name sync-gateway -P couchbase/sync-gateway sync-gw-start -c feature/forestdb_bucket -g https://fixme.com
-$ docker run --name elastic-thought -P --link sync-gateway:sync-gateway tleyden5iwx/elastic-thought-cpu-develop bash -c 'refresh-elastic-thought; elastic-thought'
+$ docker run --name sync-gateway -P couchbase/sync-gateway sync-gw-start -c feature/forestdb_bucket -g http://git.io/vfF4b
+$ docker run --name elastic-thought -P --link sync-gateway:sync-gateway tleyden5iwx/elastic-thought-cpu-develop bash -c 'refresh-elastic-thought; elastic-thought --sync-gw http://sync-gateway:4984'
 ```
 	
-
 ## Installing elastic-thought on Vagrant
 
 ### Update Vagrant
