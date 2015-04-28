@@ -161,7 +161,7 @@ Here's what will be created:
 ```
 $ vagrant ssh core-01
 $ docker run --name sync-gateway -P couchbase/sync-gateway sync-gw-start -c feature/forestdb_bucket -g https://fixme.com
-$ docker run --name elastic-thought -P --link sync-gateway:sync-gateway tleyden5iwx/elastic-thought-cpu-develop bash -c 'refresh-elastic-thought-refresher; refresh-elastic-thought; httpd'
+$ docker run --name elastic-thought -P --link sync-gateway:sync-gateway tleyden5iwx/elastic-thought-cpu-develop bash -c 'refresh-elastic-thought; elastic-thought'
 ```
 	
 
