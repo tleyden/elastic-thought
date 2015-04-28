@@ -7,7 +7,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
 )
 
@@ -32,9 +31,8 @@ func CbfsReadWriteFile(config Configuration, destPath, content string) error {
 	}
 
 	// write to random cbfs file
-	options := cbfsclient.PutOptions{
-		ContentType: "text/plain",
-	}
+	options := BlobPutOptions{}
+	options.ContentType = "text/plain"
 
 	buffer := bytes.NewBuffer([]byte(content))
 

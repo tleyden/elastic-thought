@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
 	"github.com/golang/protobuf/proto"
 
@@ -341,9 +340,8 @@ func extractTrainingLayerType(netParam *caffe.NetParameter) LayerType {
 func (s Solver) saveToBlobStore(blobStore BlobStore, destPath string, reader io.Reader) error {
 
 	// save to blobStore
-	options := cbfsclient.PutOptions{
-		ContentType: "text/plain",
-	}
+	options := BlobPutOptions{}
+	options.ContentType = "text/plain"
 
 	if err := blobStore.Put("", destPath, reader, options); err != nil {
 		return fmt.Errorf("Error writing %v to blobStore: %v", destPath, err)

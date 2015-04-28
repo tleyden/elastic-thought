@@ -9,15 +9,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
 )
 
 func saveFileToBlobStore(sourcePath, destPath, contentType string, blobStore BlobStore) error {
 
-	options := cbfsclient.PutOptions{
-		ContentType: contentType,
-	}
+	options := BlobPutOptions{}
+	options.ContentType = contentType
 
 	f, err := os.Open(sourcePath)
 	if err != nil {
@@ -50,9 +48,8 @@ func saveUrlToBlobStore(sourceUrl, destPath string, blobStore BlobStore) error {
 		return fmt.Errorf("%v response to GET on: %v", resp.StatusCode, sourceUrl)
 	}
 
-	options := cbfsclient.PutOptions{
-		ContentType: resp.Header.Get("Content-Type"),
-	}
+	options := BlobPutOptions{}
+	options.ContentType = resp.Header.Get("Content-Type")
 
 	if err := blobStore.Put("", destPath, resp.Body, options); err != nil {
 		return fmt.Errorf("Error writing %v to blobStore: %v", destPath, err)

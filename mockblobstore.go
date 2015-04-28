@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-
-	"github.com/couchbaselabs/cbfs/client"
 )
 
 var (
@@ -71,7 +69,7 @@ func (m *MockBlobStore) responseQueueForPath(path string) (string, ResponseQueue
 	return "", nil
 }
 
-func (m *MockBlobStore) Put(srcname, dest string, r io.Reader, opts cbfsclient.PutOptions) error {
+func (m *MockBlobStore) Put(srcname, dest string, r io.Reader, opts BlobPutOptions) error {
 	return nil
 }
 
@@ -79,7 +77,7 @@ func (m *MockBlobStore) Rm(fn string) error {
 	return nil
 }
 
-func (m *MockBlobStore) OpenFile(path string) (*cbfsclient.FileHandle, error) {
+func (m *MockBlobStore) OpenFile(path string) (BlobHandle, error) {
 	return nil, nil
 }
 

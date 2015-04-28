@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
 	"github.com/tleyden/go-couch"
 )
@@ -163,9 +162,8 @@ func (d Datafile) CopyToBlobStore(db couch.Database, blobStore BlobStore) (strin
 	defer resp.Body.Close()
 
 	// write to blobStore
-	options := cbfsclient.PutOptions{
-		ContentType: resp.Header.Get("Content-Type"),
-	}
+	options := BlobPutOptions{}
+	options.ContentType = resp.Header.Get("Content-Type")
 	if err := blobStore.Put("", destPath, resp.Body, options); err != nil {
 		errMsg := fmt.Errorf("Error writing %v to blobStore: %v", destPath, err)
 		logg.LogError(errMsg)

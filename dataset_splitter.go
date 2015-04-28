@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/couchbaselabs/cbfs/client"
 	"github.com/couchbaselabs/logg"
 )
 
@@ -79,9 +78,8 @@ func (d DatasetSplitter) SplitDatafile() {
 
 	// Create a cbfs client
 	cbfs, err := NewBlobStore(d.Configuration.CbfsUrl)
-	options := cbfsclient.PutOptions{
-		ContentType: "application/x-gzip",
-	}
+	options := BlobPutOptions{}
+	options.ContentType = "application/x-gzip"
 	if err != nil {
 		errMsg := fmt.Errorf("Error creating cbfs client: %v", err)
 		d.recordProcessingError(errMsg)
@@ -172,9 +170,8 @@ func (d DatasetSplitter) DownloadDatafiles() {
 
 	// Create a cbfs client
 	cbfs, err := NewBlobStore(d.Configuration.CbfsUrl)
-	options := cbfsclient.PutOptions{
-		ContentType: "application/x-gzip",
-	}
+	options := BlobPutOptions{}
+	options.ContentType = "application/x-gzip"
 	if err != nil {
 		errMsg := fmt.Errorf("Error creating cbfs client: %v", err)
 		d.recordProcessingError(errMsg)
