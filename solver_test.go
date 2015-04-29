@@ -207,7 +207,7 @@ func TestSaveTrainTestDataImageData(t *testing.T) {
 func testSaveTrainTestData(t *testing.T, assetName string, layerType LayerType) {
 
 	configuration := NewDefaultConfiguration()
-	configuration.CbfsUrl = "mock-blob-store"
+	configuration.CbfsUrl = "mock://mock"
 	solver := NewSolver(*configuration)
 	solver.DatasetId = "123"
 	solver.LayerType = layerType
