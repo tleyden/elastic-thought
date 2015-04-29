@@ -29,11 +29,13 @@ Options:
 	parsedDocOptArgs, _ := docopt.Parse(usage, nil, true, "ElasticThought alpha", false)
 	fmt.Println(parsedDocOptArgs)
 
-	config := *(et.NewDefaultConfiguration()) // TODO: get these vals from cmd line args
+	config := *(et.NewDefaultConfiguration())
 
-	// parse command line args into struct
-
-	// config = config.Merge(parsedDocOptArgs)
+	config, err := config.Merge(parsedDocOptArgs)
+	if err != nil {
+		logg.LogFatal("Error processing cmd line args: %v", err)
+		return
+	}
 
 	if err := et.EnvironmentSanityCheck(config); err != nil {
 		logg.LogFatal("Failed environment sanity check: %v", err)
