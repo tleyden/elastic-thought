@@ -2,7 +2,10 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/couchbaselabs/logg"
+	"github.com/docopt/docopt-go"
 	"github.com/gin-gonic/gin"
 	et "github.com/tleyden/elastic-thought"
 )
@@ -13,7 +16,24 @@ func init() {
 
 func main() {
 
+	usage := `ElasticThought REST API server.
+
+Usage:
+  elastic-thought [--sync-gw-url=<sgu>] [--blob-store-url=<bsu>]
+
+Options:
+  -h --help     Show this screen.
+  --sync-gw-url=<sgu>  Sync Gateway DB URL [default: http://localhost:4985/elastic-thought].
+  --blob-store-url=<bsu>  Blob store URL [default: file:///tmp].`
+
+	parsedDocOptArgs, _ := docopt.Parse(usage, nil, true, "ElasticThought alpha", false)
+	fmt.Println(parsedDocOptArgs)
+
 	config := *(et.NewDefaultConfiguration()) // TODO: get these vals from cmd line args
+
+	// parse command line args into struct
+
+	// config = config.Merge(parsedDocOptArgs)
 
 	if err := et.EnvironmentSanityCheck(config); err != nil {
 		logg.LogFatal("Failed environment sanity check: %v", err)

@@ -57,3 +57,26 @@ func (c Configuration) DbConnection() couch.Database {
 func (c Configuration) NewBlobStoreClient() (BlobStore, error) {
 	return NewBlobStore(c.CbfsUrl)
 }
+
+// Add values from parsedDocOpts into Configuration and return a new instance
+// Example map:
+//     map[--help:false --blob-store-url:file:///tmp --sync-gw-url:http://blah.com:4985/et]
+func (c Configuration) Merge(parsedDocOpts map[string]interface{}) (Configuration, error) {
+
+	// Sync Gateway URL
+	syncGwUrl, ok := parsedDocOpts["--sync-gw-url"].(string)
+	if !ok {
+		return c, fmt.Errorf("Expected string arg in --sync-gw-url, got %T", syncGwUrl)
+	}
+	c.DbUrl = syncGwUrl
+
+	// Blob Store URL
+	blobStoreUrl, ok := parsedDocOpts["--blob-store-url"].(string)
+	if !ok {
+		return c, fmt.Errorf("Expected string arg in --blob-store-url, got %T", blobStoreUrl)
+	}
+	c.CbfsUrl = blobStoreUrl
+
+	return c, nil
+
+}
