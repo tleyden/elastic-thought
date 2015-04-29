@@ -160,7 +160,7 @@ Here's what will be created:
 
 ```
 $ vagrant ssh core-01
-$ docker run --name sync-gateway -P couchbase/sync-gateway sync-gw-start -c feature/forestdb_bucket -g http://git.io/vfF4b
+$ docker run --name sync-gateway -P couchbase/sync-gateway sync-gw-start -c feature/forestdb_bucket -g https://gist.githubusercontent.com/tleyden/8051567cf62dfa8f89ca/raw/43d4abc9ef64cef7b4bbbdf6cb8ce80c456efd1f/gistfile1.txt
 $ docker run --name elastic-thought -P --link sync-gateway:sync-gateway tleyden5iwx/elastic-thought-cpu-develop bash -c 'refresh-elastic-thought; elastic-thought --sync-gw http://sync-gateway:4984'
 ```
 	

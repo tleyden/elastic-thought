@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/couchbaselabs/logg"
 	"github.com/tleyden/go-couch"
@@ -60,7 +61,7 @@ func (c ChangesListener) FollowChangesFeed() {
 	options := map[string]interface{}{}
 	options["feed"] = "longpoll"
 
-	logg.LogTo("CHANGES", "Following changes feed: %+v", options)
+	logg.LogTo("CHANGES", "Following changes feed: %+v.", options)
 
 	// this will block until the handleChange callback returns nil
 	c.Database.Changes(handleChange, options)
@@ -78,8 +79,15 @@ func (c ChangesListener) processChanges(changes couch.Changes) {
 			continue
 		}
 
+		// ignore certain docs, like "_user/*"
+		if strings.HasPrefix(change.Id, "_user") {
+			logg.LogTo("CHANGES", "Ignoring change: %v", change.Id)
+			continue
+		}
+
 		doc := ElasticThoughtDoc{}
 		err := c.Database.Retrieve(change.Id, &doc)
+
 		if err != nil {
 			errMsg := fmt.Errorf("Didn't retrieve: %v - %v", change.Id, err)
 			logg.LogError(errMsg)
