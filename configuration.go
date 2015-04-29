@@ -31,7 +31,7 @@ func NewDefaultConfiguration() *Configuration {
 
 	config := &Configuration{
 		DbUrl:               "http://localhost:4985/elastic-thought",
-		CbfsUrl:             "http://localhost:8484",
+		CbfsUrl:             "file:///tmp",
 		NsqLookupdUrl:       "127.0.0.1:4161",
 		NsqdUrl:             "127.0.0.1:4150",
 		NsqdTopic:           "elastic-thought",
