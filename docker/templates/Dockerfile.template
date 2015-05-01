@@ -30,3 +30,6 @@ ADD scripts/refresh-elastic-thought /usr/local/bin/
 RUN go get -u -v -t github.com/tleyden/elastic-thought/...&& \
     cd $GOPATH/src/github.com/tleyden/elastic-thought && \
     git log -3
+
+# Export default port
+EXPORT 8080
