@@ -16,6 +16,8 @@ func init() {
 
 func main() {
 
+	// TODO: customize listen port (defaults to 8080)
+
 	usage := `ElasticThought REST API server.
 
 Usage:
@@ -63,11 +65,20 @@ Options:
 	}
 	go changesListener.FollowChangesFeed()
 
-	r := gin.Default()
-	r.Use(et.DbConnector(config.DbUrl))
-	r.POST("/users", context.CreateUserEndpoint)
+	ginEngine := gin.Default()
 
-	authorized := r.Group("/")
+	// all requests wrapped in database connection middleware
+	ginEngine.Use(et.DbConnector(config.DbUrl))
+
+	// endpoint to create a new user (db auth not required)
+	ginEngine.POST("/users", context.CreateUserEndpoint)
+
+	// static examples dir
+	ginEngine.Static("/example", "../../example")
+
+	// all endpoints in the authorized group require Basic Auth credentials
+	// which is enforced by the DbAuthRequired middleware.
+	authorized := ginEngine.Group("/")
 	authorized.Use(et.DbAuthRequired())
 	{
 		authorized.POST("/datafiles", context.CreateDataFileEndpoint)
@@ -79,6 +90,6 @@ Options:
 	}
 
 	// Listen and serve on 0.0.0.0:8080
-	r.Run(":8080")
+	ginEngine.Run(":8080")
 
 }
