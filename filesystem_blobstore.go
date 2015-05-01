@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/couchbaselabs/logg"
 )
 
 type FileSystemBlobStore struct {
@@ -50,8 +52,14 @@ func (f FileSystemBlobStore) Get(path string) (io.ReadCloser, error) {
 
 func (f FileSystemBlobStore) Put(srcname, dest string, r io.Reader, opts BlobPutOptions) error {
 
+	logg.LogTo("ELASTIC_THOUGHT", "FileSystemBlobStore.Put() called with: %v", dest)
+
 	// build full path to file
 	path := f.absolutePath(dest)
+
+	// create parent dir path if it doesn't already exist
+	logg.LogTo("ELASTIC_THOUGHT", "dir: %v", filepath.Dir(path))
+	os.MkdirAll(filepath.Dir(path), os.FileMode(0755))
 
 	// open the file for writing
 	file, err := os.Create(path)
