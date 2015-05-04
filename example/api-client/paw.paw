@@ -5,7 +5,7 @@
     <databaseInfo>
         <version>134481920</version>
         <UUID>0F1EB265-FAF8-4016-BC2A-B576C9EC5915</UUID>
-        <nextObjectID>129</nextObjectID>
+        <nextObjectID>132</nextObjectID>
         <metadata>
             <plist version="1.0">
                 <dict>
@@ -128,7 +128,7 @@
         <attribute name="order" type="int64">0</attribute>
         <attribute name="name" type="string">ElasticThought</attribute>
         <relationship name="parent" type="0/1" destination="LMREQUESTTREEITEM"></relationship>
-        <relationship name="children" type="0/0" destination="LMREQUESTTREEITEM" idrefs="z112 z121 z106 z111 z124 z129"></relationship>
+        <relationship name="children" type="0/0" destination="LMREQUESTTREEITEM" idrefs="z132 z124 z112 z106 z121 z129 z111"></relationship>
         <relationship name="bodyparameters" type="0/0" destination="LMKEYVALUE"></relationship>
         <relationship name="headers" type="0/0" destination="LMKEYVALUE"></relationship>
         <relationship name="urlparameters" type="0/0" destination="LMKEYVALUE"></relationship>
@@ -291,18 +291,54 @@
     </object>
     <object type="LMREQUEST" id="z129">
         <attribute name="uuid" type="string">00102A3F-9195-4778-90B5-B4E5349447B6</attribute>
-        <attribute name="url" type="string">http://localhost:8080/solvers</attribute>
+        <attribute name="url" type="string">http://localhost:8080/training-jobs</attribute>
         <attribute name="storecookies" type="bool">1</attribute>
         <attribute name="sendcookies" type="bool">1</attribute>
         <attribute name="redirectmethod" type="bool">0</attribute>
         <attribute name="redirectauthorization" type="bool">0</attribute>
         <attribute name="method" type="string">POST</attribute>
         <attribute name="followredirects" type="bool">0</attribute>
-        <attribute name="body" type="string">[{"data":{"json":"{\\"dataset-id\\":\\"e14e36eda33c6617652a0b0f47b8ebd1\\",\\"specification-url\\":\\"http:\\\\\\/\\\\\\/localhost:8080\\\\\\/example\\\\\\/mnist\\\\\\/mnist_solver.prototxt\\",\\"specification-net-url\\":\\"http:\\\\\\/\\\\\\/localhost:8080\\\\\\/example\\\\\\/mnist\\\\\\/mnist_net.prototxt\\"}"},"identifier":"com.luckymarmot.JSONDynamicValue"}]</attribute>
+        <attribute name="body" type="string">[{"data":{"json":"{\\"solver-id\\":\\"672048586d7668dc85db1bfc3c2339b7\\"}"},"identifier":"com.luckymarmot.JSONDynamicValue"}]</attribute>
         <attribute name="order" type="int64">5</attribute>
-        <attribute name="name" type="string">Create Solver Duplicate</attribute>
+        <attribute name="name" type="string">Create Training Job</attribute>
         <relationship name="parent" type="0/1" destination="LMREQUESTTREEITEM" idrefs="z108"></relationship>
         <relationship name="children" type="0/0" destination="LMREQUESTTREEITEM"></relationship>
         <relationship name="headers" type="0/0" destination="LMKEYVALUE" idrefs="z128 z127"></relationship>
+    </object>
+    <object type="LMKEYVALUE" id="z130">
+        <attribute name="value" type="string">[{"data":{"charset":"us-ascii","username":"foo","password":"bar"},"identifier":"com.luckymarmot.BasicAuthDynamicValue"}]</attribute>
+        <attribute name="order" type="int64">0</attribute>
+        <attribute name="name" type="string">Authorization</attribute>
+        <attribute name="enabled" type="bool">1</attribute>
+        <relationship name="groupforbodyparameters" type="0/1" destination="LMREQUESTGROUP"></relationship>
+        <relationship name="groupforheaders" type="0/1" destination="LMREQUESTGROUP"></relationship>
+        <relationship name="groupforurlparameters" type="0/1" destination="LMREQUESTGROUP"></relationship>
+        <relationship name="request" type="0/1" destination="LMREQUEST" idrefs="z132"></relationship>
+    </object>
+    <object type="LMKEYVALUE" id="z131">
+        <attribute name="value" type="string"></attribute>
+        <attribute name="order" type="int64">1</attribute>
+        <attribute name="name" type="string"></attribute>
+        <attribute name="enabled" type="bool">1</attribute>
+        <relationship name="groupforbodyparameters" type="0/1" destination="LMREQUESTGROUP"></relationship>
+        <relationship name="groupforheaders" type="0/1" destination="LMREQUESTGROUP"></relationship>
+        <relationship name="groupforurlparameters" type="0/1" destination="LMREQUESTGROUP"></relationship>
+        <relationship name="request" type="0/1" destination="LMREQUEST" idrefs="z132"></relationship>
+    </object>
+    <object type="LMREQUEST" id="z132">
+        <attribute name="uuid" type="string">434C06C4-580B-42C2-8348-25ADDB05B0E1</attribute>
+        <attribute name="url" type="string">http://localhost:8080/classifiers</attribute>
+        <attribute name="storecookies" type="bool">1</attribute>
+        <attribute name="sendcookies" type="bool">1</attribute>
+        <attribute name="redirectmethod" type="bool">0</attribute>
+        <attribute name="redirectauthorization" type="bool">0</attribute>
+        <attribute name="method" type="string">POST</attribute>
+        <attribute name="followredirects" type="bool">0</attribute>
+        <attribute name="body" type="string">[{"data":{"json":"{\\"specification-url\\":\\"http:\\\\\\/\\\\\\/localhost:8080\\\\\\/example\\\\\\/mnist\\\\\\/classifier.prototxt\\",\\"training-job-id\\":\\"edc83a5bed514c0c9b9b840217e20f0d\\",\\"scale\\":\\"255\\",\\"image-width\\":\\"28\\",\\"image-height\\":\\"28\\",\\"color\\":false,\\"gpu\\":false}"},"identifier":"com.luckymarmot.JSONDynamicValue"}]</attribute>
+        <attribute name="order" type="int64">6</attribute>
+        <attribute name="name" type="string">Create Classifier</attribute>
+        <relationship name="parent" type="0/1" destination="LMREQUESTTREEITEM" idrefs="z108"></relationship>
+        <relationship name="children" type="0/0" destination="LMREQUESTTREEITEM"></relationship>
+        <relationship name="headers" type="0/0" destination="LMKEYVALUE" idrefs="z130 z131"></relationship>
     </object>
 </database>
