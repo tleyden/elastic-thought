@@ -44,8 +44,8 @@ It would be possible to start more nodes which only had Caffe GPU workers runnin
 
 1. **[done]** Working end-to-end with IMAGE_DATA caffe layer using a single test set with a single training set, and ability to query trained set.
 1. **[done]** Support LEVELDB / LMDB data formats, to run mnist example.
-1. **[in progress]** Support the majority of caffe use cases
-1. Package everything up to make it easy to deploy  <-- initial release
+1. **[in progress]** Package everything up to make it easy to deploy locally or in the cloud
+1. Support the majority of caffe use cases
 1. Ability to auto-scale worker instances up and down based on how many jobs are in the message queue.
 1. Attempt to add support for other deep learning frameworks: pylearn2, cuda-convnet, etc.
 1. Build a Web App on top of the REST API that leverages [PouchDB](https://github.com/pouchdb/pouchdb)
@@ -70,6 +70,54 @@ It would be possible to start more nodes which only had Caffe GPU workers runnin
 ElasticThought requires CoreOS to run.
 
 If you want to access the GPU, you will need to do extra work to get [CoreOS working with Nvidia CUDA GPU Drivers](http://tleyden.github.io/blog/2014/11/04/coreos-with-nvidia-cuda-gpu-drivers/)
+
+## Installing elastic-thought on a single CoreOS host (Development mode)
+
+If you are on OSX, you'll first need to install Vagrant, VirtualBox, and CoreOS.  See [CoreOS on Vagrant](https://coreos.com/docs/running-coreos/platforms/vagrant/) for instructions.  
+
+Here's what will be created:
+
+                                                                          
+                                                                          
+               ┌─────────────────────────────────────────────────────────┐
+               │                       CoreOS Host                       │
+               │  ┌──────────────────────────┐  ┌─────────────────────┐  │
+               │  │     Docker Container     │  │  Docker Container   │  │
+               │  │   ┌───────────────────┐  │  │    ┌────────────┐   │  │
+               │  │   │  Elastic Thought  │  │  │    │Sync Gateway│   │  │
+               │  │   │      Server       │  │  │    │  Database  │   │  │
+               │  │   │   ┌───────────┐   │  │  │    │            │   │  │
+               │  │   │   │In-process │   │◀─┼──┼───▶│            │   │  │
+               │  │   │   │   Caffe   │   │  │  │    │            │   │  │
+               │  │   │   │  worker   │   │  │  │    │            │   │  │
+               │  │   │   └───────────┘   │  │  │    └────────────┘   │  │
+               │  │   └───────────────────┘  │  └─────────────────────┘  │
+               │  └──────────────────────────┘                           │
+               └─────────────────────────────────────────────────────────┘
+	       
+
+Run the following commands on your CoreOS box (to get in, you may need to `vagrant ssh core-01`)
+
+**Start Sync Gateway Database**
+
+```
+$ docker run -d --name sync-gateway -P couchbase/sync-gateway:1.1.0-forestdb_bucket sync_gateway https://gist.githubusercontent.com/tleyden/8051567cf62dfa8f89ca/raw/43d4abc9ef64cef7b4bbbdf6cb8ce80c456efd1f/gistfile1.txt
+```
+
+**Start ElasticThought REST API server**
+
+```
+$ docker run -d --name elastic-thought -p 8080:8080 --link sync-gateway:sync-gateway tleyden5iwx/elastic-thought-cpu-develop bash -c 'refresh-elastic-thought; elastic-thought --sync-gw http://sync-gateway:4984/elastic-thought'
+```
+
+It's also a good idea to check the logs of both containers to look for any errors:
+
+```
+$ docker logs sync-gateway 
+$ docker logs -f elastic-thought
+```
+
+At this point you can [test the API](http://docs.elasticthought.apiary.io/) via curl. 
 
 
 ## Installing elastic-thought on AWS (Production mode)
@@ -133,38 +181,10 @@ sync_gw_node@3.service                          0f5e2e11.../10.168.212.210      
 
 At this point you should be able to access the [REST API](http://docs.elasticthought.apiary.io/) on the public ip any of the three Sync Gateway machines.
 
-## Installing elastic-thought on a single CoreOS host (Development mode)
-
-If you are on OSX, you'll first need to install Vagrant, VirtualBox, and CoreOS.  See [CoreOS on Vagrant](https://coreos.com/docs/running-coreos/platforms/vagrant/) for instructions.  
-
-Here's what will be created:
-
-                                                                          
-                                                                          
-               ┌─────────────────────────────────────────────────────────┐
-               │                       CoreOS Host                       │
-               │  ┌──────────────────────────┐  ┌─────────────────────┐  │
-               │  │     Docker Container     │  │  Docker Container   │  │
-               │  │   ┌───────────────────┐  │  │    ┌────────────┐   │  │
-               │  │   │  Elastic Thought  │  │  │    │Sync Gateway│   │  │
-               │  │   │      Server       │  │  │    │  Database  │   │  │
-               │  │   │   ┌───────────┐   │  │  │    │            │   │  │
-               │  │   │   │In-process │   │◀─┼──┼───▶│            │   │  │
-               │  │   │   │   Caffe   │   │  │  │    │            │   │  │
-               │  │   │   │  worker   │   │  │  │    │            │   │  │
-               │  │   │   └───────────┘   │  │  │    └────────────┘   │  │
-               │  │   └───────────────────┘  │  └─────────────────────┘  │
-               │  └──────────────────────────┘                           │
-               └─────────────────────────────────────────────────────────┘
-	       
-
-```
-$ vagrant ssh core-01
-$ docker run --name sync-gateway -P couchbase/sync-gateway sync-gw-start -c feature/forestdb_bucket -g https://gist.githubusercontent.com/tleyden/8051567cf62dfa8f89ca/raw/43d4abc9ef64cef7b4bbbdf6cb8ce80c456efd1f/gistfile1.txt
-$ docker run --name elastic-thought -P --link sync-gateway:sync-gateway tleyden5iwx/elastic-thought-cpu-develop bash -c 'refresh-elastic-thought; elastic-thought --sync-gw http://sync-gateway:4984'
-```
 	
-## Installing elastic-thought on Vagrant
+## Installing elastic-thought on Vagrant (Staging mode)
+
+This mode tries to replicate the Production mode described above, but on Vagrant instead of AWS.
 
 ### Update Vagrant
 
@@ -275,3 +295,4 @@ Scroll up to the **Installing elastic-thought on AWS** section and start with **
 ## License
 
 Apache 2
+
