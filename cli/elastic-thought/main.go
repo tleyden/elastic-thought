@@ -73,8 +73,10 @@ Options:
 	// endpoint to create a new user (db auth not required)
 	ginEngine.POST("/users", context.CreateUserEndpoint)
 
-	// static examples dir
-	ginEngine.Static("/example", "../../example")
+	// TODO: bundle in static assets from ../../example directory into the
+	// binary using gobin-data and then allow them to be served up
+	// via the /example REST endpoint.
+	// ginEngine.Static("/example", "../../example")  <-- uncomment for quick hack rel path
 
 	// all endpoints in the authorized group require Basic Auth credentials
 	// which is enforced by the DbAuthRequired middleware.
