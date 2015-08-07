@@ -292,6 +292,12 @@ Scroll up to the **Installing elastic-thought on AWS** section and start with **
 
 * Is this useful for grid computing / distributed computation?  **Ans**:  No, this is not trying to be a grid computing (aka distributed computation) solution.  You may want to check out [Caffe Issue 876](https://github.com/BVLC/caffe/issues/876) or [ParameterServer](http://parameterserver.org/)
   
+## Related Projects
+
+* [DeepDetect - REST Api wrapper for Caffe](https://github.com/beniz/deepdetect) 
+* [caffe-docker-classifier - Set up your own classifier API based on pre-trained GoogleNet model and Caffe.](https://github.com/irony/caffe-docker-classifier)
+
+
 ## License
 
 Apache 2
